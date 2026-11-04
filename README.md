@@ -1,5 +1,7 @@
 # Qwen3.6 35B-A3B on AMD Strix Halo
 
+[![Repository validation](https://github.com/LeoStehlik/qwen3.6-35b-a3b-strix-halo/actions/workflows/validate.yml/badge.svg)](https://github.com/LeoStehlik/qwen3.6-35b-a3b-strix-halo/actions/workflows/validate.yml)
+
 Reconstructable deployment and prefill experiments for Qwen3.6-35B-A3B,
 ROCmFP4 weights, native MTP, and F16 KV on a Ryzen AI Max+ 395 / Radeon 8060S.
 The runtime is **llama.cpp Vulkan/RADV**. ROCmFP4 names the weight format and
@@ -73,6 +75,14 @@ patches, MTP work and prefill evidence. Its historical Qwen3.6 overview is usefu
 background, but the service state and benchmark decisions here are newer.
 
 ## Reproducibility and attribution
+
+GitHub Actions checks the repository's JSON, fixture and patch manifests,
+parses every Python file, smoke-tests the portable command-line interfaces and
+reconstructs each source profile from the pinned upstream commit. It does not
+run GPU benchmarks, validate model quality or prove the current deployment
+state; those remain the evidence-separated checks documented above.
+NumPy is needed only by the numerical and perplexity analysis helpers; install
+it with `python3 -m pip install -r requirements-analysis.txt`.
 
 The base is `charlie12345/rocmfp4-llama` commit
 `4795079b04f5e0ada6e5d2e85b12bac1e27e7873`. Patch checksums and reconstructed

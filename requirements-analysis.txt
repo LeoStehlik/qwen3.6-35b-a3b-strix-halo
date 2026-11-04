@@ -1,0 +1,2 @@
+# Used only by benchmarks/analyze-perplexity.py and compare-numerics.py.
+numpy>=1.26,<3
