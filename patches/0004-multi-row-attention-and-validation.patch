@@ -1,0 +1,861 @@
+diff --git a/ggml/src/ggml-cpu/ops.cpp b/ggml/src/ggml-cpu/ops.cpp
+--- a/ggml/src/ggml-cpu/ops.cpp
++++ b/ggml/src/ggml-cpu/ops.cpp
+@@ -8419,7 +8419,12 @@
+         ggml_fp16_t * VKQ16 = (ggml_fp16_t *) (VKQ32 + 1*DV); // (temporary) FP16 VKQ accumulator
+         ggml_fp16_t * Q_q   = (ggml_fp16_t *) (VKQ32 + 2*DV); // (temporary) buffer for Q converted to quantized/FP16
+ 
+-        if (v->type == GGML_TYPE_F16) {
++        // Diagnostic oracle for long-context Vulkan attention tests. The
++        // default CPU reference sums V in fp16 even at GGML_PREC_F32, which
++        // loses accuracy over tens of thousands of KV entries. Opt-in only.
++        const bool f16_accumulator = v->type == GGML_TYPE_F16 &&
++            getenv("GGML_CPU_FA_F32_REFERENCE") == nullptr;
++        if (f16_accumulator) {
+             memset(VKQ16, 0, DV*sizeof(ggml_fp16_t));
+         } else {
+             memset(VKQ32, 0, DV*sizeof(float));
+@@ -8468,7 +8473,7 @@
+ 
+             const char * v_data = ((const char *) v->data + (ic*nbv1 + iv2*nbv2 + iv3*nbv3));
+ 
+-            if (v->type == GGML_TYPE_F16) {
++            if (f16_accumulator) {
+                 if (s > M) {
+                     // s is new maximum, ms < 1.0f, vs == expf(s - s) == 1.0f
+                     M = s;
+@@ -8509,7 +8514,7 @@
+             S = S*ms + vs; // scale and increment sum with partial sum
+         }
+ 
+-        if (v->type == GGML_TYPE_F16) {
++        if (f16_accumulator) {
+             for (int64_t d = 0; d < DV; ++d) {
+                 VKQ32[d] = GGML_CPU_FP16_TO_FP32(VKQ16[d]);
+             }
+diff --git a/ggml/src/ggml-vulkan/ggml-vulkan.cpp b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/ggml/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -756,6 +756,7 @@
+ 
+     vk_pipeline pipeline_dequant[GGML_TYPE_COUNT];
+     vk_pipeline pipeline_dequant_transpose[GGML_TYPE_COUNT];
++    vk_pipeline pipeline_dequant_f16_transpose_vt;
+     vk_pipeline pipeline_dequant_mul_mat_vec_f32_f32[DMMV_WG_SIZE_COUNT][GGML_TYPE_COUNT][mul_mat_vec_max_cols];
+     vk_pipeline pipeline_dequant_mul_mat_vec_f16_f32[DMMV_WG_SIZE_COUNT][GGML_TYPE_COUNT][mul_mat_vec_max_cols];
+     vk_pipeline pipeline_dequant_mul_mat_vec_id_f32[DMMV_WG_SIZE_COUNT][GGML_TYPE_COUNT];
+@@ -4028,6 +4029,17 @@
+                 if (f32acc) { spv_data = flash_attn_f32_f16_cm1_data;        spv_size = flash_attn_f32_f16_cm1_len; }
+                 else        { spv_data = flash_attn_f32_f16_f16acc_cm1_data; spv_size = flash_attn_f32_f16_f16acc_cm1_len; }
+                 name = aligned ? "flash_attn_f32_f16_aligned_cm1" : "flash_attn_f32_f16_cm1";
++                if (fa.first.flags & 1024) {
++                    GGML_ASSERT(f32acc && aligned);
++                    spv_data = flash_attn_f32_f16_mr_cm1_data;
++                    spv_size = flash_attn_f32_f16_mr_cm1_len;
++                    name = "flash_attn_f32_f16_mr_cm1";
++                } else if (fa.first.flags & 32768) {
++                    GGML_ASSERT(f32acc);
++                    spv_data = flash_attn_f32_f16_o32_cm1_data;
++                    spv_size = flash_attn_f32_f16_o32_cm1_len;
++                    name = "flash_attn_f32_f16_o32_cm1";
++                }
+             }
+             ggml_vk_create_pipeline(device, fa.second, name, spv_size, spv_data, "main", 7,
+                                     sizeof(vk_flash_attn_push_constants), {Br, 1, 1},
+@@ -4847,6 +4859,7 @@
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q5_1], "dequant_q5_1", dequant_q5_1_len, dequant_q5_1_data, "main", 2, 5 * sizeof(uint32_t), {256 * 16, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q8_0], "dequant_q8_0", dequant_q8_0_len, dequant_q8_0_data, "main", 2, 5 * sizeof(uint32_t), {256 * 16, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant_transpose[GGML_TYPE_F16], "dequant_f16_transpose", dequant_f16_transpose_len, dequant_f16_transpose_data, "main", 2, 5 * sizeof(uint32_t), {256 * 8, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_dequant_f16_transpose_vt, "dequant_f16_transpose_vt", dequant_f16_transpose_vt_len, dequant_f16_transpose_vt_data, "main", 2, 5 * sizeof(uint32_t), {64 * 64, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q2_K], "dequant_q2_k", dequant_q2_k_len, dequant_q2_k_data, "main", 2, 5 * sizeof(uint32_t), {256 * 64, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q3_K], "dequant_q3_k", dequant_q3_k_len, dequant_q3_k_data, "main", 2, 5 * sizeof(uint32_t), {256 * 64, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q4_K], "dequant_q4_k", dequant_q4_k_len, dequant_q4_k_data, "main", 2, 5 * sizeof(uint32_t), {256 * 32, 1, 1}, {}, 1);
+@@ -10124,10 +10137,70 @@
+         scale /= logit_softcap;
+     }
+ 
++    // Opt-in backport of Strix 925cc5b7 + 6f9e0021. Keep the original path
++    // for decode and unsupported layouts; this first port targets hs256 on RADV.
++    static const bool fa_mr_enabled = [] {
++        const char * e = getenv("GGML_VK_FA_MR");
++        return e && atoi(e) != 0;
++    }();
++    static const uint32_t fa_mr_h = [] {
++        const char * e = getenv("GGML_VK_FA_MR_H");
++        return e ? (uint32_t) atoi(e) : 2u;
++    }();
++    const uint32_t vt_stride = KV + 128;
++    const uint64_t vt_size = (uint64_t) HSV * vt_stride * nev2 * sizeof(ggml_fp16_t);
++    const uint64_t vt_offset = use_contig_kv ? k_f16_sz + v_f16_sz : 0;
++    const bool use_mr = fa_mr_enabled && neq1 >= 64 && HSK == 256 && HSV == 256 &&
++        f32acc && aligned && tuning_params.path == FA_COOPMAT1 && gqa_ratio == 1 &&
++        ctx->device->driver_id == vk::DriverId::eMesaRadv && ctx->device->architecture == AMD_RDNA3 &&
++        k->type == GGML_TYPE_F16 && v->type == GGML_TYPE_F16 && (KV % 64) == 0 &&
++        neq3 == 1 && nek3 == 1 && nev3 == 1 && nek2 == nev2 &&
++        (fa_mr_h == 1 || fa_mr_h == 2 || fa_mr_h == 4) && qk_ratio % fa_mr_h == 0 &&
++        neq2 == (int64_t) qk_ratio * nek2 &&
++        (mask == nullptr || (mask->type == GGML_TYPE_F16 && nem0 == KV && nem2 == 1 && nem3 == 1 &&
++                            mask->nb[0] == 2 && mask->nb[1] == (uint64_t) KV * 2)) &&
++        (q_stride % 4) == 0 && (nbq2 % 16) == 0 && (nbq3 % 16) == 0 &&
++        (k_stride % 8) == 0 && (nbk2_eff % 16) == 0 && (nbk3_eff % 16) == 0 &&
++        (nbv1 % 8) == 0 && (nbv2 % 8) == 0 &&
++        vt_stride < (1u << 20) && nev2 < 4096 &&
++        vt_size <= ctx->device->properties.limits.maxStorageBufferRange &&
++        ctx->device->pipeline_dequant_f16_transpose_vt != nullptr &&
++        ctx->device->subgroup_size_control && ctx->device->subgroup_min_size <= 32 &&
++        ctx->device->subgroup_max_size >= 32;
++    if (use_mr) {
++        tuning_params.block_rows = 64 / fa_mr_h;
++        tuning_params.block_cols = 64;
++        tuning_params.row_split = fa_mr_h;
++        tuning_params.subgroup_size = 32;
++        tuning_params.workgroup_size = 256;
++        tuning_params.shmem_staging = 0;
++        tuning_params.disable_subgroups = false;
++        tuning_params.limit_occupancy_shmem = 0;
++        workgroups_y = (uint32_t) neq2 / fa_mr_h;
++    }
++    static const bool trace_mr = getenv("GGML_VK_FA_MR_TRACE") != nullptr;
++    if (trace_mr && neq1 >= 64) {
++        fprintf(stderr, "FA_MR engaged=%d name=%s q=%lld kv=%u hsk=%u hsv=%u heads=%lld kvheads=%lld H=%u f32acc=%d contig=%d\n",
++            use_mr, dst->name, (long long) neq1, KV, HSK, HSV, (long long) neq2, (long long) nek2,
++            fa_mr_h, f32acc, use_contig_kv);
++    }
++
+     // Only use mask opt when the mask is fairly large. This hasn't been tuned extensively.
+     bool use_mask_opt = mask && nem1 >= 32 && nem0 * nem1 > 32768 && nem0 >= tuning_params.block_cols * 16;
+     vk_fa_pipeline_state fa_pipeline_state = get_fa_pipeline_state(ctx->device, tuning_params, HSK, HSV, aligned, f32acc,
+                                                                    mask != nullptr, use_mask_opt, logit_softcap != 0, k->type, v->type);
++    if (use_mr) {
++        auto enabled = [](const char * name) { const char * e = getenv(name); return !e || atoi(e) != 0; };
++        fa_pipeline_state.flags |= 1024;
++        if (enabled("GGML_VK_FA_MR_LAZY"))  fa_pipeline_state.flags |= 4096;
++        if (enabled("GGML_VK_FA_MR_NOEB"))  fa_pipeline_state.flags |= 8192;
++        if (enabled("GGML_VK_FA_MR_VPOST")) fa_pipeline_state.flags |= 16384;
++    }
++    static const bool diagnostic_f32_output = getenv("GGML_VK_FA_F32_OUTPUT") != nullptr;
++    if (!use_mr && diagnostic_f32_output && f32acc && tuning_params.path == FA_COOPMAT1 &&
++        k->type == GGML_TYPE_F16 && v->type == GGML_TYPE_F16 && HSK == 256 && HSV == 256) {
++        fa_pipeline_state.flags |= 32768;
++    }
+ 
+     vk_pipeline pipeline = nullptr;
+ 
+@@ -10162,7 +10235,9 @@
+     const uint32_t Tr = CEIL_DIV(N, Br);
+ 
+     // Try to use split_k when KV is large enough to be worth the overhead.
+-    if (gqa_ratio > 1 && workgroups_x <= Br) {
++    if (use_mr) {
++        // Prefill has enough workgroups; MR does not implement split-K.
++    } else if (gqa_ratio > 1 && workgroups_x <= Br) {
+         split_k = shader_core_count * 2 / (workgroups_x * workgroups_y * workgroups_z);
+     } else if (gqa_ratio <= 1) {
+         uint32_t total_wgs_no_split = Tr * workgroups_y * workgroups_z;
+@@ -10241,10 +10316,15 @@
+     };
+     if (vk_fa_profile_enabled) {
+         ctx->fa_profile_entries.push_back({dst->name, (uint32_t) neq1, KV, Br, Bc, split_k,
+-            use_contig_kv, use_contig_kv ? k_f16_sz + v_f16_sz : 0,
++            use_contig_kv || use_mr, (use_contig_kv ? k_f16_sz + v_f16_sz : 0) + (use_mr ? v_f16_sz : 0),
+             (uint32_t) neq2, (uint32_t) nek2, HSK, HSV});
+     }
+     profile_stamp(0);
++    if (use_mr && ctx->prealloc_size_x < vt_offset + vt_size) {
++        // Reserve every scratch region before dispatching any producer.
++        ctx->prealloc_size_x = vt_offset + vt_size;
++        ggml_vk_preallocate_buffers(ctx, subctx);
++    }
+     if (use_contig_kv) {
+         if (ctx->prealloc_size_x < k_f16_sz + v_f16_sz) {
+             ctx->prealloc_size_x = k_f16_sz + v_f16_sz;
+@@ -10267,6 +10347,26 @@
+         ctx->prealloc_x_need_sync = true;
+         k_buf = k_dst;
+         v_buf = v_dst;
++    }
++    if (use_mr) {
++        vk_pipeline transpose_v = ctx->device->pipeline_dequant_f16_transpose_vt;
++        ggml_pipeline_request_descriptor_sets(ctx, transpose_v, 1);
++        if (ctx->prealloc_x_need_sync && !use_contig_kv) {
++            ggml_vk_sync_buffers(ctx, subctx);
++        }
++        vk_subbuffer vt_dst = {ctx->prealloc_x, vt_offset, vt_size};
++        const uint32_t source_kv_stride = use_contig_kv ? HSV : (uint32_t) (nbv1 / 2);
++        const uint32_t source_head_stride = use_contig_kv ? HSV * KV : (uint32_t) (nbv2 / 2);
++        const uint32_t nel = (uint32_t) ggml_nelements(v);
++        const std::vector<uint32_t> vt_pc = {HSV, vt_stride | ((uint32_t) nev2 << 20),
++                                           source_kv_stride, source_head_stride, nel};
++        ggml_vk_dispatch_pipeline(ctx, subctx, transpose_v, {v_buf, vt_dst}, vt_pc, {nel, 1, 1});
++        ggml_vk_sync_buffers(ctx, subctx);
++        ctx->prealloc_x_need_sync = true;
++        v_buf = vt_dst;
++        v_stride = vt_stride;
++        nbv2_eff = (uint32_t) ((uint64_t) HSV * vt_stride * sizeof(ggml_fp16_t));
++        nbv3_eff = (uint32_t) vt_size;
+     }
+     profile_stamp(1);
+ 
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/dequant_f16_transpose_vt.comp b/ggml/src/ggml-vulkan/vulkan-shaders/dequant_f16_transpose_vt.comp
+new file mode 100644
+--- /dev/null
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/dequant_f16_transpose_vt.comp
+@@ -0,0 +1,58 @@
++#version 450
++
++#include "dequant_head.glsl"
++
++#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
++
++layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++layout (binding = 0) readonly buffer A {f16vec4 data_a[];};
++layout (binding = 1) writeonly buffer D {f16vec4 data_b[];};
++
++// V -> V^T per head for the coopmat1 FA (V_TRANSPOSED): source V[nh][kv][hs] with element strides
++// p.stride_a (kv) and p.stride_b (head), hs contiguous; dest [nh][hs][kv] tightly packed
++// (p.M = HS, p.K = dest row stride | NH << 20, kv count = p.nel / (HS * NH)). The dest row stride is
++// KV plus a pad: a stride that is a multiple of 4 KB puts every hd row of a fragment on the same
++// memory channel (16 channels x 256 B). One workgroup transposes a 64 kv x 64 hs tile
++// through LDS so both the reads and the writes are 128-byte coalesced runs (the first version did
++// 2-byte gathers and cost more than the FA kernel gained at depth). Host gate: KV % 64 == 0, HS % 64 == 0.
++shared uint16_t tile[64][65];   // [kv][hs], padded to spread the transposed reads over the banks
++
++void main() {
++    const uint HS = p.M, NH = p.K >> 20, KVs = p.K & 0xFFFFF;
++    const uint KVn = p.nel / (HS * NH);
++    const uint tiles_kv = KVn / 64;
++    const uint tiles_hs = HS / 64;
++    const uint t = gl_WorkGroupID.x;
++    const uint nh  = t / (tiles_kv * tiles_hs);
++    const uint rem = t % (tiles_kv * tiles_hs);
++    const uint tkv = rem / tiles_hs;
++    const uint ths = rem % tiles_hs;
++    if (nh >= NH) {
++        return;
++    }
++    const uint tid = gl_LocalInvocationID.x;
++    // read: 64 rows x 64 hs = 64 rows x 16 f16vec4; 256 threads -> 4 passes, 16 threads per row
++    [[unroll]] for (uint i = 0; i < 4; ++i) {
++        const uint idx = i * 256 + tid;
++        const uint r = idx / 16;          // kv row within the tile
++        const uint c = idx % 16;          // f16vec4 column within the tile
++        const uint src = (nh * p.stride_b + (tkv * 64 + r) * p.stride_a + ths * 64) / 4 + c;
++        const f16vec4 v = data_a[src];
++        tile[r][4 * c + 0] = float16BitsToUint16(v.x);
++        tile[r][4 * c + 1] = float16BitsToUint16(v.y);
++        tile[r][4 * c + 2] = float16BitsToUint16(v.z);
++        tile[r][4 * c + 3] = float16BitsToUint16(v.w);
++    }
++    barrier();
++    // write: 64 hs rows x 64 kv = 64 rows x 16 f16vec4
++    [[unroll]] for (uint i = 0; i < 4; ++i) {
++        const uint idx = i * 256 + tid;
++        const uint h = idx / 16;          // hs row of V^T within the tile
++        const uint c = idx % 16;          // f16vec4 column (kv) within the tile
++        const f16vec4 v = f16vec4(uint16BitsToFloat16(tile[4 * c + 0][h]), uint16BitsToFloat16(tile[4 * c + 1][h]),
++                                  uint16BitsToFloat16(tile[4 * c + 2][h]), uint16BitsToFloat16(tile[4 * c + 3][h]));
++        const uint dst = (nh * HS * KVs + (ths * 64 + h) * KVs + tkv * 64) / 4 + c;
++        data_b[dst] = v;
++    }
++}
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_base.glsl b/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_base.glsl
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_base.glsl
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_base.glsl
+@@ -103,7 +103,7 @@
+ #define FA_TYPE_Q4_0_ROCMFP4      100u
+ #define FA_TYPE_Q4_0_ROCMFP4_FAST 101u
+ 
+-#if defined(BFLOAT16)
++#if defined(BFLOAT16) || defined(FA_O_F32)
+ #define O_TYPE float
+ #define O_TYPEV4 vec4
+ #else
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1.comp b/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1.comp
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1.comp
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1.comp
+@@ -612,7 +612,7 @@
+         const uint d_local = d0 / threads_per_rowgroup;
+         [[unroll]] for (uint32_t r = 0; r < rows_per_thread; ++r) {
+             Of[r][d_local] *= O_TYPE(Lfrcp[r]);
+-#if defined(FLOAT_TYPE_MAX)
++#if defined(FLOAT_TYPE_MAX) && !defined(FA_O_F32)
+             Of[r][d_local] = clamp(Of[r][d_local], -FLOAT_TYPE_MAX, FLOAT_TYPE_MAX);
+ #endif
+         }
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1_mr.comp b/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1_mr.comp
+new file mode 100644
+--- /dev/null
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1_mr.comp
+@@ -0,0 +1,341 @@
++#version 450
++
++#extension GL_EXT_control_flow_attributes : enable
++#extension GL_EXT_shader_16bit_storage : require
++
++#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
++#extension GL_EXT_shader_explicit_arithmetic_types_int32 : require
++
++#extension GL_KHR_shader_subgroup_basic : enable
++#extension GL_KHR_shader_subgroup_arithmetic : enable
++#extension GL_KHR_shader_subgroup_clustered : enable
++#extension GL_KHR_shader_subgroup_vote : enable
++#extension GL_KHR_memory_scope_semantics : enable
++#extension GL_KHR_cooperative_matrix : enable
++
++// Multi-row coopmat1 prefill FA (GGML_VK_FA_MR, 2026-09-25, after gufo's attention_wmma.hip).
++//
++// The cm1 kernel pins Br at 16 query rows and splits Bc over its subgroups, so every 16 rows stream
++// the whole K/V range and each subgroup needs every Q fragment (re-read from LDS per KV block).
++// Here one workgroup of eight wave32 subgroups owns 64 rows = H heads x (64 / H) tokens (the heads
++// share one KV head under GQA), and the work is split the other way round:
++//   S = Q K^T per 16-key tile: subgroup s owns row block s % 4 and half s / 4 of the head dim,
++//     so its Q fragments (HSK / 32 of them) stay in registers for the whole KV loop. The two halves'
++//     partial S tiles meet in LDS.
++//   softmax: four threads per row, running max / sum in registers, P (f16) and the per-row rescale
++//     factor to LDS.
++//   O += P V: subgroup s owns head-dim tiles s, s + 8, ... for all four row blocks, so each V^T
++//     fragment is loaded once per subgroup and reused four times.
++// K fragments are read directly from the contiguized [HSK][KV] scratch and V fragments from the
++// V^T scratch (both prepasses of the cm1 path), so neither goes through LDS.
++// The accumulator rescale multiplies by a row-broadcast matrix loaded from LDS with a zero column
++// stride, so no accumulator element-to-row layout is assumed.
++//
++// Spec constants reuse the cm1 slots: Br = tokens per workgroup (64 / H), Bc = 64 (the mask_opt
++// block), row_split = H. Host gates: f16 K (contiguous rows) + V^T, HSK == HSV in {128, 256},
++// KV % 64 == 0, f32 accumulation, no split_k, mask shared across heads.
++
++#include "types.glsl"
++#include "flash_attn_base.glsl"
++
++const uint32_t NSG = 8;                  // wave32 subgroups
++const uint32_t ROWS = 64;                // rows per workgroup
++const uint32_t RB = 4;                   // 16-row blocks
++const uint32_t KT = 16;                  // keys per inner tile
++const uint32_t H = row_split;            // heads per workgroup
++const uint32_t TOKS = Br;                // tokens per workgroup (ROWS / H)
++const uint32_t QF = HSK / 32;            // Q fragments per subgroup (half the head dim)
++const uint32_t OT = HSV / (16 * NSG);    // O dim tiles per subgroup
++
++layout (binding = 0) readonly buffer Q {float data_q[];};
++layout (binding = 0) readonly buffer QV4 {vec4 data_qv4[];};
++layout (binding = 1) readonly buffer K {float16_t data_k[];};
++layout (binding = 1) readonly buffer KV4 {f16vec4 data_kv4[];};
++layout (binding = 2) readonly buffer V {float16_t data_v[];};
++layout (binding = 2) readonly buffer VV4 {f16vec4 data_vv4[];};
++layout (binding = 3) readonly buffer M {float16_t data_m[];};
++
++// one 16 x 16 f16 Q tile per subgroup at the start, then the P tile [ROWS][KT] (f16vec4 units)
++const uint32_t pstride = KT / 4 + 2;
++const uint32_t stage_len = (NSG * 64 > ROWS * pstride) ? NSG * 64 : ROWS * pstride;
++shared f16vec4 stage_sh[stage_len];
++
++// partial S tiles of the two head-dim halves: [2][ROWS][sstride] f32; reused for the partial-block output
++const uint32_t sstride = KT + 4;
++const uint32_t s_len = (2 * ROWS * sstride > NSG * 256) ? 2 * ROWS * sstride : NSG * 256;
++shared float s_sh[s_len];
++
++// per-row rescale factor of the current tile (then the final 1/L factor)
++shared float scale_sh[ROWS];
++// MR_LAZY: per softmax subgroup, whether any of its eight rows moved its running max this tile
++shared uint32_t resc_sh[NSG];
++
++// skip the O rescale of a row block whose rows all kept their running max (eM == 1 exactly, so the
++// skipped multiply is an identity and the result is bit-identical); at depth the max rarely moves
++const bool MR_LAZY = (Flags & 4096) != 0;
++// drop the loop-end barrier (hazard argument at the loop end)
++const bool MR_NOEB = (Flags & 8192) != 0;
++// issue the tile's V^T loads right after the S store, before the softmax barrier
++const bool MR_VPOST = (Flags & 16384) != 0;
++
++// 2-bit mask_opt state of 64-key block j for this workgroup's tokens
++uint32_t block_bits(const uint32_t j, const uint32_t mo_offset) {
++    return (data_mask_opt[mo_offset + j / 16] >> ((j % 16) * 2)) & 0x3;
++}
++
++// first block after j (j = ~0: the first block) that the mask does not skip entirely; end_j if none
++uint32_t next_block(uint32_t j, const uint32_t end_j, const uint32_t mo_offset) {
++    j = j + 1;
++    if (MASK_ENABLE && USE_MASK_OPT) {
++        while (j < end_j && block_bits(j, mo_offset) == MASK_OPT_ALL_NEG_INF) {
++            j++;
++        }
++    }
++    return j;
++}
++
++void main() {
++    const uint32_t tid = gl_LocalInvocationIndex;
++    const uint32_t sg = gl_SubgroupID;
++
++    const uint32_t tok0 = gl_WorkGroupID.x * TOKS;
++    const uint32_t head0 = gl_WorkGroupID.y * H;
++    const uint32_t iq3 = gl_WorkGroupID.z;
++    const uint32_t N = p.N;
++    const uint32_t KV = p.KV;
++
++    const uint32_t rk2 = p.neq2 / p.nek2, rk3 = p.neq3 / p.nek3;
++    const uint32_t rv2 = p.neq2 / p.nev2, rv3 = p.neq3 / p.nev3;
++    const uint32_t k_offset = ((head0 / rk2) * p.nb12 + (iq3 / rk3) * p.nb13) / 2;   // f16 elements
++    const uint32_t v_offset = ((head0 / rv2) * p.nb22 + (iq3 / rv3) * p.nb23) / 2;
++    const uint32_t k_stride = p.nb11;   // elements (HSK for the contiguized scratch)
++    const uint32_t v_stride = p.nb21;   // V^T row stride (KV + pad)
++
++    // row r -> (row block r / 16, head (r / 16) % H, token tok0 + ((r / 16) / H) * 16 + r % 16)
++#define ROW_HEAD(r) (head0 + ((r) / 16) % H)
++#define ROW_TOK(r)  (tok0 + (((r) / 16) / H) * 16 + (r) % 16)
++
++    const uint32_t s_rb = sg % RB;       // S phase: row block
++    const uint32_t s_half = sg / RB;     // S phase: head-dim half
++
++    // ---- Q -> registers ----
++    // Each subgroup converts its 16 x 16 Q tiles (zero rows past N) into a private LDS slice and loads the
++    // fragment back with one unconditional coopMatLoad: a fragment converted in registers stays sixteen 16-bit
++    // values that ACO repacks before every WMMA (130 v_mov_b16 per tile in the loop), and a conditional load
++    // leaves a phi that it copies at the loop header.
++    coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> QA[QF];
++    {
++        const uint32_t q_tok0 = ROW_TOK(s_rb * 16);
++        const uint32_t q_off = (ROW_HEAD(s_rb * 16) * p.nb02 + iq3 * p.nb03) / 4;
++        const uint32_t lane = gl_SubgroupInvocationID;
++        [[unroll]] for (uint32_t f = 0; f < QF; ++f) {
++            // lane owns (row lane / 2, dims (lane % 2) * 8 .. + 7) of the tile: two vec4 reads, two f16vec4 writes
++            const uint32_t r = lane / 2;
++            const uint32_t c4 = (lane % 2) * 2;
++            const uint32_t d0 = (s_half * QF + f) * 16;
++            vec4 q0 = vec4(0.0), q1 = vec4(0.0);
++            if (q_tok0 + r < N) {
++                const uint32_t o = (q_off + (q_tok0 + r) * p.nb01 + d0) / 4 + c4;
++                q0 = data_qv4[o] * p.scale;
++                q1 = data_qv4[o + 1] * p.scale;
++            }
++            stage_sh[sg * 64 + r * 4 + c4]     = f16vec4(q0);
++            stage_sh[sg * 64 + r * 4 + c4 + 1] = f16vec4(q1);
++            subgroupMemoryBarrierShared();
++            subgroupBarrier();
++            coopMatLoad(QA[f], stage_sh, sg * 64, 4, gl_CooperativeMatrixLayoutRowMajor);
++            subgroupBarrier();
++        }
++    }
++    barrier();
++
++    // ---- softmax thread state: four threads per row ----
++    const uint32_t sm_row = tid / 4;
++    const uint32_t sm_seg = tid % 4;
++    const uint32_t sm_tok = ROW_TOK(sm_row);
++    const float NEG_FLT_MAX_OVER_2 = uintBitsToFloat(0xFEFFFFFF);
++    float Mf = NEG_FLT_MAX_OVER_2;
++    float Lf = 0.0;
++
++    float slope = 1.0;
++    if (p.max_bias > 0.0f) {
++        const uint32_t h = ROW_HEAD(sm_row);
++        const uint32_t n_head_log2 = p.mask_n_head_log2 & N_LOG2_MASK;
++        const float base = h < n_head_log2 ? p.m0 : p.m1;
++        const int exph = int(h < n_head_log2 ? h + 1 : 2 * (h - n_head_log2) + 1);
++        slope = pow(base, float(exph));
++    }
++
++    // mask: shared by all heads (host gate nem2 == nem3 == 1); rows past nem1 read as zero
++    const uint32_t m_row_off = sm_tok * KV;
++    const bool m_row_ok = sm_tok < p.nem1;
++
++    const uint32_t mo_stride = CEIL_DIV(KV, 16 * Bc);
++    const uint32_t mo_offset = mo_stride * gl_WorkGroupID.x;
++
++    coopmat<float, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> OAcc[RB][OT];
++    [[unroll]] for (uint32_t rb = 0; rb < RB; ++rb) {
++        [[unroll]] for (uint32_t t = 0; t < OT; ++t) {
++            OAcc[rb][t] = coopmat<float, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator>(0.0);
++        }
++    }
++
++    const uint32_t end_j = KV / Bc;
++
++    uint32_t j = next_block(0xFFFFFFFFu, end_j, mo_offset);
++    uint32_t key0 = j * Bc;
++    bool read_mask = false;
++
++    [[dont_unroll]]
++    while (j < end_j) {
++        const uint32_t kt = (key0 / KT) % (Bc / KT);
++        if (kt == 0) {
++            read_mask = MASK_ENABLE && (!USE_MASK_OPT || block_bits(j, mo_offset) != MASK_OPT_ALL_ZERO);
++        }
++        // the next tile: the rest of this block, then the next block the mask does not skip
++        const uint32_t nj = (kt + 1 < Bc / KT) ? j : next_block(j, end_j, mo_offset);
++        const uint32_t nkey0 = (kt + 1 < Bc / KT) ? key0 + KT : nj * Bc;
++
++        coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> VB[OT];
++        {
++            // ---- S = Q K^T (this subgroup: row block s_rb, head-dim half s_half) ----
++            coopmat<float, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> SAcc[2];
++            SAcc[0] = coopmat<float, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator>(0.0);
++            SAcc[1] = coopmat<float, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator>(0.0);
++            [[unroll]] for (uint32_t f = 0; f < QF; ++f) {
++                coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseB> KB;
++                // B[k = dim][n = key] at key * k_stride + dim: column-major, one 32-byte run per lane
++                const uint32_t coord = (k_offset + key0 * k_stride + (s_half * QF + f) * 16) / 4;
++                coopMatLoad(KB, data_kv4, coord, k_stride / 4, gl_CooperativeMatrixLayoutColumnMajor);
++                SAcc[f % 2] = coopMatMulAdd(QA[f], KB, SAcc[f % 2]);
++            }
++            SAcc[0] = SAcc[0] + SAcc[1];
++            coopMatStore(SAcc[0], s_sh, (s_half * ROWS + s_rb * 16) * sstride, sstride, gl_CooperativeMatrixLayoutRowMajor);
++            if (MR_VPOST) {
++                [[unroll]] for (uint32_t t = 0; t < OT; ++t) {
++                    const uint32_t coord = (v_offset + ((t * NSG + sg) * 16) * v_stride + key0) / 4;
++                    coopMatLoad(VB[t], data_vv4, coord, v_stride / 4, gl_CooperativeMatrixLayoutColumnMajor);
++                }
++            }
++            barrier();
++
++            // ---- online softmax ----
++            {
++                vec4 s = vec4(s_sh[sm_row * sstride + sm_seg * 4 + 0], s_sh[sm_row * sstride + sm_seg * 4 + 1],
++                              s_sh[sm_row * sstride + sm_seg * 4 + 2], s_sh[sm_row * sstride + sm_seg * 4 + 3]) +
++                         vec4(s_sh[(ROWS + sm_row) * sstride + sm_seg * 4 + 0], s_sh[(ROWS + sm_row) * sstride + sm_seg * 4 + 1],
++                              s_sh[(ROWS + sm_row) * sstride + sm_seg * 4 + 2], s_sh[(ROWS + sm_row) * sstride + sm_seg * 4 + 3]);
++                if (LOGIT_SOFTCAP) {
++                    s = p.logit_softcap * tanh(s);
++                }
++                if (read_mask && m_row_ok) {
++                    const uint32_t mo = m_row_off + key0 + sm_seg * 4;
++                    s += slope * vec4(data_m[mo], data_m[mo + 1], data_m[mo + 2], data_m[mo + 3]);
++                }
++                float rowmax = max(max(s.x, s.y), max(s.z, s.w));
++                rowmax = subgroupClusteredMax(rowmax, 4) + FATTN_KQ_MAX_OFFSET;
++                const float Mold = Mf;
++                Mf = max(rowmax, Mold);
++                const float eM = exp(Mold - Mf);
++                const vec4 P = exp(s - Mf);
++                Lf = eM * Lf + (P.x + P.y + P.z + P.w);
++                stage_sh[sm_row * pstride + sm_seg] = f16vec4(P);
++                if (sm_seg == 0) {
++                    scale_sh[sm_row] = eM;
++                }
++                if (MR_LAZY) {
++                    const bool moved = subgroupAny(eM != 1.0);
++                    if (subgroupElect()) {
++                        resc_sh[sg] = moved ? 1u : 0u;
++                    }
++                }
++            }
++            barrier();
++
++            // ---- O = diag(eM) O + P V ----
++            if (!MR_VPOST) {
++                [[unroll]] for (uint32_t t = 0; t < OT; ++t) {
++                    // V^T [HSV][v_stride]: B[k = key][n = dim] at dim * v_stride + key, column-major
++                    const uint32_t coord = (v_offset + ((t * NSG + sg) * 16) * v_stride + key0) / 4;
++                    coopMatLoad(VB[t], data_vv4, coord, v_stride / 4, gl_CooperativeMatrixLayoutColumnMajor);
++                }
++            }
++            [[unroll]] for (uint32_t rb = 0; rb < RB; ++rb) {
++                coopmat<float16_t, gl_ScopeSubgroup, 16, 16, gl_MatrixUseA> PA;
++                coopMatLoad(PA, stage_sh, rb * 16 * pstride, pstride, gl_CooperativeMatrixLayoutRowMajor);
++                // softmax rows of row block rb live in subgroups 2 rb and 2 rb + 1 (four threads per row)
++                if (!MR_LAZY || (resc_sh[2 * rb] | resc_sh[2 * rb + 1]) != 0) {
++                    // element (r, c) = scale_sh[rb * 16 + r]: column-major with a zero column stride
++                    coopmat<float, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> SC;
++                    coopMatLoad(SC, scale_sh, rb * 16, 0, gl_CooperativeMatrixLayoutColumnMajor);
++                    [[unroll]] for (uint32_t t = 0; t < OT; ++t) {
++                        OAcc[rb][t] = OAcc[rb][t] * SC;
++                    }
++                }
++                [[unroll]] for (uint32_t t = 0; t < OT; ++t) {
++                    OAcc[rb][t] = coopMatMulAdd(PA, VB[t], OAcc[rb][t]);
++                }
++            }
++            // the next tile's S store and softmax overwrite s_sh / stage_sh / scale_sh. MR_NOEB: neither needs
++            // this barrier. A subgroup at the next S store has passed this tile's softmax barrier, so every
++            // softmax read of s_sh is done; the next softmax writes P / scale_sh / resc_sh only after the next
++            // S barrier, which every subgroup reaches after finishing this PV.
++            if (!MR_NOEB) {
++                barrier();
++            }
++        }
++        j = nj;
++        key0 = nkey0;
++    }
++    if (MR_NOEB) {
++        barrier();   // the last PV may still read scale_sh
++    }
++
++    // ---- final per-row factor: sinks, 1 / L ----
++    {
++        float L = subgroupClusteredAdd(Lf, 4);
++        float ms = 1.0;
++        if ((p.mask_n_head_log2 & SINK_ENABLE_BIT) != 0) {
++            const float sink = data_s[ROW_HEAD(sm_row)];
++            float vs = 1.0;
++            if (sink > Mf) {
++                ms = exp(Mf - sink);
++            } else {
++                vs = exp(sink - Mf);
++            }
++            L = L * ms + vs;
++        }
++        if (sm_seg == 0) {
++            scale_sh[sm_row] = (L == 0.0) ? 0.0 : ms / L;
++        }
++    }
++    barrier();
++
++    const uint32_t o_base = iq3 * p.ne2 * p.ne1 * HSV;
++    [[unroll]] for (uint32_t rb = 0; rb < RB; ++rb) {
++        coopmat<float, gl_ScopeSubgroup, 16, 16, gl_MatrixUseAccumulator> SC;
++        coopMatLoad(SC, scale_sh, rb * 16, 0, gl_CooperativeMatrixLayoutColumnMajor);
++        const uint32_t tokb = ROW_TOK(rb * 16);
++        const uint32_t h = ROW_HEAD(rb * 16);
++        [[unroll]] for (uint32_t t = 0; t < OT; ++t) {
++            OAcc[rb][t] = OAcc[rb][t] * SC;
++            const uint32_t d0 = (t * NSG + sg) * 16;
++            if (tokb + 16 <= N) {
++                // dst [HSV][ne1 heads][ne2 tokens]: row = token (stride ne1 * HSV), col = dim
++                coopMatStore(OAcc[rb][t], data_o, o_base + (tokb * p.ne1 + h) * HSV + d0, p.ne1 * HSV, gl_CooperativeMatrixLayoutRowMajor);
++            } else if (tokb < N) {
++                // partial row block: stage through this subgroup's private LDS slice and store the valid rows
++                coopMatStore(OAcc[rb][t], s_sh, sg * 256, 16, gl_CooperativeMatrixLayoutRowMajor);
++                subgroupMemoryBarrierShared();
++                subgroupBarrier();
++                [[unroll]] for (uint32_t e = gl_SubgroupInvocationID; e < 256; e += 32) {
++                    const uint32_t r = e / 16, c = e % 16;
++                    if (tokb + r < N) {
++                        data_o[o_base + ((tokb + r) * p.ne1 + h) * HSV + d0 + c] = D_TYPE(s_sh[sg * 256 + e]);
++                    }
++                }
++                subgroupBarrier();
++            }
++        }
++    }
++}
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -683,6 +683,13 @@
+ #if defined(GGML_VULKAN_COOPMAT_GLSLC_SUPPORT)
+                 string_to_spv("flash_attn_f32_f16", "flash_attn_cm1.comp",
+                     merge_maps(fa_base_dict, {{"Q_TYPE", "float"}, {"D_TYPE", "float"}, {"D_TYPEV4", "vec4"}, {"COOPMAT", "1"}}), fp16, true, false, f16acc);
++                if (!f16acc) {
++                    // Diagnostic original-kernel oracle with FP32 output accumulation.
++                    string_to_spv("flash_attn_f32_f16_o32", "flash_attn_cm1.comp",
++                        merge_maps(fa_base_dict, {{"Q_TYPE", "float"}, {"D_TYPE", "float"}, {"D_TYPEV4", "vec4"}, {"COOPMAT", "1"}, {"FA_O_F32", "1"}}), fp16, true, false, false);
++                    string_to_spv("flash_attn_f32_f16_mr", "flash_attn_cm1_mr.comp",
++                        merge_maps(fa_base_dict, {{"Q_TYPE", "float"}, {"D_TYPE", "float"}, {"D_TYPEV4", "vec4"}, {"COOPMAT", "1"}}), fp16, true, false, false);
++                }
+ #endif
+             }
+ 
+@@ -762,6 +769,7 @@
+         }
+         if (tname == "f16") {
+             string_to_spv("dequant_f16_transpose", "dequant_f16_transpose.comp", {});
++            string_to_spv("dequant_f16_transpose_vt", "dequant_f16_transpose_vt.comp", {});
+         }
+ 
+         shader = (tname == "f32" || tname == "f16" || tname == "bf16") ? "get_rows.comp" : "get_rows_quant.comp";
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -118,6 +118,7 @@
+ 
+ # build test-tokenizer-0 target once and add many tests
+ llama_build(test-mtp-hidden.cpp)
++llama_build(test-fa-mr-numeric.cpp)
+ llama_build(test-tokenizer-0.cpp)
+ 
+ llama_test(test-tokenizer-0 NAME test-tokenizer-0-bert-bge          ARGS ${PROJECT_SOURCE_DIR}/models/ggml-vocab-bert-bge.gguf)
+diff --git a/tests/test-backend-ops.cpp b/tests/test-backend-ops.cpp
+--- a/tests/test-backend-ops.cpp
++++ b/tests/test-backend-ops.cpp
+@@ -6479,6 +6479,7 @@
+     const ggml_type type_K;
+     const ggml_type type_V;
+     std::array<int32_t, 4> permute;
++    bool tight_kv = false;
+ 
+     std::string vars() override {
+         return VARS_TO_STR14(hsk, hsv, nh, nr23, kv, nb, mask, sinks, max_bias, logit_softcap, prec, type_K, type_V, permute);
+@@ -6512,7 +6513,7 @@
+                 ne_perm[permute[i]] = ne[i];
+             }
+             ggml_tensor * t;
+-            if (is_view) {
++            if (is_view && !tight_kv) {
+                 ggml_tensor * t0 = ggml_new_tensor_4d(ctx, type, ne_perm[0], 2*ne_perm[1], ne_perm[2], ne_perm[3]);
+                 t = ggml_view_4d(ctx, t0, ne_perm[0], ne_perm[1], ne_perm[2], ne_perm[3], t0->nb[1], t0->nb[2], t0->nb[3], 0);
+             } else {
+@@ -6584,6 +6585,20 @@
+ };
+ 
+ // GGML_OP_CROSS_ENTROPY_LOSS
++struct test_flash_attn_mr : public test_flash_attn_ext {
++    const bool interleaved;
++    test_flash_attn_mr(int64_t q_tokens, int64_t kv_tokens, bool interleaved,
++                      bool mask = true, bool sinks = false, float bias = 0, float cap = 0,
++                      bool tight = true)
++        : test_flash_attn_ext(256, 256, 2, {8, 1}, kv_tokens, q_tokens, mask, sinks, bias, cap,
++                             GGML_PREC_F32, GGML_TYPE_F16, GGML_TYPE_F16,
++                             interleaved ? std::array<int32_t, 4>{0,2,1,3} : std::array<int32_t, 4>{0,1,2,3}),
++          interleaved(interleaved) { tight_kv = tight; }
++    std::string vars() override {
++        return test_flash_attn_ext::vars() + ",mr_case=1,tight_kv=" + std::to_string(tight_kv);
++    }
++};
++
+ struct test_cross_entropy_loss : public test_case {
+     const ggml_type type;
+     const std::array<int64_t, 4> ne;
+@@ -9024,6 +9039,23 @@
+         }
+     }
+ 
++    // Current Qwen3.6 shape: 16 Q heads sharing 2 KV heads, dimension 256.
++    // Cover exact/interleaved layouts, partial query rows, deep caches and fallback.
++    for (bool interleaved : {false, true}) {
++        for (int q : {63, 64, 65, 75, 1024}) {
++            test_cases.emplace_back(new test_flash_attn_mr(q, 1024, interleaved));
++        }
++        for (int kv : {113, 4096, 16384, 65536}) {
++            test_cases.emplace_back(new test_flash_attn_mr(65, kv, interleaved));
++        }
++        test_cases.emplace_back(new test_flash_attn_mr(1024, 4096, interleaved));
++        test_cases.emplace_back(new test_flash_attn_mr(75, 1024, interleaved, false));
++        test_cases.emplace_back(new test_flash_attn_mr(75, 1024, interleaved, true, true));
++        test_cases.emplace_back(new test_flash_attn_mr(75, 1024, interleaved, true, false, 8));
++        test_cases.emplace_back(new test_flash_attn_mr(75, 1024, interleaved, true, true, 8, 10));
++        test_cases.emplace_back(new test_flash_attn_mr(75, 1024, interleaved, true, false, 0, 0, false));
++    }
++
+     // mixed quant and Q1_0 test cases
+     test_cases.emplace_back(new test_flash_attn_ext(64, 64, 4, {1, 1}, 128, 2, true, false, 0, 0, GGML_PREC_F32, GGML_TYPE_Q8_0, GGML_TYPE_Q4_0));
+     test_cases.emplace_back(new test_flash_attn_ext(64, 64, 4, {1, 1}, 128, 2, true, false, 0, 0, GGML_PREC_F32, GGML_TYPE_Q4_0, GGML_TYPE_F16));
+diff --git a/tests/test-fa-mr-numeric.cpp b/tests/test-fa-mr-numeric.cpp
+new file mode 100644
+--- /dev/null
++++ b/tests/test-fa-mr-numeric.cpp
+@@ -0,0 +1,103 @@
++// Same-input cross-process model logits for FA_MR=0/1; no sampling or KV reuse.
++#include "llama.h"
++#include "../src/llama-ext.h"
++#include "../vendor/nlohmann/json.hpp"
++#include <cstdio>
++#include <cstdlib>
++#include <cstring>
++#include <fstream>
++#include <stdexcept>
++#include <string>
++#include <vector>
++
++static void require(bool ok, const char * message) {
++    if (!ok) throw std::runtime_error(message);
++}
++
++struct capture_state { std::string prefix; int count = 0; };
++static bool capture_first_attention(ggml_tensor * t, bool ask, void * user) {
++    auto & state = *(capture_state *) user;
++    const bool wanted = t->op == GGML_OP_FLASH_ATTN_EXT && std::strcmp(t->name,"__fattn__-3")==0 && state.count==0;
++    if (ask) return wanted;
++    if (!wanted) return true;
++    ++state.count;
++    nlohmann::json metadata;
++    for (int i=0;i<5;++i) {
++        ggml_tensor * x=i==4?t:t->src[i];
++        if (!x) continue;
++        std::vector<unsigned char> bytes(ggml_nbytes(x));
++        ggml_backend_tensor_get(x,bytes.data(),0,bytes.size());
++        std::string name=i==4?"out":std::string("qkvm").substr(i,1);
++        std::ofstream file(state.prefix+"."+name,std::ios::binary);
++        file.write((const char *)bytes.data(),bytes.size());
++        metadata[name]={{"type",ggml_type_name(x->type)},
++          {"ne",{x->ne[0],x->ne[1],x->ne[2],x->ne[3]}},
++          {"nb",{x->nb[0],x->nb[1],x->nb[2],x->nb[3]}}};
++    }
++    std::ofstream file(state.prefix+".attention.json"); file<<metadata.dump(2)<<'\n';
++    return true;
++}
++
++int main(int argc, char ** argv) {
++    try {
++        require(argc == 4, "usage: test-fa-mr-numeric model.gguf tokens.json output-prefix");
++        std::ifstream input(argv[2]);
++        nlohmann::json data; input >> data;
++        auto tokens = data.get<std::vector<llama_token>>();
++        require(tokens.size() == 65536, "expected fixed 64K prompt");
++        llama_backend_init();
++        auto mp = llama_model_default_params();
++        mp.n_gpu_layers = 999; mp.use_mmap = false;
++        auto model = llama_model_load_from_file(argv[1], mp);
++        require(model, "model load failed");
++        auto cp = llama_context_default_params();
++        cp.n_ctx = 131072; cp.n_batch = 2048; cp.n_ubatch = 1024;
++        cp.n_seq_max = 1; cp.n_threads = cp.n_threads_batch = 16;
++        cp.type_k = cp.type_v = GGML_TYPE_F16;
++        cp.flash_attn_type = LLAMA_FLASH_ATTN_TYPE_ENABLED;
++        capture_state capture{argv[3]};
++        const bool diagnostic = std::getenv("FA_MR_DUMP_INITIAL") != nullptr;
++        if (diagnostic || std::getenv("FA_MR_CAPTURE_FIRST") != nullptr) {
++            cp.cb_eval=capture_first_attention; cp.cb_eval_user_data=&capture;
++        }
++        auto ctx = llama_init_from_model(model, cp);
++        require(ctx, "context creation failed");
++        llama_set_embeddings_pre_norm(ctx, true, false);
++        const int vocab = llama_vocab_n_tokens(llama_model_get_vocab(model));
++        const int hidden = llama_model_n_embd(model);
++        std::ofstream logits(std::string(argv[3])+".logits",std::ios::binary);
++        std::ofstream embeddings(std::string(argv[3])+".hidden",std::ios::binary);
++        require(logits.good() && embeddings.good(), "output open failed");
++        auto batch = llama_batch_init(2048,0,1);
++        const std::vector<int> sample_rows = {255,767,1279,2047};
++        std::vector<int> positions;
++        for (int start = 0; start < (diagnostic ? 2048 : 65536); start += 2048) {
++            batch.n_tokens = 2048;
++            for (int i = 0; i < batch.n_tokens; ++i) {
++                batch.token[i] = tokens[start+i]; batch.pos[i] = start+i;
++                batch.n_seq_id[i] = 1; batch.seq_id[i][0] = 0; batch.logits[i] = false;
++            }
++            for (int row : sample_rows) batch.logits[row] = true;
++            require(llama_decode(ctx,batch)==0,"decode failed");
++            const float * h = llama_get_embeddings_pre_norm(ctx);
++            require(h, "hidden state missing");
++            for (int row : sample_rows) {
++                const float * p = llama_get_logits_ith(ctx,row);
++                require(p,"selected logits missing");
++                logits.write((const char *)p, vocab*sizeof(float));
++                embeddings.write((const char *)(h+row*hidden),hidden*sizeof(float));
++                positions.push_back(start+row);
++            }
++            if ((start+2048)%8192 == 0) {
++                std::printf("captured through %d tokens\n",start+2048); std::fflush(stdout);
++            }
++        }
++        require(logits.good() && embeddings.good(),"output write failed");
++        std::ofstream metadata(std::string(argv[3])+".json");
++        metadata << nlohmann::json({{"vocab",vocab},{"hidden",hidden},{"positions",positions}}).dump(2) << '\n';
++        llama_batch_free(batch); llama_free(ctx); llama_model_free(model); llama_backend_free();
++        return 0;
++    } catch (const std::exception & e) {
++        std::fprintf(stderr,"FAIL: %s\n",e.what()); return 1;
++    }
++}
+diff --git a/tools/perplexity/perplexity.cpp b/tools/perplexity/perplexity.cpp
+--- a/tools/perplexity/perplexity.cpp
++++ b/tools/perplexity/perplexity.cpp
+@@ -2084,6 +2084,17 @@
+         kl_divergence(ctx, params);
+     } else {
+         results = perplexity(ctx, params, n_ctx);
++        // Optional diagnostic export for paired per-token accuracy comparisons.
++        if (const char * path = std::getenv("GGML_PPL_PROBS_OUT")) {
++            std::ofstream dump(path, std::ios::binary);
++            dump.write(reinterpret_cast<const char *>(results.probs.data()),
++                       results.probs.size() * sizeof(float));
++            if (!dump) {
++                LOG_ERR("failed to write perplexity probabilities to %s\n", path);
++                return 1;
++            }
++            LOG_INF("PPL_RESULT value=%.12g tokens=%zu\n", results.ppl_value, results.tokens.size());
++        }
+     }
+ 
+     LOG("\n");

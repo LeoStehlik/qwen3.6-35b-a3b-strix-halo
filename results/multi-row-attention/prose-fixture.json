@@ -1,0 +1,11 @@
+{
+  "filename": "prose-32k-wikitext.txt",
+  "sha256": "c102257d05f5463cdb99682d95349571610f5be71da53d1f13b168239978466c",
+  "bytes": 131138,
+  "redistributed": false,
+  "tool_token_count": 31661,
+  "tokenizer_endpoint_count": 31662,
+  "context": 12288,
+  "scored_tokens": 6143,
+  "note": "Tool and endpoint tokenization differed by one token; recorded PPL uses tool tokenization."
+}

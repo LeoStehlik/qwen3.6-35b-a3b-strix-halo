@@ -1,0 +1,68 @@
+diff --git a/ggml/src/ggml-vulkan/ggml-vulkan.cpp b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/ggml/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -9333,10 +9333,29 @@
+ 
+     const ggml_type effective_src1_type = quantize_y ? GGML_TYPE_Q8_1 : (y_f32_kernel ? GGML_TYPE_F32 : src1->type);
+ 
+-    const uint32_t kpad = quantize_y ? 0 : ggml_vk_align_size(ne10, ggml_vk_guess_matmul_id_pipeline_align(ctx, mmp, ne01, nei1, qx_needs_dequant ? f16_type : src0->type, effective_src1_type));
++    // Strix de689608: size expert tiles by the expected assignments per
++    // expert. Dispatch and row bounds still cover every actual assignment,
++    // including experts with substantially more than the mean token count.
++    static const bool smalln = [] {
++        const char * e = getenv("GGML_VK_MMID_SMALLN");
++        return e && atoi(e) != 0;
++    }();
++    const uint32_t n_for_tile = smalln && ne02 > 1
++        ? std::max<uint32_t>(1u, (uint32_t) ((nei1 * nei0 + ne02 - 1) / ne02))
++        : (uint32_t) nei1;
++    const uint32_t kpad = quantize_y ? 0 : ggml_vk_align_size(ne10, ggml_vk_guess_matmul_id_pipeline_align(ctx, mmp, ne01, n_for_tile, qx_needs_dequant ? f16_type : src0->type, effective_src1_type));
+     const bool aligned = !quantize_y && ne10 == kpad && ne01 > 8 && nei1 > 8;
+ 
+-    vk_pipeline pipeline = ggml_vk_guess_matmul_id_pipeline(ctx, mmp, ne01, nei1, aligned, qx_needs_dequant ? f16_type : src0->type, effective_src1_type);
++    vk_pipeline pipeline = ggml_vk_guess_matmul_id_pipeline(ctx, mmp, ne01, n_for_tile, aligned, qx_needs_dequant ? f16_type : src0->type, effective_src1_type);
++
++    static const bool trace_smalln = getenv("GGML_VK_MMID_SMALLN_TRACE") != nullptr;
++    static int trace_count = 0;
++    if (trace_smalln && nei1 >= 1024 && trace_count < 6) {
++        ++trace_count;
++        fprintf(stderr, "ggml_vulkan: MMID smalln=%d type=%s tokens=%lld routes=%lld experts=%lld selection_n=%u tile=%ux%u quantize_y=%d\n",
++                smalln, ggml_type_name(src0->type), (long long) nei1, (long long) nei0, (long long) ne02,
++                n_for_tile, pipeline->wg_denoms[0], pipeline->wg_denoms[1], quantize_y);
++    }
+ 
+     if (ggml_nbytes(src0) > ctx->device->properties.limits.maxStorageBufferRange) {
+         pipeline = ggml_vk_get_64b_indexing_pipeline(ctx, pipeline);
+diff --git a/tests/test-backend-ops.cpp b/tests/test-backend-ops.cpp
+--- a/tests/test-backend-ops.cpp
++++ b/tests/test-backend-ops.cpp
+@@ -4205,8 +4205,9 @@
+ struct test_mul_mat_id_dispatch : public test_mul_mat_id {
+     const bool skewed;
+ 
+-    test_mul_mat_id_dispatch(ggml_type type_a, bool broadcast, int64_t tokens, bool skewed)
+-        : test_mul_mat_id(type_a, GGML_TYPE_F32, 256, 8, broadcast, 64, tokens, 256), skewed(skewed) {}
++    test_mul_mat_id_dispatch(ggml_type type_a, bool broadcast, int64_t tokens, bool skewed,
++                            int64_t rows = 64, int64_t inner = 256)
++        : test_mul_mat_id(type_a, GGML_TYPE_F32, 256, 8, broadcast, rows, tokens, inner), skewed(skewed) {}
+ 
+     std::string vars() override {
+         return test_mul_mat_id::vars() + ",dispatch_routing=" + (skewed ? "skewed" : "balanced");
+@@ -8508,6 +8509,17 @@
+         }
+     }
+ 
++    // Qwen3.6 ROCmFP4 gate/up and down shapes, including partial ubatches
++    // and experts receiving far more assignments than the sizing heuristic.
++    for (int64_t tokens : {1024, 1025}) {
++        for (bool skewed : {false, true}) {
++            test_cases.emplace_back(new test_mul_mat_id_dispatch(
++                GGML_TYPE_Q4_0_ROCMFP4_FAST, true, tokens, skewed, 512, 2048));
++            test_cases.emplace_back(new test_mul_mat_id_dispatch(
++                GGML_TYPE_Q4_0_ROCMFP4_FAST, false, tokens, skewed, 2048, 512));
++        }
++    }
++
+     // test large experts*tokens
+     for (bool b : {false, true}) {
+         test_cases.emplace_back(new test_mul_mat_id(GGML_TYPE_F16, GGML_TYPE_F32, 16, 16, b, 32, 1024, 16));

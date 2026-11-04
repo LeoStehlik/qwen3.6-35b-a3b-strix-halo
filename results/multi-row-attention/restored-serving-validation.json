@@ -1,0 +1,7 @@
+{
+  "health": {
+    "status": "ok"
+  },
+  "binary": "$HOME/src/rocmfp4-mtp-output/build-vulkan/bin/llama-server",
+  "experimental_kernel_enabled": false
+}

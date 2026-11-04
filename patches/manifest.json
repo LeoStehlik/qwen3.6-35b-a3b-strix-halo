@@ -1,0 +1,152 @@
+[
+  {
+    "patch": "patches/0001-prefill-foundation.patch",
+    "sha256": "02bdd7f03ecdff1f723ac57256903129e473225ac4e23c3ef18dc2bb9b920050",
+    "files": [
+      {
+        "path": "ggml/src/ggml-vulkan/ggml-vulkan.cpp",
+        "sha256_after": "3321894147c1d53d9c4472463e6741409a5cf8aca2076b59e73c99413f8a05be"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/dequant_f16_transpose.comp",
+        "sha256_after": "7a919d290684289d0388e95a2d260d2c54f7be22bdb473d893d517aa0691d04f"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp",
+        "sha256_after": "1ce72843cd69f7b4edfcc7ccd7b2219b98885bf6a8da19252a02e0a2ef4e9168"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp",
+        "sha256_after": "4ed41e8434a10c4c46c51dce8d79e9daf0c723f75e4d498a448a64beea76267e"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl",
+        "sha256_after": "8921694f2cba460897b935a2900db935a8d8366db36b92fc19ac9fe0f0b3e23f"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/mul_mmq.comp",
+        "sha256_after": "df549381440b919edfb181837dd614a897a885a22d85486bc5f706f701752390"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+        "sha256_after": "79b37c51e394c6106e9dc5d46670c41244a11cfba1e268983270fa1e81881ace"
+      },
+      {
+        "path": "src/models/delta-net-base.cpp",
+        "sha256_after": "2d90b0144bfa1d087f89ded99cf469ff8cc7f2250b73fd7a8a76fa7499bd6a84"
+      },
+      {
+        "path": "tests/test-backend-ops.cpp",
+        "sha256_after": "10d37685bafccb0d85086cc0f1de28e53589dfa510e82a4c18b0b116a685bd87"
+      }
+    ]
+  },
+  {
+    "patch": "patches/0002-mtp-sparse-logits.patch",
+    "sha256": "baa68e5242e96075208fe922036b44757788d6796ac5d0c105227255316bff98",
+    "files": [
+      {
+        "path": "common/speculative.cpp",
+        "sha256_after": "4092fc62c27fd94ab2d1f01835877b80a3e23e2b00656833c6816934c49e4fbb"
+      },
+      {
+        "path": "src/llama-batch.cpp",
+        "sha256_after": "260bfd22223926640f7c4e2c4a7e29c42d9db5ae7c949c98db8c6ec2867e8308"
+      },
+      {
+        "path": "src/llama-batch.h",
+        "sha256_after": "c267620b57bfa38114b01749ebdf60e1961969969f93d9f64d588cfc05f6cf48"
+      },
+      {
+        "path": "src/llama-context.cpp",
+        "sha256_after": "0fc1a95d0450afce03fef8a0c73c279ba0078ea431a025af73f1a3595993b79b"
+      },
+      {
+        "path": "tests/CMakeLists.txt",
+        "sha256_after": "a6bee809af9693ab8460b8c4d87e1a60784ff66a1aa342ed905944fdc27724cb"
+      },
+      {
+        "path": "tests/test-mtp-hidden.cpp",
+        "sha256_after": "783476fd2ead78e9b52cbd83bf86aa29da13e470d92311be0a5c074e8e6e0858"
+      },
+      {
+        "path": "tools/server/server-context.cpp",
+        "sha256_after": "d716367d8228dec53d3d7ed0730f27e9aa71bfc840763acbe029c9df602480e5"
+      }
+    ]
+  },
+  {
+    "patch": "patches/0003-attention-profiling.patch",
+    "sha256": "20271a3deaa51ed576454baa940cc7f07e90a96708db8acd9915d34e257072e4",
+    "files": [
+      {
+        "path": "ggml/src/ggml-vulkan/ggml-vulkan.cpp",
+        "sha256_after": "f58b8a151249b8e8ffa8f5d28ea9168fb896e876e3614caae31183e4bfffceb6"
+      }
+    ]
+  },
+  {
+    "patch": "patches/0004-multi-row-attention-and-validation.patch",
+    "sha256": "3fba879ce4bfe3155638979caa13dbbadd639ae3fa0f87e04ad97f3d6366a809",
+    "files": [
+      {
+        "path": "ggml/src/ggml-cpu/ops.cpp",
+        "sha256_after": "7a32058364db1b019df806ecad738c31c18caec89159915a0471cead5fee2a8a"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/ggml-vulkan.cpp",
+        "sha256_after": "bb6e22bfbf2fcf928cbfbd252bc94c553ca3249f61de9a1fee2f11561cf37df2"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/dequant_f16_transpose_vt.comp",
+        "sha256_after": "7b255f8624d9510a447b78e9cfd03525531a4f040fc48d43240ad009597f8472"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_base.glsl",
+        "sha256_after": "3a22e2bde52621aa241f17189df658d8572bbae706c64ba04badc556b7f8cec8"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1.comp",
+        "sha256_after": "e9f0c6d2cf5eeeda1d93b5c0aa59aef1c042ccddf07a073711702683ab699b89"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/flash_attn_cm1_mr.comp",
+        "sha256_after": "61570452a9181f2a991ee226142a9cd75a2cb062780a9c8cc58a2d1434a6cdeb"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+        "sha256_after": "f32cda7a1237ca0f78ab81285f446c37ea70e453e65500697444e9071d3d688d"
+      },
+      {
+        "path": "tests/CMakeLists.txt",
+        "sha256_after": "1fbf1fd73b6c1df996237cc9fa26f7955abc5b8b17ece652f1b5634d506e3c4d"
+      },
+      {
+        "path": "tests/test-backend-ops.cpp",
+        "sha256_after": "89becc932c73b1da622229f3c383f37708c5bffa5b59441af58e13fb8a4503ca"
+      },
+      {
+        "path": "tests/test-fa-mr-numeric.cpp",
+        "sha256_after": "88ebccdd1e2fdfbcaa3345540ff4be12b4949638061242513ab227c1eedf026d"
+      },
+      {
+        "path": "tools/perplexity/perplexity.cpp",
+        "sha256_after": "6f44d180538cd01ccc604e639ad6cf6790b9658c13cc2bac0e284fb3995a584c"
+      }
+    ]
+  },
+  {
+    "patch": "patches/experimental/5001-smaller-moe-tiles.patch",
+    "sha256": "f10b96fcbff89db18675c2491959cd252451ff1c31aa592bf8af76113edae85f",
+    "files": [
+      {
+        "path": "ggml/src/ggml-vulkan/ggml-vulkan.cpp",
+        "sha256_after": "a164ee6acf70792ca0b16a3379437dc1ec8084091f627df69011a6cf51050258"
+      },
+      {
+        "path": "tests/test-backend-ops.cpp",
+        "sha256_after": "755363c0ad864ff77e8f7a7f24004e2d82b5c83d73680ca4ba53341cbbb77858"
+      }
+    ]
+  }
+]

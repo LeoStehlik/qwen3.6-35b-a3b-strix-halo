@@ -1,0 +1,25 @@
+{
+  "date_utc": "2026-11-04",
+  "profiles_reconstructed_and_changed_file_hashes_verified": [
+    "stable",
+    "profile",
+    "mr",
+    "moe-tiles"
+  ],
+  "upstream_base": "4795079b04f5e0ada6e5d2e85b12bac1e27e7873",
+  "patch_application": "All ordered profiles applied to clean pinned Git checkouts; git diff --check passed. Sparse-checkout omissions were handled using base Git contents when exporting patches.",
+  "cmake_configuration": "MR reconstructed source configured/generated successfully with Ninja, Vulkan, explicit O3/NDEBUG and tests enabled.",
+  "full_rebuild_during_packaging": false,
+  "full_rebuild_note": "Reconstructed changed source files match the existing compiled/tested trees by SHA-256; compilation and GPU experiments were performed in the preceding experiment, not repeated during documentation.",
+  "scripts": "Python AST/JSON parsing, CLI help, shell syntax, launch/restore dry runs passed.",
+  "analysis_replay": {
+    "numerical_gate_failure_reproduced": true,
+    "perplexity_exact_match": true,
+    "attention_profile_exact_match": true
+  },
+  "serving_launcher_argv": "Exactly matches current validated process when given its binary and binding.",
+  "relative_documentation_links": "passed",
+  "sensitive_pattern_scan": "passed; no model weights, raw conversations or tensor captures included",
+  "live_service": "Same process remained running; no restart or provider change during repository preparation.",
+  "restore_helper": "Dry-run only; not executed against live service."
+}

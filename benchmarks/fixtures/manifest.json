@@ -1,0 +1,8 @@
+{
+  "origin": "Synthetic review prompt built from the local MIT-licensed Vulkan backend; no OpenClaw conversation data.",
+  "prompt_tokens": 65536,
+  "files": {
+    "prompt.txt": "6efd5cb8693d5c7fc9fa826da0e454895172071c7d30283f6eb6c04978875346",
+    "prompt-tokens.json": "f4d8caf4698d26f019455e871fb9f084d0acbbf9de658881b8f7b8288f9760bf"
+  }
+}

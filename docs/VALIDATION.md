@@ -1,0 +1,84 @@
+# Validation, failures and deployment decision
+
+The MR speedup is repeatable on the tested 64K workload. Its deployment decision
+is separate: **MR remains disabled in normal serving**. The prior MTP build was
+restored, health returned OK and a completion answered `42`. No OpenClaw gateway
+restart was part of this experiment or repository work.
+
+## Passed checks
+
+- 30 attention cases per mode against the CPU F32 oracle: Qwen dimensions,
+  q=63/64/65/75/1024, KV up to 65,536, interleaved/padded views, masks, sinks,
+  ALiBi and softcap. Some deliberately exercise fallback.
+- MTP regression: hidden capture, selected logits, speculative verification,
+  multiple sequences and checkpoint restore within the candidate path. This
+  does not prove equality between old and new attention kernels.
+- Repeat server output was identical **within each mode**. Baseline and MR
+  output differed from one another.
+- One WikiText excerpt at 12,288 context, 6,143 scored tokens: PPL 4.5824288
+  versus 4.5837880, +0.02966%. Approximate 95% paired NLL interval: −0.001901 to
+  +0.002494. This met the recorded 1% perplexity margin on that sample, not a
+  general capability-equivalence criterion.
+
+## CPU reference correction
+
+Initially two 65K cases failed the original CPU oracle for **both** Vulkan
+kernels, error around 0.00134 versus tolerance 0.0005. The CPU F16 path
+accumulated values in F16 despite requested F32 precision. A diagnostic F32
+accumulator fixed both comparisons: 30/30 passed without relaxing tolerance.
+Default CPU behavior is unchanged unless `GGML_CPU_FA_F32_REFERENCE` is set.
+
+## Failed full-model gate
+
+The test sampled 128 next-token distributions across the separate 65,536-token
+code prompt. Predefined thresholds: mean KL <0.001, maximum logit NRMSE <0.02,
+greedy agreement ≥95%, hidden-state NRMSE <0.02.
+
+| Metric | Baseline vs MR |
+|---|---:|
+| Mean KL | 0.60334 |
+| Maximum logit NRMSE | about 0.9148 |
+| Greedy agreement | 108/128 = 84.375% |
+| Hidden-state NRMSE | about 0.3511 |
+
+The gate failed. These are internal probabilities on one code prompt, not 128
+independent tasks or a task-failure rate. Different output does not establish
+worse quality; faster inference does not establish preserved quality either.
+
+## Investigation
+
+First-layer Q/K/V/mask inputs were bit-identical. MR versus old attention output
+NRMSE was 0.000588. On selected rows/heads, an independent FP64 softmax/value
+calculation found MR closer to the oracle: roughly 0.0000949 versus 0.000488.
+This describes the captured first layer, not all layers or a 64K guarantee.
+
+The old coopmat1 kernel used an F16 output accumulator; MR uses F32. A
+diagnostic F32-output variant of the old kernel passed 30/30 operator tests,
+but MR still differed at model level (mean KL 0.64754, 110/128 greedy matches).
+Disabling the three MR scheduling options produced identical captured
+first-layer output to normal MR.
+
+These observations are consistent with numerical sensitivity in the quantized
+hybrid model, but the cause and downstream quality impact are **unresolved**.
+Do not label MR quality-equivalent or defective from this evidence alone.
+
+## Before promotion
+
+1. Inspect layer/state divergence beyond the first attention layer; distinguish
+   rounding/route changes from an indexing, synchronization or state bug.
+2. Evaluate several text/code samples at 32K and 64K+, plus retrieval, source
+   comparison and tool-selection tasks with assessable answers.
+3. Test multi-turn tool-result continuation, prefix displacement/restoration
+   and speculative rollback with production checkpoints enabled.
+4. Repeat paired timing and record workload/power/clock conditions after fixes.
+5. Establish quality acceptance criteria before examining new results.
+
+The prepared MR production-serving validation script in the local cache was
+**not executed**. The default launcher uses stable code; `--experimental-mr`
+is an opt-in switch, not a claim of promotion.
+
+Evidence: [summary](../results/multi-row-attention/summary.json),
+[numeric comparison](../results/multi-row-attention/numeric-comparison.json),
+[FP32 oracle](../results/multi-row-attention/numeric-oracle-comparison.json),
+[first-layer check](../results/multi-row-attention/initial-comparison.json),
+[perplexity](../results/multi-row-attention/perplexity-comparison.json).

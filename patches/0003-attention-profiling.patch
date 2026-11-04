@@ -1,0 +1,164 @@
+diff --git a/ggml/src/ggml-vulkan/ggml-vulkan.cpp b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/ggml/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -1813,6 +1813,7 @@
+ 
+ static bool vk_perf_logger_enabled = false;
+ static bool vk_perf_logger_concurrent = false;
++static bool vk_fa_profile_enabled = false;
+ static bool vk_enable_sync_logger = false;
+ // number of calls between perf logger prints
+ static uint32_t vk_perf_logger_frequency = 1;
+@@ -2053,6 +2054,19 @@
+     std::vector<int> query_node_idx;
+     int32_t num_queries {};
+     int32_t query_idx {};
++
++    // Diagnostic-only nested timestamps, read after the normal profiler fence.
++    struct fa_profile_entry {
++        std::string name;
++        uint32_t q_tokens, kv_tokens, br, bc, split_k;
++        bool repack;
++        uint64_t bytes;
++        uint32_t q_heads, kv_heads, hsk, hsv;
++    };
++    vk::QueryPool fa_profile_pool;
++    uint32_t fa_profile_capacity {};
++    uint64_t profile_graph_id {};
++    std::vector<fa_profile_entry> fa_profile_entries;
+ };
+ 
+ static void * const vk_ptr_base = (void *)(uintptr_t) 0x1000;  // NOLINT
+@@ -6609,6 +6623,11 @@
+ 
+     vk_perf_logger_enabled = getenv("GGML_VK_PERF_LOGGER") != nullptr;
+     vk_perf_logger_concurrent = getenv("GGML_VK_PERF_LOGGER_CONCURRENT") != nullptr;
++    vk_fa_profile_enabled = getenv("GGML_VK_FA_PROFILE") != nullptr;
++    if (vk_fa_profile_enabled) {
++        vk_perf_logger_enabled = true;
++        GGML_ASSERT(!vk_perf_logger_concurrent);
++    }
+     vk_enable_sync_logger = getenv("GGML_VK_SYNC_LOGGER") != nullptr;
+     vk_memory_logger_enabled = getenv("GGML_VK_MEMORY_LOGGER") != nullptr;
+     const char* GGML_VK_PIPELINE_STATS = getenv("GGML_VK_PIPELINE_STATS");
+@@ -10212,6 +10231,20 @@
+     vk_subbuffer sinks_buf = sinks ? ggml_vk_tensor_subbuffer(ctx, sinks) : q_buf;
+     vk_subbuffer mask_opt_buf = use_mask_opt ? ggml_vk_subbuffer(ctx, ctx->prealloc_y, 0) : q_buf;
+ 
++    const uint32_t fa_query_base = (uint32_t) ctx->fa_profile_entries.size() * 4;
++    auto profile_stamp = [&](uint32_t stage) {
++        if (vk_fa_profile_enabled) {
++            GGML_ASSERT(fa_query_base + stage < ctx->fa_profile_capacity);
++            subctx->s->buffer->buf.writeTimestamp(vk::PipelineStageFlagBits::eAllCommands,
++                                                ctx->fa_profile_pool, fa_query_base + stage);
++        }
++    };
++    if (vk_fa_profile_enabled) {
++        ctx->fa_profile_entries.push_back({dst->name, (uint32_t) neq1, KV, Br, Bc, split_k,
++            use_contig_kv, use_contig_kv ? k_f16_sz + v_f16_sz : 0,
++            (uint32_t) neq2, (uint32_t) nek2, HSK, HSV});
++    }
++    profile_stamp(0);
+     if (use_contig_kv) {
+         if (ctx->prealloc_size_x < k_f16_sz + v_f16_sz) {
+             ctx->prealloc_size_x = k_f16_sz + v_f16_sz;
+@@ -10235,6 +10268,7 @@
+         k_buf = k_dst;
+         v_buf = v_dst;
+     }
++    profile_stamp(1);
+ 
+     uint32_t mask_n_head_log2 = ((sinks != nullptr) << 24) | n_head_log2;
+ 
+@@ -10258,6 +10292,7 @@
+         ggml_vk_sync_buffers(ctx, subctx);
+     }
+ 
++    profile_stamp(2);
+     const vk_flash_attn_push_constants pc = { N, KV,
+                                               (uint32_t)ne1, (uint32_t)ne2, (uint32_t)ne3,
+                                               (uint32_t)neq2, (uint32_t)neq3,
+@@ -10308,6 +10343,7 @@
+                                     {q_buf, k_buf, v_buf, mask_buf, sinks_buf, dst_buf, mask_opt_buf},
+                                     pc, { workgroups_x, workgroups_y, workgroups_z });
+     }
++    profile_stamp(3);
+ }
+ 
+ static vk_conv_shapes ggml_vk_conv_select_shape(ggml_backend_vk_context * ctx, uint32_t K, uint32_t NPQ) {
+@@ -14700,6 +14736,10 @@
+     if (vk_perf_logger_enabled) {
+         ctx->perf_logger->print_timings(true);
+     }
++    if (ctx->fa_profile_pool) {
++        ctx->device->device.destroyQueryPool(ctx->fa_profile_pool);
++        ctx->fa_profile_pool = nullptr;
++    }
+ }
+ 
+ static int ggml_vk_get_device_count() {
+@@ -15711,6 +15751,20 @@
+ 
+     vk_context compute_ctx;
+     if (vk_perf_logger_enabled) {
++        ++ctx->profile_graph_id;
++        if (vk_fa_profile_enabled) {
++            const uint32_t required = 4 * (uint32_t) cgraph->n_nodes;
++            if (ctx->fa_profile_capacity < required) {
++                if (ctx->fa_profile_pool) {
++                    ctx->device->device.destroyQueryPool(ctx->fa_profile_pool);
++                }
++                ctx->fa_profile_pool = ctx->device->device.createQueryPool(
++                    vk::QueryPoolCreateInfo({}, vk::QueryType::eTimestamp, required));
++                ctx->fa_profile_capacity = required;
++            }
++            ctx->device->device.resetQueryPool(ctx->fa_profile_pool, 0, required);
++            ctx->fa_profile_entries.clear();
++        }
+         // allocate/resize the query pool
+         if (ctx->num_queries < cgraph->n_nodes + 1) {
+             if (ctx->query_pool) {
+@@ -16028,7 +16082,16 @@
+             for (int i = 1; i < ctx->query_idx; i++) {
+                 auto node = ctx->query_nodes[i];
+                 auto name = ctx->query_fusion_names[i];
+-                ctx->perf_logger->log_timing(node, name, uint64_t((timestamps[i] - timestamps[i-1]) * ctx->device->properties.limits.timestampPeriod));
++                const uint64_t ns = uint64_t((timestamps[i] - timestamps[i-1]) * ctx->device->properties.limits.timestampPeriod);
++                ctx->perf_logger->log_timing(node, name, ns);
++                if (vk_fa_profile_enabled) {
++                    const char * op = name ? name : (node->op == GGML_OP_UNARY ?
++                        ggml_unary_op_name(ggml_get_unary_op(node)) : ggml_op_name(node->op));
++                    fprintf(stderr, "VKP_OP\t%p\t%llu\t%s\t%s\t%llu\t%lld\t%lld\t%lld\t%lld\n",
++                        (void *) ctx, (unsigned long long) ctx->profile_graph_id, node->name, op,
++                        (unsigned long long) ns, (long long) node->ne[0], (long long) node->ne[1],
++                        (long long) node->ne[2], (long long) node->ne[3]);
++                }
+             }
+         } else {
+             // Log each group of nodes
+@@ -16047,6 +16110,25 @@
+                 }
+                 prev_node_idx = cur_node_idx;
+                 ctx->perf_logger->log_timing(nodes, names, uint64_t((timestamps[i] - timestamps[i-1]) * ctx->device->properties.limits.timestampPeriod));
++            }
++        }
++        if (vk_fa_profile_enabled && !ctx->fa_profile_entries.empty()) {
++            const uint32_t count = (uint32_t) ctx->fa_profile_entries.size() * 4;
++            std::vector<uint64_t> fa_times(count);
++            VK_CHECK(ctx->device->device.getQueryPoolResults(ctx->fa_profile_pool, 0, count,
++                count * sizeof(uint64_t), fa_times.data(), sizeof(uint64_t),
++                vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait), "FA profile timestamps");
++            for (size_t j = 0; j < ctx->fa_profile_entries.size(); ++j) {
++                const auto & e = ctx->fa_profile_entries[j];
++                auto elapsed = [&](size_t s) -> unsigned long long {
++                    return (unsigned long long) ((fa_times[j*4+s+1] - fa_times[j*4+s]) *
++                        ctx->device->properties.limits.timestampPeriod);
++                };
++                fprintf(stderr, "VKP_FA\t%p\t%llu\t%s\t%u\t%u\t%u\t%u\t%u\t%d\t%llu\t%llu\t%llu\t%llu\t%u\t%u\t%u\t%u\n",
++                    (void *) ctx, (unsigned long long) ctx->profile_graph_id, e.name.c_str(),
++                    e.q_tokens, e.kv_tokens, e.br, e.bc, e.split_k, e.repack,
++                    (unsigned long long) e.bytes, elapsed(0), elapsed(1), elapsed(2),
++                    e.q_heads, e.kv_heads, e.hsk, e.hsv);
+             }
+         }
+         ctx->perf_logger->print_timings();

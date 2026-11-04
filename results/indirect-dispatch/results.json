@@ -1,0 +1,23 @@
+{
+  "experiment": "MMID indirect dispatch",
+  "source_commit": "79097254057ace65ef0af7882c864c1542ac74a2",
+  "base_commit": "4795079b",
+  "prompt_tokens": 65536,
+  "batch": 2048,
+  "ubatch": 1024,
+  "kv_type": "f16",
+  "full_prompt_warmup": true,
+  "baseline_tokens_per_second": [
+    743.437922,
+    738.573891
+  ],
+  "candidate_tokens_per_second": [
+    742.823165,
+    740.319042
+  ],
+  "baseline_mean": 741.0059065,
+  "candidate_mean": 741.5711034999999,
+  "change_percent": 0.07627429080416803,
+  "cpu_reference_tests_passed": 176,
+  "decision": "disabled: no demonstrated throughput improvement"
+}

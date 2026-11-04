@@ -1,0 +1,28 @@
+{
+  "experiment": "Strix de689608 per-expert tile sizing, adapted to current ROCmFP4 build",
+  "synthetic": {
+    "prompt_tokens": 65536,
+    "full_prompt_warmup": true,
+    "repetitions_per_mode": 2,
+    "MTP": false
+  },
+  "server": {
+    "prompt_tokens": 65536,
+    "same_token_ids_as_previous_experiment": true,
+    "warmup_tokens": 2048,
+    "generated_tokens": 128,
+    "repetitions_per_mode": 2,
+    "MTP": true,
+    "MTP_sparse_logits": true,
+    "cache_prompt": false,
+    "checkpoints": false
+  },
+  "common": {
+    "batch": 2048,
+    "ubatch": 1024,
+    "kv": "f16",
+    "indirect_dispatch": false,
+    "row_lists": true
+  },
+  "order": "correctness, server off/on, synthetic off/on, server on/off"
+}

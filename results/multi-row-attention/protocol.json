@@ -1,0 +1,56 @@
+{
+  "experiment": "Multi-row F16 attention, Strix 925cc5b7 + 6f9e0021 backport",
+  "common": {
+    "batch": 2048,
+    "ubatch": 1024,
+    "KV": "F16",
+    "MR_heads_per_group": 2,
+    "MTP_sparse_logits": true
+  },
+  "server": {
+    "prompt_tokens": 65536,
+    "warmup_tokens": 2048,
+    "generated_tokens": 128,
+    "repetitions": 2,
+    "MTP": true,
+    "cache_prompt": false,
+    "checkpoints": false
+  },
+  "synthetic": {
+    "prompt_tokens": 65536,
+    "full_prompt_warmup": true,
+    "repetitions": 2,
+    "MTP": false
+  },
+  "numerical": {
+    "context_tokens": 65536,
+    "sampled_logit_rows": 128,
+    "same_source_prompt": true
+  },
+  "order": [
+    "CPU reference",
+    "MTP regression",
+    "numeric off/on",
+    "server off/on",
+    "synthetic off/on",
+    "server on/off",
+    "candidate profile if gain >5%"
+  ],
+  "completion": {
+    "performance": "Two server trials per mode; full warmup plus two synthetic trials per mode; one candidate profile.",
+    "correctness": "See summary.json, numeric-comparison.json, numeric-oracle-comparison.json and perplexity-comparison.json.",
+    "quality_check_protocol": {
+      "source": "$HOME/src/strix-halo-llamacpp-latest/tools/prompts/prose-32k-wikitext.txt",
+      "available_tokens": 31662,
+      "context": 12288,
+      "chunks": 1,
+      "score": "Next-token loss over the second half of one natural-prose context; paired per-token comparison.",
+      "batch": 2048,
+      "ubatch": 1024,
+      "KV": "F16",
+      "MTP": false,
+      "context_selection": "Largest 4096-token multiple satisfying the tool input-length requirement; original text is neither repeated nor padded."
+    },
+    "serving": "Prior validated binary restored; experimental kernel not deployed."
+  }
+}

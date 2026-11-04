@@ -1,0 +1,694 @@
+diff --git a/ggml/src/ggml-vulkan/ggml-vulkan.cpp b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+--- a/ggml/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -755,6 +755,7 @@
+     vk_pipeline pipeline_quantize_q8_1_x4;
+ 
+     vk_pipeline pipeline_dequant[GGML_TYPE_COUNT];
++    vk_pipeline pipeline_dequant_transpose[GGML_TYPE_COUNT];
+     vk_pipeline pipeline_dequant_mul_mat_vec_f32_f32[DMMV_WG_SIZE_COUNT][GGML_TYPE_COUNT][mul_mat_vec_max_cols];
+     vk_pipeline pipeline_dequant_mul_mat_vec_f16_f32[DMMV_WG_SIZE_COUNT][GGML_TYPE_COUNT][mul_mat_vec_max_cols];
+     vk_pipeline pipeline_dequant_mul_mat_vec_id_f32[DMMV_WG_SIZE_COUNT][GGML_TYPE_COUNT];
+@@ -915,6 +916,7 @@
+ 
+     vk_pipeline pipeline_flash_attn_split_k_reduce;
+     vk_pipeline pipeline_count_experts;
++    vk_pipeline pipeline_mmid_row_lists;
+ 
+     // [2] is for whether to take n_experts from spec constant (0) or push constant (1)
+     vk_pipeline pipeline_topk_moe[num_topk_moe_pipelines][2];
+@@ -1099,6 +1101,7 @@
+     uint32_t batch_stride_a; uint32_t batch_stride_b; uint32_t batch_stride_d;
+     uint32_t nei0; uint32_t nei1; uint32_t nbi1; uint32_t ne11;
+     uint32_t padded_N;
++    uint32_t use_row_lists;
+ };
+ struct vk_mat_vec_id_push_constants {
+     uint32_t ncols;
+@@ -1172,6 +1175,18 @@
+     uint32_t nb00;
+     uint32_t nb01;
+     uint32_t a_offset;
++};
++
++struct vk_op_mmid_row_lists_push_constants {
++    uint32_t nei0;
++    uint32_t nei1;
++    uint32_t nb00;
++    uint32_t nb01;
++    uint32_t a_offset;
++    uint32_t n_as;
++    uint32_t args_off; // uint32 offset of dispatch args; zero disables indirect dispatch
++    uint32_t gx;
++    uint32_t bn;
+ };
+ 
+ struct vk_op_glu_push_constants {
+@@ -2857,7 +2872,8 @@
+         return buf;
+     }
+ 
+-    vk::BufferUsageFlags usage_flags = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
++    vk::BufferUsageFlags usage_flags = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst |
++                                       vk::BufferUsageFlagBits::eIndirectBuffer;
+     vk::MemoryAllocateFlags mem_flags {};
+     if (device->buffer_device_address) {
+         usage_flags |= vk::BufferUsageFlagBits::eShaderDeviceAddress;
+@@ -3067,21 +3083,37 @@
+     VK_LOG_DEBUG("ggml_vk_sync_buffers()");
+ 
+     const bool transfer_queue = subctx->p->q->transfer_only;
++    // Scratch reuse must also wait for previous indirect-argument reads.
++    const auto src_stages = transfer_queue ? subctx->p->q->stage_flags :
++        subctx->p->q->stage_flags | vk::PipelineStageFlagBits::eDrawIndirect;
+ 
+     if (ctx) {
+         ctx->prealloc_x_need_sync = ctx->prealloc_y_need_sync = ctx->prealloc_split_k_need_sync = false;
+     }
+ 
+     subctx->s->buffer->buf.pipelineBarrier(
+-        subctx->p->q->stage_flags,
++        src_stages,
+         subctx->p->q->stage_flags,
+         {},
+         { {
+-          { !transfer_queue ? (vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite) : (vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite) },
++          { !transfer_queue ? (vk::AccessFlagBits::eIndirectCommandRead | vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite) : (vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite) },
+           { !transfer_queue ? (vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite) : (vk::AccessFlagBits::eTransferRead | vk::AccessFlagBits::eTransferWrite) }
+         } },
+         {},
+         {}
++    );
++}
++
++// Publish shader-written workgroup counts to dispatchIndirect and the row-list consumers.
++static void ggml_vk_sync_indirect(ggml_backend_vk_context * ctx, vk_context& subctx) {
++    ctx->prealloc_x_need_sync = ctx->prealloc_y_need_sync = ctx->prealloc_split_k_need_sync = false;
++    subctx->s->buffer->buf.pipelineBarrier(
++        vk::PipelineStageFlagBits::eComputeShader,
++        vk::PipelineStageFlagBits::eDrawIndirect | vk::PipelineStageFlagBits::eComputeShader,
++        {},
++        { { vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderRead,
++            vk::AccessFlagBits::eIndirectCommandRead | vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite } },
++        {}, {}
+     );
+ }
+ 
+@@ -4800,6 +4832,7 @@
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q5_0], "dequant_q5_0", dequant_q5_0_len, dequant_q5_0_data, "main", 2, 5 * sizeof(uint32_t), {256 * 16, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q5_1], "dequant_q5_1", dequant_q5_1_len, dequant_q5_1_data, "main", 2, 5 * sizeof(uint32_t), {256 * 16, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q8_0], "dequant_q8_0", dequant_q8_0_len, dequant_q8_0_data, "main", 2, 5 * sizeof(uint32_t), {256 * 16, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_dequant_transpose[GGML_TYPE_F16], "dequant_f16_transpose", dequant_f16_transpose_len, dequant_f16_transpose_data, "main", 2, 5 * sizeof(uint32_t), {256 * 8, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q2_K], "dequant_q2_k", dequant_q2_k_len, dequant_q2_k_data, "main", 2, 5 * sizeof(uint32_t), {256 * 64, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q3_K], "dequant_q3_k", dequant_q3_k_len, dequant_q3_k_data, "main", 2, 5 * sizeof(uint32_t), {256 * 64, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_dequant[GGML_TYPE_Q4_K], "dequant_q4_k", dequant_q4_k_len, dequant_q4_k_data, "main", 2, 5 * sizeof(uint32_t), {256 * 32, 1, 1}, {}, 1);
+@@ -5175,6 +5208,8 @@
+     ggml_vk_create_pipeline(device, device->pipeline_count_equal_i32, "count_equal_i32", count_equal_i32_len, count_equal_i32_data, "main", 3, sizeof(vk_op_push_constants), {512, 1, 1}, { device->subgroup_size }, 1);
+ 
+     ggml_vk_create_pipeline(device, device->pipeline_count_experts, "count_experts", count_experts_len, count_experts_data, "main", 2, sizeof(vk_op_count_experts_push_constants), {1, 1, 1}, {}, 1, true);
++
++    ggml_vk_create_pipeline(device, device->pipeline_mmid_row_lists, "mmid_row_lists", mmid_row_lists_len, mmid_row_lists_data, "main", 2, sizeof(vk_op_mmid_row_lists_push_constants), {1, 1, 1}, {}, 1, true);
+ 
+     for (auto &s : device->pipeline_solve_tri_f32) {
+         const vk_solve_tri_pipeline_state &state = s.first;
+@@ -7338,6 +7373,24 @@
+     subctx->s->buffer->buf.dispatch(wg0, wg1, wg2);
+ }
+ 
++template <typename T>
++static void ggml_vk_dispatch_pipeline_indirect(ggml_backend_vk_context* ctx, vk_context& subctx, vk_pipeline& pipeline, std::initializer_list<vk::DescriptorBufferInfo> const& descriptor_buffer_infos, const T &push_constants, const vk_subbuffer & args) {
++    GGML_ASSERT(ctx->descriptor_set_idx < ctx->descriptor_sets.size());
++    GGML_ASSERT(descriptor_buffer_infos.size() <= MAX_PARAMETER_COUNT);
++    GGML_ASSERT(pipeline->parameter_count == descriptor_buffer_infos.size());
++    GGML_ASSERT(pipeline->push_constant_size == push_constant_size(push_constants));
++    GGML_ASSERT(args.offset % 4 == 0 && args.size >= 3 * sizeof(uint32_t));
++
++    vk::DescriptorSet& descriptor_set = ctx->descriptor_sets[ctx->descriptor_set_idx++];
++    vk::WriteDescriptorSet write_descriptor_set{ descriptor_set, 0, 0, pipeline->parameter_count, vk::DescriptorType::eStorageBuffer, nullptr, descriptor_buffer_infos.begin() };
++    ctx->device->device.updateDescriptorSets({ write_descriptor_set }, {});
++
++    subctx->s->buffer->buf.pushConstants(pipeline->layout, vk::ShaderStageFlagBits::eCompute, 0, push_constant_size(push_constants), push_constant_data(push_constants));
++    subctx->s->buffer->buf.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline->pipeline);
++    subctx->s->buffer->buf.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipeline->layout, 0, { descriptor_set }, {});
++    subctx->s->buffer->buf.dispatchIndirect(args.buffer->buffer, args.offset);
++}
++
+ static void ggml_vk_end_submission(vk_submission& s, std::vector<vk_semaphore> wait_semaphores, std::vector<vk_semaphore> signal_semaphores) {
+     s.buffer->buf.end();
+ 
+@@ -8052,14 +8105,18 @@
+         uint32_t m, uint32_t n, uint32_t k, uint32_t stride_a, uint32_t stride_b, uint32_t stride_d,
+         uint32_t batch_stride_a, uint32_t batch_stride_b, uint32_t batch_stride_d,
+         uint32_t n_as, uint32_t nei0, uint32_t nei1, uint32_t nbi1, uint32_t ne11,
+-        uint32_t padded_n) {
++        uint32_t padded_n, uint32_t use_row_lists, const vk_subbuffer * indirect_args = nullptr) {
+     VK_LOG_DEBUG("ggml_vk_matmul_id(a: (" << a.buffer->buffer << ", " << a.offset << ", " << a.size << "), b: (" << b.buffer->buffer << ", " << b.offset << ", " << b.size << "), d: (" << d.buffer->buffer << ", " << d.offset << ", " << d.size << "), ids: (" << ids.buffer->buffer << ", " << ids.offset << ", " << ids.size << "), expert_count: (" << expert_count_buf.buffer->buffer << ", " << expert_count_buf.offset << ", " << expert_count_buf.size << "), " <<
+         "m: " << m << ", n: " << n << ", k: " << k << ", stride_a: " << stride_a << ", stride_b: " << stride_b << ", stride_d: " << stride_d << ", " <<
+         "batch_stride_a: " << batch_stride_a << ", batch_stride_b: " << batch_stride_b << ", batch_stride_d: " << batch_stride_d << ", " <<
+         "n_as: " << n_as << ", nei0: " << nei0 << ", nei1: " << nei1 << ", nbi1: " << nbi1 << ", ne11: " << ne11 << ")");
+     const vk_mat_mat_id_push_constants pc = { m, n, k, stride_a, stride_b, stride_d, batch_stride_a, batch_stride_b, batch_stride_d,
+-                                              nei0, nei1, nbi1, ne11, padded_n };
+-    ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { a, b, d, ids, expert_count_buf }, pc, { m, nei1, n_as });
++                                              nei0, nei1, nbi1, ne11, padded_n, use_row_lists };
++    if (indirect_args) {
++        ggml_vk_dispatch_pipeline_indirect(ctx, subctx, pipeline, { a, b, d, ids, expert_count_buf }, pc, *indirect_args);
++    } else {
++        ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { a, b, d, ids, expert_count_buf }, pc, { m, nei1, n_as });
++    }
+ }
+ 
+ static bool ggml_vk_dim01_contiguous(const ggml_tensor * tensor) {
+@@ -9336,7 +9393,22 @@
+     }
+     vk_pipeline count_experts = ctx->device->pipeline_count_experts;
+ 
++    // Precompute per-expert row lists so each matmul workgroup reads its rows
++    // directly instead of re-scanning the whole ids tensor. Stored in the same
++    // buffer after the counts: [counts n_as][offsets n_as+1][cursors n_as][entries].
++    // The coopmat2 shaders only read the counts and don't use the lists.
++    // GGML_VK_MMID_ROWLISTS=0 disables it (same-binary A/B).
++    static const char * mmid_row_lists_env = getenv("GGML_VK_MMID_ROWLISTS");
++    const bool use_row_lists = !(mmid_row_lists_env && atoi(mmid_row_lists_env) == 0) && !ctx->device->coopmat2;
++
++    // Backport of Strix 79097254: cover the busiest expert, preserving every live tile.
++    static const bool mmid_indirect = [] { const char * e = getenv("GGML_VK_MMID_INDIRECT"); return e && atoi(e) != 0; }();
++    const bool use_indirect = mmid_indirect && use_row_lists;
++    const uint32_t args_off = (uint32_t)(3 * n_as + 1 + nei0 * nei1);
+     uint32_t expert_count_size = sizeof(uint32_t) * n_as;
++    if (use_row_lists) {
++        expert_count_size = sizeof(uint32_t) * (args_off + 4);
++    }
+ 
+     {
+         if (
+@@ -9369,6 +9441,9 @@
+             ggml_pipeline_request_descriptor_sets(ctx, to_q8_1, 1);
+         }
+         ggml_pipeline_request_descriptor_sets(ctx, count_experts, 1);
++        if (use_row_lists) {
++            ggml_pipeline_request_descriptor_sets(ctx, ctx->device->pipeline_mmid_row_lists, 1);
++        }
+     }
+ 
+     vk_buffer d_D = dst_buf_ctx->dev_buffer;
+@@ -9480,6 +9555,32 @@
+     }
+     ggml_vk_sync_buffers(ctx, subctx);
+ 
++    if (use_row_lists) {
++        // Prefix-sum the expert counts and scatter (ii0, ii1) into per-expert row lists
++        const std::vector<uint32_t> pc = { (uint32_t)nei0,
++                                           (uint32_t)nei1,
++                                           (uint32_t)(nbi0 / ggml_type_size(ids->type)),
++                                           (uint32_t)(nbi1 / ggml_type_size(ids->type)),
++                                           (uint32_t)(get_misalign_bytes(ctx, ids) / ggml_type_size(ids->type)),
++                                           (uint32_t)n_as,
++                                           use_indirect ? args_off : 0u,
++                                           CEIL_DIV((uint32_t)ne01, pipeline->wg_denoms[0]),
++                                           pipeline->wg_denoms[1] };
++        ggml_vk_dispatch_pipeline(ctx, subctx, ctx->device->pipeline_mmid_row_lists,
++            { vk_subbuffer{ d_ids, ids_buf_offset, ids_sz }, expert_count_buf }, pc, { 1, 1, 1});
++        if (use_indirect) {
++            ggml_vk_sync_indirect(ctx, subctx);
++        } else {
++            ggml_vk_sync_buffers(ctx, subctx);
++        }
++        static bool logged = false;
++        if (use_indirect && !logged) {
++            logged = true;
++            fprintf(stderr, "ggml_vulkan: MUL_MAT_ID indirect dispatch engaged (GGML_VK_MMID_INDIRECT)\n");
++        }
++    }
++    const vk_subbuffer indirect_args = { expert_count_buf.buffer, expert_count_buf.offset + sizeof(uint32_t) * args_off, sizeof(uint32_t) * 3 };
++
+     uint32_t stride_batch_x = ne00*ne01;
+     uint32_t stride_b_y = y_decode_vector_staging ? y_staged_row_stride : ne10;
+     uint32_t stride_batch_y = y_decode_vector_staging ? y_staged_row_stride * padded_n : ne10*ne11;
+@@ -9499,7 +9600,8 @@
+         { d_D, d_buf_offset, d_sz }, { d_ids, ids_buf_offset, ids_sz }, expert_count_buf,
+         ne01, ne21, ne10, ne10, stride_b_y, ne01,
+         stride_batch_x, stride_batch_y, ne20*ne21,
+-        n_as, nei0, nei1, nbi1 / ggml_type_size(ids->type), ne11, padded_n
++        n_as, nei0, nei1, nbi1 / ggml_type_size(ids->type), ne11, padded_n,
++        use_row_lists ? 1u : 0u, use_indirect ? &indirect_args : nullptr
+     );  // NOLINT
+ 
+     if (x_non_contig || qx_needs_dequant) {
+@@ -9925,6 +10027,20 @@
+ 
+     const bool f32acc = !ctx->device->fp16 || dst->op_params[3] == GGML_PREC_F32 || k->type == GGML_TYPE_BF16;
+ 
++    static const char * fa_kv_contig_env = getenv("GGML_VK_FA_KV_CONTIG");
++    const bool fa_kv_contig = fa_kv_contig_env && fa_kv_contig_env[0] == '1';
++    const uint64_t k_f16_sz = (uint64_t) ggml_nelements(k) * sizeof(ggml_fp16_t);
++    const uint64_t v_f16_sz = (uint64_t) ggml_nelements(v) * sizeof(ggml_fp16_t);
++    const bool use_contig_kv = fa_kv_contig && neq1 >= 64 &&
++                               k->type == GGML_TYPE_F16 && v->type == GGML_TYPE_F16 &&
++                               (k->nb[1] != (uint64_t) HSK * sizeof(ggml_fp16_t) ||
++                                v->nb[1] != (uint64_t) HSV * sizeof(ggml_fp16_t)) &&
++                               (HSK % 8) == 0 && (HSV % 8) == 0 &&
++                               ggml_is_contiguously_allocated(k) && ggml_is_contiguously_allocated(v) &&
++                               k_f16_sz <= ctx->device->properties.limits.maxStorageBufferRange &&
++                               v_f16_sz <= ctx->device->properties.limits.maxStorageBufferRange &&
++                               ctx->device->pipeline_dequant_transpose[GGML_TYPE_F16] != nullptr;
++
+     // For scalar/coopmat1 FA, we can use the "large" size to accommodate qga.
+     // For coopmat2 FA, we always use the small size (which is still pretty large for gqa).
+     vk_fa_tuning_params tuning_params = get_fa_tuning_params(ctx->device, HSK, HSV, 512, KV, k->type, v->type, f32acc);
+@@ -9952,6 +10068,19 @@
+     }
+     if (v->type == GGML_TYPE_F32) {
+         v_stride /= 4;
++    }
++
++    uint32_t nbk2_eff = (uint32_t) nbk2;
++    uint32_t nbk3_eff = (uint32_t) nbk3;
++    uint32_t nbv2_eff = (uint32_t) nbv2;
++    uint32_t nbv3_eff = (uint32_t) nbv3;
++    if (use_contig_kv) {
++        k_stride = HSK;
++        v_stride = HSV;
++        nbk2_eff = (uint32_t) ((uint64_t) HSK * KV * sizeof(ggml_fp16_t));
++        nbk3_eff = (uint32_t) ((uint64_t) HSK * KV * nek2 * sizeof(ggml_fp16_t));
++        nbv2_eff = (uint32_t) ((uint64_t) HSV * KV * sizeof(ggml_fp16_t));
++        nbv3_eff = (uint32_t) ((uint64_t) HSV * KV * nev2 * sizeof(ggml_fp16_t));
+     }
+ 
+     const uint32_t alignment = tuning_params.block_cols;
+@@ -10082,6 +10211,30 @@
+     vk_subbuffer mask_buf = mask ? ggml_vk_tensor_subbuffer(ctx, mask) : q_buf;
+     vk_subbuffer sinks_buf = sinks ? ggml_vk_tensor_subbuffer(ctx, sinks) : q_buf;
+     vk_subbuffer mask_opt_buf = use_mask_opt ? ggml_vk_subbuffer(ctx, ctx->prealloc_y, 0) : q_buf;
++
++    if (use_contig_kv) {
++        if (ctx->prealloc_size_x < k_f16_sz + v_f16_sz) {
++            ctx->prealloc_size_x = k_f16_sz + v_f16_sz;
++            ggml_vk_preallocate_buffers(ctx, subctx);
++        }
++        vk_pipeline transpose = ctx->device->pipeline_dequant_transpose[GGML_TYPE_F16];
++        ggml_pipeline_request_descriptor_sets(ctx, transpose, 2);
++        if (ctx->prealloc_x_need_sync) {
++            ggml_vk_sync_buffers(ctx, subctx);
++        }
++        vk_subbuffer k_dst = vk_subbuffer{ ctx->prealloc_x, 0,        k_f16_sz };
++        vk_subbuffer v_dst = vk_subbuffer{ ctx->prealloc_x, k_f16_sz, v_f16_sz };
++        const uint32_t k_nel = (uint32_t) ggml_nelements(k);
++        const uint32_t v_nel = (uint32_t) ggml_nelements(v);
++        const std::vector<uint32_t> k_pc = { HSK, (uint32_t) nek2, KV, 0, k_nel };
++        const std::vector<uint32_t> v_pc = { HSV, (uint32_t) nev2, KV, 0, v_nel };
++        ggml_vk_dispatch_pipeline(ctx, subctx, transpose, { k_buf, k_dst }, k_pc, { k_nel, 1, 1 });
++        ggml_vk_dispatch_pipeline(ctx, subctx, transpose, { v_buf, v_dst }, v_pc, { v_nel, 1, 1 });
++        ggml_vk_sync_buffers(ctx, subctx);
++        ctx->prealloc_x_need_sync = true;
++        k_buf = k_dst;
++        v_buf = v_dst;
++    }
+ 
+     uint32_t mask_n_head_log2 = ((sinks != nullptr) << 24) | n_head_log2;
+ 
+@@ -10112,8 +10265,8 @@
+                                               (uint32_t)nev2, (uint32_t)nev3,
+                                               nem1, nem2, nem3,
+                                               q_stride, (uint32_t)nbq2, (uint32_t)nbq3,
+-                                              k_stride, (uint32_t)nbk2, (uint32_t)nbk3,
+-                                              v_stride, (uint32_t)nbv2, (uint32_t)nbv3,
++                                              k_stride, nbk2_eff, nbk3_eff,
++                                              v_stride, nbv2_eff, nbv3_eff,
+                                               scale, max_bias, logit_softcap,
+                                               mask_n_head_log2, m0, m1,
+                                               gqa_ratio, split_kv, split_k };
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/dequant_f16_transpose.comp b/ggml/src/ggml-vulkan/vulkan-shaders/dequant_f16_transpose.comp
+new file mode 100644
+--- /dev/null
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/dequant_f16_transpose.comp
+@@ -0,0 +1,27 @@
++#version 450
++
++#include "dequant_head.glsl"
++
++#extension GL_EXT_shader_explicit_arithmetic_types_float16 : require
++
++layout(local_size_x = 256, local_size_y = 1, local_size_z = 1) in;
++
++layout (binding = 0) readonly buffer A {f16vec4 data_a[];};
++layout (binding = 1) writeonly buffer D {f16vec4 data_b[];};
++
++void main() {
++    const uint i = gl_GlobalInvocationID.x;
++    const uint e0 = i * 8;
++    if (e0 >= p.nel) {
++        return;
++    }
++
++    const uint HS = p.M, NH = p.K, KVn = p.stride_a;
++    const uint dst = (e0 % HS)
++                   + ((e0 / (HS * NH)) % KVn) * HS
++                   + ((e0 / HS) % NH) * (HS * KVn)
++                   + (e0 / (HS * NH * KVn)) * (HS * KVn * NH);
++
++    data_b[dst / 4    ] = data_a[e0 / 4    ];
++    data_b[dst / 4 + 1] = data_a[e0 / 4 + 1];
++}
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp b/ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp
+new file mode 100644
+--- /dev/null
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp
+@@ -0,0 +1,105 @@
++#version 450
++
++#extension GL_EXT_control_flow_attributes : enable
++
++// Builds per-expert row lists for MUL_MAT_ID so the matmul workgroups can read
++// their rows directly instead of each re-scanning the whole ids tensor.
++//
++// Output layout in the expert-counts buffer (all uint32, counts written by the
++// count_experts pass and left untouched so mul_mm_cm2 keeps working):
++//   [0,        n_as)    counts   (input, from count_experts)
++//   [n_as,     2*n_as]  offsets  (exclusive prefix sum of counts; [2*n_as] = total)
++//   (2*n_as,   3*n_as]  cursors  (scratch for the scatter)
++//   (3*n_as, ...]       entries  (packed (ii1 << 16) | ii0, grouped by expert)
++//
++// Runs as a single workgroup: the scatter is only nei0*nei1 elements and this
++// keeps the prefix sum, cursor init and scatter in one dispatch.
++
++layout (push_constant) uniform parameter
++{
++    uint nei0;
++    uint nei1;
++    uint nb00;
++    uint nb01;
++    uint a_offset;
++    uint n_as;
++    uint args_off;
++    uint gx;
++    uint bn;
++} p;
++
++#define BLOCK_SIZE 256
++
++layout(local_size_x = BLOCK_SIZE, local_size_y = 1, local_size_z = 1) in;
++
++layout (binding = 0) readonly buffer IDS {int data_ids[];};
++layout (binding = 1) buffer RL {uint data_rl[];};
++
++shared uint sh[BLOCK_SIZE];
++shared uint sh_carry;
++shared uint sh_max;
++
++void main() {
++    const uint tid = gl_LocalInvocationID.x;
++    const uint off_base = p.n_as;
++    const uint cur_base = 2 * p.n_as + 1;
++    const uint ent_base = 3 * p.n_as + 1;
++
++    // Exclusive prefix sum of counts -> offsets, cursors start at the offsets
++    if (tid == 0) {
++        sh_carry = 0;
++        sh_max = 0;
++    }
++    barrier();
++    uint my_max = 0;
++    for (uint base = 0; base < p.n_as; base += BLOCK_SIZE) {
++        const uint i = base + tid;
++        const uint v = (i < p.n_as) ? data_rl[i] : 0;
++        my_max = max(my_max, v);
++        sh[tid] = v;
++        barrier();
++        [[unroll]] for (uint s = 1; s < BLOCK_SIZE; s <<= 1) {
++            const uint t = (tid >= s) ? sh[tid - s] : 0;
++            barrier();
++            sh[tid] += t;
++            barrier();
++        }
++        const uint carry = sh_carry;
++        if (i < p.n_as) {
++            const uint excl = carry + sh[tid] - v;
++            data_rl[off_base + i] = excl;
++            data_rl[cur_base + i] = excl;
++        }
++        barrier();
++        if (tid == BLOCK_SIZE - 1) {
++            sh_carry = carry + sh[tid];
++        }
++        barrier();
++    }
++    atomicMax(sh_max, my_max);
++    barrier();
++    if (tid == 0) {
++        data_rl[off_base + p.n_as] = sh_carry;
++        if (p.args_off != 0) {
++            data_rl[p.args_off]     = p.gx;
++            data_rl[p.args_off + 1] = (sh_max + p.bn - 1) / p.bn;
++            data_rl[p.args_off + 2] = p.n_as;
++        }
++    }
++
++    // offsets/cursors must be visible to the atomics below
++    memoryBarrierBuffer();
++    barrier();
++
++    // Scatter each (ii0, ii1) into its expert's segment
++    const uint num_elements = p.nei0 * p.nei1;
++    for (uint idx = tid; idx < num_elements; idx += BLOCK_SIZE) {
++        const uint ii1 = idx / p.nei0;
++        const uint ii0 = idx - ii1 * p.nei0;
++        const int id = data_ids[p.a_offset + ii1 * p.nb01 + ii0 * p.nb00];
++        if (id >= 0 && uint(id) < p.n_as) {
++            const uint slot = atomicAdd(data_rl[cur_base + uint(id)], 1);
++            data_rl[ent_base + slot] = (ii1 << 16) | ii0;
++        }
++    }
++}
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp
+@@ -90,6 +90,8 @@
+     uint nei1;
+     uint nbi1;
+     uint ne11;
++    uint padded_N;
++    uint use_row_lists;
+ #else
+     uint base_work_group_z;
+     uint num_batches;
+@@ -203,6 +205,9 @@
+     const uint loadstride_b = gl_WorkGroupSize.x * LOAD_VEC_B * LOAD_VEC_BATCH_B / BK;
+ 
+ #ifdef MUL_MAT_ID
++    if (p.use_row_lists != 0) {
++        load_row_ids_from_lists(expert_idx, ic);
++    } else {
+ #ifdef MUL_MAT_ID_USE_SUBGROUPS
+     if (bitCount(p.nei0) == 1) {
+         load_row_ids(expert_idx, true, ic);
+@@ -224,6 +229,7 @@
+ 
+     barrier();
+ #endif
++    }
+ 
+     // Workgroup has no work
+     if (ic * BN >= _ne1) return;
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl
+@@ -1,6 +1,25 @@
+ #ifdef MUL_MAT_ID
+ shared u16vec2 row_ids[BN];
+ uint _ne1;
++
++// Read this workgroup's row ids from the lists built by the mmid_row_lists
++// prepass, stored after the expert counts in the same buffer:
++// [counts n_as][offsets n_as+1][cursors n_as][entries packed (ii1 << 16) | ii0].
++// The dispatch uses one z-slice per expert, so n_as == gl_NumWorkGroups.z.
++void load_row_ids_from_lists(uint expert_idx, uint ic) {
++    const uint n_as = gl_NumWorkGroups.z;
++    _ne1 = uint(data_expert_count[expert_idx]);
++    const uint expert_off = uint(data_expert_count[n_as + expert_idx]);
++    const uint ent_base = 3 * n_as + 1 + expert_off + ic * BN;
++    for (uint i = gl_LocalInvocationIndex; i < BN; i += BLOCK_SIZE) {
++        // fill out-of-range slots with (0, 0): the unaligned load/store loops
++        // bounds-check against _ne1, but the aligned B loads read row_ids
++        // unconditionally for the full tile
++        const uint entry = (ic * BN + i < _ne1) ? uint(data_expert_count[ent_base + i]) : 0;
++        row_ids[i] = u16vec2(entry & 0xFFFF, entry >> 16);
++    }
++    barrier();
++}
+ 
+ #ifdef MUL_MAT_ID_USE_SUBGROUPS
+ shared uvec4 ballots_sh[NUM_WARPS];
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mmq.comp b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mmq.comp
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mmq.comp
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mmq.comp
+@@ -56,6 +56,8 @@
+     uint nei1;
+     uint nbi1;
+     uint ne11;
++    uint padded_N;
++    uint use_row_lists;
+ #else
+     uint base_work_group_z;
+     uint num_batches;
+@@ -157,6 +159,9 @@
+     const uint loadstride_b = BLOCK_SIZE * LOAD_VEC_B / BK;
+ 
+ #ifdef MUL_MAT_ID
++    if (p.use_row_lists != 0) {
++        load_row_ids_from_lists(expert_idx, ic);
++    } else {
+ #ifdef MUL_MAT_ID_USE_SUBGROUPS
+     if (bitCount(p.nei0) == 1) {
+         load_row_ids(expert_idx, true, ic);
+@@ -178,6 +183,7 @@
+ 
+     barrier();
+ #endif
++    }
+ 
+     // Workgroup has no work
+     if (ic * BN >= _ne1) return;
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -759,6 +759,9 @@
+         // Dequant shaders
+         if (tname != "f16" && tname != "bf16") {
+             string_to_spv("dequant_" + tname, "dequant_" + tname + ".comp", merge_maps(base_dict, {{data_a_key, "1"}, {"D_TYPE", "float16_t"}}));
++        }
++        if (tname == "f16") {
++            string_to_spv("dequant_f16_transpose", "dequant_f16_transpose.comp", {});
+         }
+ 
+         shader = (tname == "f32" || tname == "f16" || tname == "bf16") ? "get_rows.comp" : "get_rows_quant.comp";
+@@ -1009,6 +1012,7 @@
+     string_to_spv("cumsum_multipass2_f32", "cumsum_multipass2.comp", merge_maps(base_dict, {{"A_TYPE", "float"}, {"D_TYPE", "float"}}));
+ 
+     string_to_spv("count_experts", "count_experts.comp", merge_maps(base_dict, {{"A_TYPE", "uint"}, {"D_TYPE", "uint"}}));
++    string_to_spv("mmid_row_lists", "mmid_row_lists.comp", {});
+ 
+     for (std::string dim_str : {"", "_3d"}) {
+         for (bool bda : {false, true}) {
+diff --git a/src/models/delta-net-base.cpp b/src/models/delta-net-base.cpp
+--- a/src/models/delta-net-base.cpp
++++ b/src/models/delta-net-base.cpp
+@@ -466,6 +466,8 @@
+     conv_states = ggml_reshape_3d(ctx0, conv_states, conv_kernel_size - 1, conv_channels, n_seqs);
+     cb(conv_states, "conv_states_reshaped", il);
+ 
++    ggml_tensor * x = qkv_mixed;   // [conv_channels, n_seq_tokens, n_seqs]
++
+     qkv_mixed = ggml_transpose(ctx0, qkv_mixed);
+     cb(qkv_mixed, "qkv_mixed_transposed", il);
+ 
+@@ -475,6 +477,54 @@
+     const int64_t row_count = (conv_kernel_size - 1) * conv_channels;
+ 
+     const size_t row_size  = ggml_row_size(conv_states_all->type, row_count);
++
++    // LLAMA_CONV_TAIL_X (default on): write the new conv state (and each rollback slot) straight from x and the old state.
++    // This leaves conv_input with a single consumer, allowing Vulkan to fuse CONCAT + SSM_CONV + SILU during prefill.
++    // Short ubatches keep the original views because no backend fuses the concat there and a straddle adds a copy.
++    static const bool tail_x = [] { const char * e = getenv("LLAMA_CONV_TAIL_X"); return e == nullptr || atoi(e) != 0; }();
++    if (tail_x && x->ne[1] >= conv_kernel_size - 1) {
++        const int64_t state_cols   = conv_kernel_size - 1;
++        const int64_t n_seq_tokens = x->ne[1];
++        const size_t  esz          = ggml_element_size(conv_states_all);
++
++        // Copy columns [c0, c0 + state_cols) of [old state | x^T] into rollback slot s_slot.
++        auto store = [&](int64_t c0, int64_t s_slot) {
++            const size_t row0 = ((size_t) s_slot * mem_size + kv_head) * row_size;
++            if (c0 < state_cols) {
++                ggml_tensor * old = ggml_view_3d(ctx0, conv_states,
++                        state_cols - c0, conv_channels, n_seqs,
++                        conv_states->nb[1], conv_states->nb[2],
++                        c0 * conv_states->nb[0]);
++                ggml_tensor * d_old = ggml_view_3d(ctx0, conv_states_all,
++                        state_cols - c0, conv_channels, n_seqs,
++                        state_cols * esz, conv_states_all->nb[1], row0);
++                ggml_build_forward_expand(gf, ggml_cpy(ctx0, old, d_old));
++            }
++            const int64_t x0 = std::max<int64_t>(0, c0 - state_cols);
++            const int64_t nx = c0 + state_cols - std::max<int64_t>(c0, state_cols);
++            if (nx > 0) {
++                ggml_tensor * xs = ggml_transpose(ctx0, ggml_view_3d(ctx0, x,
++                        conv_channels, nx, n_seqs,
++                        x->nb[1], x->nb[2],
++                        x0 * x->nb[1]));
++                ggml_tensor * d_x = ggml_view_3d(ctx0, conv_states_all,
++                        nx, conv_channels, n_seqs,
++                        state_cols * esz, conv_states_all->nb[1], row0 + (state_cols - nx) * esz);
++                ggml_build_forward_expand(gf, ggml_cpy(ctx0, xs, d_x));
++            }
++        };
++
++        if (cparams.n_rs_seq == 0) {
++            store(n_seq_tokens, 0);
++        } else {
++            // [TAG_RECURRENT_ROLLBACK_SPLITS] slot K - t holds the columns ending t - K tokens before the end.
++            const int64_t K = (int64_t) cparams.n_rs_seq + 1;
++            for (int64_t t = 1; t <= K; ++t) {
++                store(std::max<int64_t>(0, n_seq_tokens - K + t), K - t);
++            }
++        }
++        return conv_input;
++    }
+ 
+     if (cparams.n_rs_seq == 0) {
+         const int64_t s_idx  = conv_input->ne[0] - conv_states->ne[0];
+diff --git a/tests/test-backend-ops.cpp b/tests/test-backend-ops.cpp
+--- a/tests/test-backend-ops.cpp
++++ b/tests/test-backend-ops.cpp
+@@ -4198,6 +4198,35 @@
+ 
+     void initialize_tensors(ggml_context * ctx) override {
+         init_mul_mat_id_tensors(ctx, n_mats);
++    }
++};
++
++// Exercise row-list dispatch with uneven expert loads, empty experts, and partial tiles.
++struct test_mul_mat_id_dispatch : public test_mul_mat_id {
++    const bool skewed;
++
++    test_mul_mat_id_dispatch(ggml_type type_a, bool broadcast, int64_t tokens, bool skewed)
++        : test_mul_mat_id(type_a, GGML_TYPE_F32, 256, 8, broadcast, 64, tokens, 256), skewed(skewed) {}
++
++    std::string vars() override {
++        return test_mul_mat_id::vars() + ",dispatch_routing=" + (skewed ? "skewed" : "balanced");
++    }
++
++    void initialize_tensors(ggml_context * ctx) override {
++        test_mul_mat_id::initialize_tensors(ctx);
++        for (ggml_tensor * t = ggml_get_first_tensor(ctx); t != nullptr; t = ggml_get_next_tensor(ctx, t)) {
++            if (t->type != GGML_TYPE_I32 || ggml_is_view_op(t->op)) {
++                continue;
++            }
++            std::vector<int32_t> data(t->ne[0]);
++            for (int64_t r = 0; r < ggml_nrows(t); ++r) {
++                const int64_t start = skewed && r < n / 2 ? 0 : r * n_used;
++                for (int64_t i = 0; i < t->ne[0]; ++i) {
++                    data[i] = (start + i) % n_mats;
++                }
++                ggml_backend_tensor_set(t, data.data(), r * t->nb[1], t->ne[0] * sizeof(int32_t));
++            }
++        }
+     }
+ };
+ 
+@@ -8469,6 +8498,16 @@
+     // this case is verified (pass) in Intel(R) Data Center GPU Max 1100 (sycl backend) and NV A30 (cuda backend)
+     // test_cases.emplace_back(new test_mul_mat(GGML_TYPE_F16, GGML_TYPE_F16, 512, 262144, 9216, {1, 1}, {1, 1}));
+ 
++    for (ggml_type type : {GGML_TYPE_F16, GGML_TYPE_Q4_0_ROCMFP4_FAST}) {
++        for (bool broadcast : {false, true}) {
++            for (int64_t tokens : {17, 1024, 1025}) {
++                for (bool skewed : {false, true}) {
++                    test_cases.emplace_back(new test_mul_mat_id_dispatch(type, broadcast, tokens, skewed));
++                }
++            }
++        }
++    }
++
+     // test large experts*tokens
+     for (bool b : {false, true}) {
+         test_cases.emplace_back(new test_mul_mat_id(GGML_TYPE_F16, GGML_TYPE_F32, 16, 16, b, 32, 1024, 16));

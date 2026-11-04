@@ -1,0 +1,26 @@
+{
+  "on": {
+    "inputs_identical": {
+      "q": true,
+      "k": true,
+      "v": true,
+      "m": true
+    },
+    "output_NRMSE_vs_baseline": 0.0005881392536207161,
+    "output_max_abs_difference": 0.004860639572143555,
+    "baseline_NRMSE_vs_FP64_oracle": 0.0004881795198726205,
+    "candidate_NRMSE_vs_FP64_oracle": 9.48771552233418e-05
+  },
+  "conservative": {
+    "inputs_identical": {
+      "q": true,
+      "k": true,
+      "v": true,
+      "m": true
+    },
+    "output_NRMSE_vs_baseline": 0.0005881392536207161,
+    "output_max_abs_difference": 0.004860639572143555,
+    "baseline_NRMSE_vs_FP64_oracle": 0.0004881795198726205,
+    "candidate_NRMSE_vs_FP64_oracle": 9.48771552233418e-05
+  }
+}

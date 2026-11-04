@@ -1,0 +1,19 @@
+{
+  "prompt_tokens": 65536,
+  "prompt": "$HOME/.cache/qwen38-ubatch-compare.fp9Hef/prompt-tokens.json",
+  "warmup_tokens": 2048,
+  "outputs": 128,
+  "MTP": true,
+  "MTP_sparse_logits": true,
+  "batch": 2048,
+  "ubatch": 1024,
+  "KV": "F16",
+  "cache_prompt": false,
+  "checkpoints": false,
+  "profiler": "GPU timestamps at operator boundaries plus nested KV repack/mask/attention boundaries",
+  "caveat": "The built-in operator profiler serializes operations. Compare elapsed time against an unprofiled control.",
+  "order": [
+    "control",
+    "profile"
+  ]
+}

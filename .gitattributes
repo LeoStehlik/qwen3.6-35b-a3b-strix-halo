@@ -1,0 +1,4 @@
+# Unified-diff context lines and the exact tokenizer fixture contain deliberate
+# trailing whitespace. Validate reconstructed source with git diff --check.
+*.patch -whitespace
+benchmarks/fixtures/prompt.txt -whitespace -text

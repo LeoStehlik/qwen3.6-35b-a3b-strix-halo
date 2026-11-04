@@ -1,0 +1,13 @@
+{
+  "prompt_tokens": 65536,
+  "prompt_sha256": "6efd5cb8693d5c7fc9fa826da0e454895172071c7d30283f6eb6c04978875346",
+  "context_capacity": 131072,
+  "batch": 2048,
+  "threads": 16,
+  "warmup": "2048 distinct prompt tokens, 16 generated tokens, then cache_prompt=false for the measured request",
+  "measured_generation_tokens": 128,
+  "temperature": 0,
+  "cache_prompt": false,
+  "checkpoints": "disabled in all disposable servers",
+  "scope": "Existing model weights and respective runtimes/KV precision; same tokenized source prompt; DFlash2 or MTP enabled"
+}

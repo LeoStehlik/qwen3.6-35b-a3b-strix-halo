@@ -1,0 +1,29 @@
+{
+  "deploy": false,
+  "test_complete": true,
+  "status": "Candidate remains available as an opt-in experiment; validated prior MTP build restored and completion-checked on port 8082.",
+  "reason": "Repeated prefill performance improvement is established. Operator/MTP tests and one 12K-context prose perplexity comparison pass, but the predefined numerical-equivalence gate on the separate 64K code prompt failed. This test does not establish unchanged long-context task quality.",
+  "quality_evidence": {
+    "CPU_FP32_operator_cases": 30,
+    "MTP_regression": "passed",
+    "prose_perplexity": {
+      "scored_tokens": 6143,
+      "baseline_perplexity": 4.582428801716686,
+      "candidate_perplexity": 4.583787963951783,
+      "perplexity_change_percent": 0.029660302296208307,
+      "paired_mean_NLL_change": 0.0002965590449812026,
+      "approximate_128_token_block_standard_error": 0.0011210485719404368,
+      "approximate_95_percent_NLL_interval": [
+        -0.0019006961560220535,
+        0.0024938142459844585
+      ],
+      "scope": "One local WikiText excerpt. Measures language-model next-token accuracy, not a general tool-use/capability evaluation.",
+      "within_one_percent_perplexity_margin": true
+    },
+    "long_context_numerical_equivalence": "failed"
+  },
+  "prior_start_script": "$HOME/.cache/mtp-output.fVUPF0/start-server.sh",
+  "experimental_start_script": "$HOME/.cache/fa-mr.MuLSLc/start-server.sh",
+  "experimental_start_script_executed": false,
+  "restore_validation": "restored-serving-validation.json"
+}

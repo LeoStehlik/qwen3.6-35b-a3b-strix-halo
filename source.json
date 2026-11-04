@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/charlie12345/rocmfp4-llama.git",
+  "commit": "4795079b04f5e0ada6e5d2e85b12bac1e27e7873",
+  "branch_reference_only": "mtp-rocmfp4-strix",
+  "profiles": {
+    "stable": ["0001-prefill-foundation.patch", "0002-mtp-sparse-logits.patch"],
+    "profile": ["0001-prefill-foundation.patch", "0002-mtp-sparse-logits.patch", "0003-attention-profiling.patch"],
+    "mr": ["0001-prefill-foundation.patch", "0002-mtp-sparse-logits.patch", "0003-attention-profiling.patch", "0004-multi-row-attention-and-validation.patch"],
+    "moe-tiles": ["0001-prefill-foundation.patch", "0002-mtp-sparse-logits.patch", "experimental/5001-smaller-moe-tiles.patch"]
+  }
+}

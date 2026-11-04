@@ -1,0 +1,86 @@
+[
+  {
+    "label": "mr-off-ub1024-r1",
+    "model": "mr-off",
+    "ubatch": 1024,
+    "batch": 2048,
+    "wall_seconds": 104.43087142700097,
+    "first_output_seconds": 101.76946098497137,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 101756.845,
+      "prompt_per_token_ms": 1.5526862335205078,
+      "prompt_per_second": 644.0451254163786,
+      "predicted_n": 128,
+      "predicted_ms": 2661.582,
+      "predicted_per_token_ms": 20.793609375,
+      "predicted_per_second": 48.09169884677609,
+      "draft_n": 68,
+      "draft_n_accepted": 61
+    }
+  },
+  {
+    "label": "mr-on-ub1024-r1",
+    "model": "mr-on",
+    "ubatch": 1024,
+    "batch": 2048,
+    "wall_seconds": 82.55532223195769,
+    "first_output_seconds": 79.93668326997431,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 79924.27,
+      "prompt_per_token_ms": 1.219547576904297,
+      "prompt_per_second": 819.9762099797721,
+      "predicted_n": 128,
+      "predicted_ms": 2618.396,
+      "predicted_per_token_ms": 20.45621875,
+      "predicted_per_second": 48.8848898333178,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    }
+  },
+  {
+    "label": "mr-on-ub1024-r2",
+    "model": "mr-on",
+    "ubatch": 1024,
+    "batch": 2048,
+    "wall_seconds": 83.12426948803477,
+    "first_output_seconds": 80.50655869301409,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 80494.787,
+      "prompt_per_token_ms": 1.2282529754638671,
+      "prompt_per_second": 814.1645247163646,
+      "predicted_n": 128,
+      "predicted_ms": 2618.001,
+      "predicted_per_token_ms": 20.4531328125,
+      "predicted_per_second": 48.89226551097574,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    }
+  },
+  {
+    "label": "mr-off-ub1024-r2",
+    "model": "mr-off",
+    "ubatch": 1024,
+    "batch": 2048,
+    "wall_seconds": 106.08118278702023,
+    "first_output_seconds": 103.40061400702689,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 103387.488,
+      "prompt_per_token_ms": 1.57756787109375,
+      "prompt_per_second": 633.8871488975533,
+      "predicted_n": 128,
+      "predicted_ms": 2681.846,
+      "predicted_per_token_ms": 20.951921875,
+      "predicted_per_second": 47.72831847913713,
+      "draft_n": 68,
+      "draft_n_accepted": 61
+    }
+  }
+]

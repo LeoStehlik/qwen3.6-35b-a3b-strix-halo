@@ -1,0 +1,9 @@
+{
+  "repository": "plunderstruck/Qwen3.6-35B-A3B-MTP-ROCmFP4-GGUF",
+  "hash_provenance": "Recorded by the preceding Qwen3.8 deployment repository on 2026-10-31; files must pass verification before use. Model downloads are not part of repository setup.",
+  "files": {
+    "Qwen3.6-35B-A3B-MTP-ROCmFP4-STRIX-embF16-headQ6.gguf": "a6775c0ff1d215f8385505d5b334ce8b81d6f70ff293a095c948c7f3d8b85a4c",
+    "mmproj-F32.gguf": "2c52a4ccbc8f0fdb716fb526bfee9506ed0092b2e6dc5d593759f7d200146663",
+    "chat_template.jinja": "27d22ab352efbb63cdcc379cc58924f16b2949931e6f185b959f8930efc9520b"
+  }
+}

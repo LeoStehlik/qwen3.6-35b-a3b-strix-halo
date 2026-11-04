@@ -1,0 +1,110 @@
+{
+  "change": "Separate full MTP hidden-state capture from target vocabulary output",
+  "source": "$HOME/src/rocmfp4-mtp-output",
+  "base_commit": "4795079b",
+  "flag": "LLAMA_MTP_SPARSE_LOGITS=1",
+  "prompt_tokens": 65536,
+  "batch": 2048,
+  "ubatch": 1024,
+  "kv": "f16",
+  "speculation": "draft-mtp",
+  "benchmark_protocol": "Same binary, two alternating cold-cache runs per setting, identical token IDs, 2048-token warmup, 128 generated tokens, no checkpoints in timing test",
+  "baseline": {
+    "runs": 2,
+    "prefill_tokens_per_second": [
+      637.2177542035384,
+      632.6093741847864
+    ],
+    "mean_prefill_tokens_per_second": 634.9135641941624,
+    "mean_prefill_seconds": 103.221709,
+    "mean_generation_tokens_per_second": 47.94245744923644
+  },
+  "optimized": {
+    "runs": 2,
+    "prefill_tokens_per_second": [
+      654.5664167676392,
+      656.6340933967815
+    ],
+    "mean_prefill_tokens_per_second": 655.6002550822104,
+    "mean_prefill_seconds": 99.963602,
+    "mean_generation_tokens_per_second": 47.989248879214415
+  },
+  "throughput_gain_percent": 3.2581900993568613,
+  "prefill_seconds_saved": 3.2581070000000096,
+  "benchmark_outputs_identical": true,
+  "benchmark_draft_counts_identical": true,
+  "regression": {
+    "cases": 7,
+    "hidden_state_comparisons": 7,
+    "logit_comparisons": 31,
+    "hidden_states_bit_identical_to_old_mtp": true,
+    "logits_bit_identical_to_ordinary_sparse_inference": true,
+    "includes_zero_output_batches_multiple_sequences_interleaved_inputs_verification_checkpoint_restore": true,
+    "note": "All-output GEMM and sparse-output kernels have normal numerical differences; logits were checked independently against ordinary sparse-output inference."
+  },
+  "serving_validation": {
+    "arithmetic": "42",
+    "cache_requests": [
+      {
+        "request": 0,
+        "wall_seconds": 13.64666678296635,
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 12306,
+          "prompt_ms": 12706.367,
+          "prompt_per_token_ms": 1.0325342922151797,
+          "prompt_per_second": 968.4908361296348,
+          "predicted_n": 64,
+          "predicted_ms": 922.893,
+          "predicted_per_token_ms": 14.420203125,
+          "predicted_per_second": 69.34715075312089,
+          "draft_n": 34,
+          "draft_n_accepted": 32
+        }
+      },
+      {
+        "request": 1,
+        "wall_seconds": 2.2632038189913146,
+        "timings": {
+          "cache_n": 11278,
+          "prompt_n": 1035,
+          "prompt_ms": 1309.181,
+          "prompt_per_token_ms": 1.2649091787439615,
+          "prompt_per_second": 790.5705933709701,
+          "predicted_n": 64,
+          "predicted_ms": 947.249,
+          "predicted_per_token_ms": 14.800765625,
+          "predicted_per_second": 67.5640723822353,
+          "draft_n": 37,
+          "draft_n_accepted": 32
+        }
+      },
+      {
+        "request": 2,
+        "wall_seconds": 2.089478217996657,
+        "timings": {
+          "cache_n": 11278,
+          "prompt_n": 1028,
+          "prompt_ms": 1240.042,
+          "prompt_per_token_ms": 1.2062665369649805,
+          "prompt_per_second": 829.004178890715,
+          "predicted_n": 64,
+          "predicted_ms": 843.199,
+          "predicted_per_token_ms": 13.174984375,
+          "predicted_per_second": 75.90141828915831,
+          "draft_n": 36,
+          "draft_n_accepted": 36
+        }
+      }
+    ],
+    "status": "passed"
+  },
+  "deployment": {
+    "port": 8082,
+    "unit": "qwen36-prefill-test.service",
+    "enabled": true,
+    "normal_checkpoints_and_cache_enabled": true,
+    "start_script": "$HOME/.cache/mtp-output.fVUPF0/start-server.sh",
+    "original_restore_script": "$HOME/.cache/prefill-indirect.t1ja9L/start-server.sh"
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "experiment": "Per-expert MoE tile sizing, GGML_VK_MMID_SMALLN",
+  "common": {
+    "model": "Qwen3.6-35B-A3B-MTP-ROCmFP4-STRIX-embF16-headQ6",
+    "prompt_tokens": 65536,
+    "batch": 2048,
+    "ubatch": 1024,
+    "KV": "F16"
+  },
+  "server_MTP": {
+    "off": {
+      "prefill_samples_tps": [
+        654.9922807836452,
+        649.6370548471765
+      ],
+      "prefill_mean_tps": 652.3146678154109,
+      "prefill_mean_seconds": 100.46854300000001,
+      "first_output_mean_seconds": 100.48175860149786,
+      "generation_mean_tps": 47.92771979016629,
+      "draft_counts": [
+        [
+          68,
+          61
+        ],
+        [
+          68,
+          61
+        ]
+      ]
+    },
+    "on": {
+      "prefill_samples_tps": [
+        620.446013736608,
+        637.5465353957935
+      ],
+      "prefill_mean_tps": 628.9962745662008,
+      "prefill_mean_seconds": 104.21065250000001,
+      "first_output_mean_seconds": 104.22389536100673,
+      "generation_mean_tps": 47.857256010133476,
+      "draft_counts": [
+        [
+          68,
+          61
+        ],
+        [
+          68,
+          61
+        ]
+      ]
+    },
+    "prefill_change_percent": -3.574715455548916,
+    "prefill_seconds_added": 3.742109499999998
+  },
+  "synthetic_target_only": {
+    "off": {
+      "prefill_samples_tps": [
+        741.891,
+        742.466
+      ],
+      "prefill_mean_tps": 742.178463,
+      "prefill_mean_seconds": 88.30222525
+    },
+    "on": {
+      "prefill_samples_tps": [
+        713.626,
+        711.11
+      ],
+      "prefill_mean_tps": 712.36779,
+      "prefill_mean_seconds": 91.997708679
+    },
+    "prefill_change_percent": -4.016644848396789,
+    "prefill_seconds_added": 3.6954834289999923
+  },
+  "protocol_note": "Compare off/on within each track. Synthetic uses a full 64K warmup and synthetic tokens; server uses a fixed source-code prompt, a 2K warmup, MTP, and 128 generated tokens.",
+  "correctness": {
+    "CPU_reference_routing_cases_passed": 32,
+    "MTP_hidden_sparse_logits_verification_checkpoint_regression": "passed",
+    "all_four_server_outputs_identical": true,
+    "server_output_sha256": [
+      "73a9aaff1fd8b1b34f8488225102b0a13bad025107df4f9ffc2d9b37ef028d50",
+      "73a9aaff1fd8b1b34f8488225102b0a13bad025107df4f9ffc2d9b37ef028d50",
+      "73a9aaff1fd8b1b34f8488225102b0a13bad025107df4f9ffc2d9b37ef028d50",
+      "73a9aaff1fd8b1b34f8488225102b0a13bad025107df4f9ffc2d9b37ef028d50"
+    ]
+  },
+  "tile_trace": {
+    "off": "64x64",
+    "on": "32x32",
+    "effective_weight_type": "q4_0_rocmfp4_fast"
+  },
+  "decision": "Leave smaller-tile candidate disabled: slower in both benchmark tracks.",
+  "restored_service": {
+    "endpoint": "http://127.0.0.1:8082",
+    "binary": "$HOME/src/rocmfp4-mtp-output/build-vulkan/bin/llama-server",
+    "MTP_sparse_logits": true,
+    "health": "ok",
+    "completion": "42",
+    "smalln_enabled": false
+  }
+}

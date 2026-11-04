@@ -1,0 +1,8 @@
+/work/
+/runtime/
+/models/
+/runs/
+__pycache__/
+*.pyc
+.venv/
+.env

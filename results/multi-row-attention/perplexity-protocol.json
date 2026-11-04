@@ -1,0 +1,12 @@
+{
+  "source": "$HOME/src/strix-halo-llamacpp-latest/tools/prompts/prose-32k-wikitext.txt",
+  "available_tokens": 31662,
+  "context": 12288,
+  "chunks": 1,
+  "score": "Next-token loss over the second half of one natural-prose context; paired per-token comparison.",
+  "batch": 2048,
+  "ubatch": 1024,
+  "KV": "F16",
+  "MTP": false,
+  "context_selection": "Largest 4096-token multiple satisfying the tool input-length requirement; original text is neither repeated nor padded."
+}
