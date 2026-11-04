@@ -15,4 +15,9 @@ fi
 if test -f "$source_dir/tests/test-mtp-unused-head.cpp"; then
     targets+=(test-mtp-unused-head)
 fi
+for target in test-mmid-fp4 test-mmid-ownership; do
+    if test -f "$source_dir/tests/$target.cpp"; then
+        targets+=("$target")
+    fi
+done
 cmake --build "$source_dir/build-vulkan" --target "${targets[@]}" -j "${BUILD_JOBS:-8}"

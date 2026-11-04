@@ -8,45 +8,58 @@ The runtime is **llama.cpp Vulkan/RADV**. ROCmFP4 names the weight format and
 specialized kernels here; these measurements are **not vLLM or a HIP backend**.
 
 The goal is sustained long-context prefill near 1,000 tok/s while preserving the
-model, tools, and useful context. Multi-row attention plus two follow-up
-optimizations now reach about **956 tok/s** on the 64K server/MTP fixture.
-The optimized endpoint is ready for the user's real OpenClaw prompt trial.
-
-The first user-triggered Telegram request subsequently processed 50,437 prompt
-tokens at **1,029.18 tok/s**, then generated 4,408 tokens at **70.20 tok/s** with
-production checkpoints enabled. This is one real workload observation, separate
-from the controlled 65K comparison; answer quality is for the user to assess.
+model, tools, and useful context. The latest pair of kernel changes reaches
+**1,045 and 1,049 tok/s** on the cold 64K server/MTP fixture. Both are now enabled
+on the existing endpoint; direct tool, continuation and cache checks passed.
+The user is testing ordinary OpenClaw answer quality before adopting this as
+the next baseline.
 
 ## Current result — 2026-11-04 UTC
 
-The final-build comparison keeps multi-row attention (MR) enabled in both modes:
+Two runs per configuration, same weights, F16 KV, batch/ubatch 2048/1024,
+MR attention and native MTP. The control includes the previously accepted tiled
+concat and unused draft-head changes. Profilers, prompt reuse and checkpoints
+are disabled for these timings.
 
-| 65,536-token server/MTP request | MR only | MR + new optimizations | Change |
-|---|---:|---:|---:|
-| Prefill throughput | 821.97 tok/s | **955.71 tok/s** | **+16.27%** |
-| Prefill time | 79.73 s | **68.57 s** | −11.16 s |
-| Short generation check | 49.17 tok/s | **52.35 tok/s** | +6.48% |
+| 65,536-token server/MTP request | Previous baseline | Expert selector + fused convolution |
+|---|---:|---:|
+| Prefill samples | 958.91, 954.49 tok/s | **1,045.40, 1,048.68 tok/s** |
+| Mean throughput | 956.70 tok/s | **1,047.04 tok/s (+9.44%)** |
+| Mean prefill time | 68.50 s | **62.59 s (5.91 s saved)** |
+| Short generation check | 52.33 tok/s | **52.45 tok/s** |
 
-The new changes tile convolution-input copies and omit unused MTP draft
-vocabulary projections. Two earlier combined trials measured 957.56 and
-952.95 tok/s. Their MR-only controls varied from 776.01 to 833.70 tok/s;
-all samples are retained rather than selecting the slowest control. The table
-uses one additional pair on the exact final build now serving. Same weights,
-F16 KV, batch/ubatch 2048/1024; no profiler or reused prompt tokens.
-[Individual measurements and correctness checks](results/prefill-next/summary.json).
+Expert row selection alone added 5.93%; convolution fusion alone added 3.20%.
+Their independent elapsed-time savings predicted about 1,048 tok/s, matching
+the combined result. All ten uninstrumented runs have the same output hash and
+draft counts. [Experiment details](docs/EXPERT-PREFILL.md),
+[all measurements](results/prefill-stage2/server-runs.json).
 
-**Deployment status:** MR and both new optimizations are enabled on the local
-trial endpoint. Health, an actual completion, function arguments and cached
-tool-result continuation passed. The user will test real OpenClaw prompts;
-no synthetic OpenClaw agent turn or gateway restart was performed. The serving
-unit is transient; see [Francis's handoff](handoff.md) for operational details.
+**Deployment status, 23:21:56 UTC:** the actual running binary uses profile
+`prefill-stage2`, with both changes enabled. Exact tool arguments, tool-result
+continuation, checkpoint restoration and displaced RAM-cache restoration passed.
+The latter reused 11,310 tokens and returned the correct result. No OpenClaw
+agent turn or gateway restart was initiated. The serving unit remains transient;
+see [Francis's handoff](handoff.md) and [readiness evidence](results/prefill-stage2/live-readiness.json).
+Ordinary OpenClaw answer quality is pending user acceptance of this pair.
 
-The user reviewed and accepted the observed MR numerical variance as sufficient
-to continue optimization and practical testing. The earlier equivalence failure
-remains recorded. New operator tests and draft-state/output comparisons pass;
-these do not establish broad capability equivalence. Read the
-[numerical investigation](docs/NUMERICAL-INVESTIGATION.md) and
-[validation scope](docs/VALIDATION.md).
+Initial real traffic on the promoted pair processed **73,093 tokens at 1,012.02
+tok/s** and a later **79,548-token pass at 993.07 tok/s**, with production
+checkpoints enabled. Follow-ups restored checkpoints beyond 72K. These are
+[workload observations](results/prefill-stage2/live-traffic-observations.json),
+not paired benchmarks or an answer-quality verdict.
+
+The previous step reached about 956 tok/s, up from 821.97 in its paired control.
+On that previous build, a user-triggered Telegram request processed 50,437 tokens
+at 1,029.18 tok/s and generated 4,408 tokens at 70.20 tok/s. Those historical
+workloads are separate from the new controlled comparison. See
+[experiment history](docs/EXPERIMENTS.md).
+
+The user accepted the earlier MR numerical variance as sufficient to continue
+optimization and practical testing. Its failed equivalence gate remains recorded.
+New operator, row-ownership and state checks pass; these do not establish broad
+capability equivalence. Read the [numerical investigation](docs/NUMERICAL-INVESTIGATION.md)
+and [validation scope](docs/VALIDATION.md). Performance testing of this pair is
+complete; real OpenClaw use is the remaining acceptance check.
 
 ## Earlier attention improvement
 
@@ -100,7 +113,7 @@ python3 scripts/serve.py
 
 Default binding is `127.0.0.1:8082`; model ID is `tiercel-qwen36-a3b-fast`.
 The commands above retain the stable fallback. To reproduce the current trial,
-prepare/build profile `prefill-next` and launch with `--optimized-prefill`;
+prepare/build profile `prefill-stage2` and launch with `--expert-prefill`;
 see the [cookbook](docs/DEPLOYMENT.md).
 The launch uses the existing model files and does not download another model.
 The 131,072-token served context is the tested configuration, not a claim that

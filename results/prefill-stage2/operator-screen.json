@@ -1,0 +1,668 @@
+[
+  {
+    "file": "kernel-base-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 504,
+    "microseconds": 2060.44
+  },
+  {
+    "file": "kernel-base-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 480,
+    "microseconds": 2101.72
+  },
+  {
+    "file": "kernel-base-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 462,
+    "microseconds": 2167.11
+  },
+  {
+    "file": "kernel-base-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 396,
+    "microseconds": 2554.41
+  },
+  {
+    "file": "kernel-base-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 236,
+    "microseconds": 4262.56
+  },
+  {
+    "file": "kernel-base-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 174,
+    "microseconds": 5769.21
+  },
+  {
+    "file": "kernel-bk128-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 264,
+    "microseconds": 4011.88
+  },
+  {
+    "file": "kernel-bk128-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 288,
+    "microseconds": 3735.14
+  },
+  {
+    "file": "kernel-bk128-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 252,
+    "microseconds": 4003.65
+  },
+  {
+    "file": "kernel-bk128-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 222,
+    "microseconds": 4606.0
+  },
+  {
+    "file": "kernel-bk128-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 130,
+    "microseconds": 7804.3
+  },
+  {
+    "file": "kernel-bk128-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 86,
+    "microseconds": 11868.69
+  },
+  {
+    "file": "kernel-bk64-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 432,
+    "microseconds": 2335.51
+  },
+  {
+    "file": "kernel-bk64-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 432,
+    "microseconds": 2352.99
+  },
+  {
+    "file": "kernel-bk64-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 432,
+    "microseconds": 2324.88
+  },
+  {
+    "file": "kernel-bk64-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 354,
+    "microseconds": 2830.66
+  },
+  {
+    "file": "kernel-bk64-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 212,
+    "microseconds": 4727.75
+  },
+  {
+    "file": "kernel-bk64-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 144,
+    "microseconds": 7026.23
+  },
+  {
+    "file": "kernel-both-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 432,
+    "microseconds": 2378.06
+  },
+  {
+    "file": "kernel-both-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 408,
+    "microseconds": 2470.92
+  },
+  {
+    "file": "kernel-both-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 402,
+    "microseconds": 2522.15
+  },
+  {
+    "file": "kernel-both-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 354,
+    "microseconds": 2871.85
+  },
+  {
+    "file": "kernel-both-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 210,
+    "microseconds": 4775.31
+  },
+  {
+    "file": "kernel-both-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 156,
+    "microseconds": 6470.17
+  },
+  {
+    "file": "kernel-codebook-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 504,
+    "microseconds": 2066.73
+  },
+  {
+    "file": "kernel-codebook-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 480,
+    "microseconds": 2143.61
+  },
+  {
+    "file": "kernel-codebook-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 450,
+    "microseconds": 2223.15
+  },
+  {
+    "file": "kernel-codebook-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 396,
+    "microseconds": 2561.29
+  },
+  {
+    "file": "kernel-codebook-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 228,
+    "microseconds": 4401.29
+  },
+  {
+    "file": "kernel-codebook-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 174,
+    "microseconds": 5793.52
+  },
+  {
+    "file": "kernel-scale-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 432,
+    "microseconds": 2324.46
+  },
+  {
+    "file": "kernel-scale-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 408,
+    "microseconds": 2496.94
+  },
+  {
+    "file": "kernel-scale-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 402,
+    "microseconds": 2514.69
+  },
+  {
+    "file": "kernel-scale-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 348,
+    "microseconds": 2884.93
+  },
+  {
+    "file": "kernel-scale-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 212,
+    "microseconds": 4736.04
+  },
+  {
+    "file": "kernel-scale-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 156,
+    "microseconds": 6482.68
+  },
+  {
+    "file": "kernel-tile128x32-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 672,
+    "microseconds": 1528.21
+  },
+  {
+    "file": "kernel-tile128x32-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 600,
+    "microseconds": 1677.13
+  },
+  {
+    "file": "kernel-tile128x32-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 576,
+    "microseconds": 1749.03
+  },
+  {
+    "file": "kernel-tile128x32-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 444,
+    "microseconds": 2278.28
+  },
+  {
+    "file": "kernel-tile128x32-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 234,
+    "microseconds": 4309.85
+  },
+  {
+    "file": "kernel-tile128x32-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 170,
+    "microseconds": 5894.94
+  },
+  {
+    "file": "kernel-tile64x32w128-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 744,
+    "microseconds": 1386.55
+  },
+  {
+    "file": "kernel-tile64x32w128-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 696,
+    "microseconds": 1467.79
+  },
+  {
+    "file": "kernel-tile64x32w128-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 648,
+    "microseconds": 1555.64
+  },
+  {
+    "file": "kernel-tile64x32w128-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 516,
+    "microseconds": 1952.66
+  },
+  {
+    "file": "kernel-tile64x32w128-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 240,
+    "microseconds": 4180.04
+  },
+  {
+    "file": "kernel-tile64x32w128-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 186,
+    "microseconds": 5392.17
+  },
+  {
+    "file": "kernel-tile64x32w64-perf.log",
+    "m": 512,
+    "n": 256,
+    "k": 2048,
+    "rows": 8,
+    "runs": 720,
+    "microseconds": 1410.45
+  },
+  {
+    "file": "kernel-tile64x32w64-perf.log",
+    "m": 2048,
+    "n": 256,
+    "k": 512,
+    "rows": 8,
+    "runs": 696,
+    "microseconds": 1486.38
+  },
+  {
+    "file": "kernel-tile64x32w64-perf.log",
+    "m": 512,
+    "n": 1024,
+    "k": 2048,
+    "rows": 32,
+    "runs": 618,
+    "microseconds": 1621.2
+  },
+  {
+    "file": "kernel-tile64x32w64-perf.log",
+    "m": 2048,
+    "n": 1024,
+    "k": 512,
+    "rows": 32,
+    "runs": 468,
+    "microseconds": 2146.69
+  },
+  {
+    "file": "kernel-tile64x32w64-perf.log",
+    "m": 512,
+    "n": 3072,
+    "k": 2048,
+    "rows": 96,
+    "runs": 242,
+    "microseconds": 4146.9
+  },
+  {
+    "file": "kernel-tile64x32w64-perf.log",
+    "m": 2048,
+    "n": 3072,
+    "k": 512,
+    "rows": 96,
+    "runs": 172,
+    "microseconds": 5818.96
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 512,
+    "n": 512,
+    "k": 2048,
+    "rows": 16,
+    "runs": 480,
+    "microseconds": 2084.53
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 2048,
+    "n": 512,
+    "k": 512,
+    "rows": 16,
+    "runs": 444,
+    "microseconds": 2312.52
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 512,
+    "n": 768,
+    "k": 2048,
+    "rows": 24,
+    "runs": 472,
+    "microseconds": 2123.4
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 2048,
+    "n": 768,
+    "k": 512,
+    "rows": 24,
+    "runs": 424,
+    "microseconds": 2360.62
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 512,
+    "n": 1536,
+    "k": 2048,
+    "rows": 48,
+    "runs": 444,
+    "microseconds": 2267.47
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 2048,
+    "n": 1536,
+    "k": 512,
+    "rows": 48,
+    "runs": 340,
+    "microseconds": 2945.22
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 512,
+    "n": 2048,
+    "k": 2048,
+    "rows": 64,
+    "runs": 429,
+    "microseconds": 2346.29
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 2048,
+    "n": 2048,
+    "k": 512,
+    "rows": 64,
+    "runs": 303,
+    "microseconds": 3304.45
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 512,
+    "n": 4096,
+    "k": 2048,
+    "rows": 128,
+    "runs": 224,
+    "microseconds": 4469.31
+  },
+  {
+    "file": "boundaries-tile0.log",
+    "m": 2048,
+    "n": 4096,
+    "k": 512,
+    "rows": 128,
+    "runs": 150,
+    "microseconds": 6750.12
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 512,
+    "n": 512,
+    "k": 2048,
+    "rows": 16,
+    "runs": 684,
+    "microseconds": 1464.84
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 2048,
+    "n": 512,
+    "k": 512,
+    "rows": 16,
+    "runs": 600,
+    "microseconds": 1672.43
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 512,
+    "n": 768,
+    "k": 2048,
+    "rows": 24,
+    "runs": 672,
+    "microseconds": 1494.45
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 2048,
+    "n": 768,
+    "k": 512,
+    "rows": 24,
+    "runs": 576,
+    "microseconds": 1754.6
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 512,
+    "n": 1536,
+    "k": 2048,
+    "rows": 48,
+    "runs": 364,
+    "microseconds": 2755.99
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 2048,
+    "n": 1536,
+    "k": 512,
+    "rows": 48,
+    "runs": 296,
+    "microseconds": 3403.97
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 512,
+    "n": 2048,
+    "k": 2048,
+    "rows": 64,
+    "runs": 348,
+    "microseconds": 2874.68
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 2048,
+    "n": 2048,
+    "k": 512,
+    "rows": 64,
+    "runs": 273,
+    "microseconds": 3690.8
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 512,
+    "n": 4096,
+    "k": 2048,
+    "rows": 128,
+    "runs": 184,
+    "microseconds": 5437.16
+  },
+  {
+    "file": "boundaries-tile3.log",
+    "m": 2048,
+    "n": 4096,
+    "k": 512,
+    "rows": 128,
+    "runs": 126,
+    "microseconds": 8024.34
+  }
+]

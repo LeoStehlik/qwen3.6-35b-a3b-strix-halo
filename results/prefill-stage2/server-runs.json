@@ -1,0 +1,442 @@
+[
+  {
+    "flag": "baseline",
+    "mode": 1,
+    "repeat": 1,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 68344.263,
+      "prompt_per_token_ms": 1.0428506927490235,
+      "prompt_per_second": 958.9100404813787,
+      "predicted_n": 128,
+      "predicted_ms": 2446.114,
+      "predicted_per_token_ms": 19.110265625,
+      "predicted_per_second": 52.32789641038807,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 68.35385453599974,
+    "wall_seconds": 70.79956204099926,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "baseline",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "0",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "0",
+        "GGML_VK_MMID_SELECTOR": "0"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:02:47Z",
+      "temp1_input": "45000",
+      "power1_average": "14870000",
+      "freq1_input": "818000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:04:04Z",
+      "temp1_input": "65000",
+      "power1_average": "108149000",
+      "freq1_input": "2783000000"
+    }
+  },
+  {
+    "flag": "compact",
+    "mode": 1,
+    "repeat": 2,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 68648.427,
+      "prompt_per_token_ms": 1.0474918670654296,
+      "prompt_per_second": 954.6613500699733,
+      "predicted_n": 128,
+      "predicted_ms": 2444.253,
+      "predicted_per_token_ms": 19.0957265625,
+      "predicted_per_second": 52.36773770963971,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 68.65744674600046,
+    "wall_seconds": 71.10171937900031,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "compact",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "0",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "1",
+        "GGML_VK_MMID_SELECTOR": "0"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:04:04Z",
+      "temp1_input": "65000",
+      "power1_average": "108149000",
+      "freq1_input": "2783000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:05:21Z",
+      "temp1_input": "66000",
+      "power1_average": "108862000",
+      "freq1_input": "2793000000"
+    }
+  },
+  {
+    "flag": "selector",
+    "mode": 1,
+    "repeat": 3,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 64698.725,
+      "prompt_per_token_ms": 0.9872241973876953,
+      "prompt_per_second": 1012.9411360115674,
+      "predicted_n": 128,
+      "predicted_ms": 2445.866,
+      "predicted_per_token_ms": 19.108328125,
+      "predicted_per_second": 52.333202227759,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 64.70770869499938,
+    "wall_seconds": 67.15385339200111,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "selector",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "0",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "1",
+        "GGML_VK_MMID_SELECTOR": "1"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:05:21Z",
+      "temp1_input": "66000",
+      "power1_average": "108862000",
+      "freq1_input": "2793000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:06:34Z",
+      "temp1_input": "68000",
+      "power1_average": "109012000",
+      "freq1_input": "2770000000"
+    }
+  },
+  {
+    "flag": "selector-repeat",
+    "mode": 1,
+    "repeat": 1,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 64630.349,
+      "prompt_per_token_ms": 0.9861808624267578,
+      "prompt_per_second": 1014.0127821373825,
+      "predicted_n": 128,
+      "predicted_ms": 2447.643,
+      "predicted_per_token_ms": 19.1222109375,
+      "predicted_per_second": 52.29520808385863,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 64.63907471899984,
+    "wall_seconds": 67.08721741999943,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "selector-repeat",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "0",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "1",
+        "GGML_VK_MMID_SELECTOR": "1"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:07:53Z",
+      "temp1_input": "51000",
+      "power1_average": "15095000",
+      "freq1_input": "811000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:09:06Z",
+      "temp1_input": "67000",
+      "power1_average": "108754000",
+      "freq1_input": "2777000000"
+    }
+  },
+  {
+    "flag": "tail-selector",
+    "mode": 1,
+    "repeat": 2,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 64374.458,
+      "prompt_per_token_ms": 0.9822762756347656,
+      "prompt_per_second": 1018.0435227897375,
+      "predicted_n": 128,
+      "predicted_ms": 2446.122,
+      "predicted_per_token_ms": 19.110328125,
+      "predicted_per_second": 52.327725272901354,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 64.38373587099886,
+    "wall_seconds": 66.83005685199896,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "tail-selector",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "0",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "1",
+        "GGML_VK_MMID_SELECTOR": "2"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:09:06Z",
+      "temp1_input": "67000",
+      "power1_average": "108754000",
+      "freq1_input": "2777000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:10:18Z",
+      "temp1_input": "67000",
+      "power1_average": "108709000",
+      "freq1_input": "2776000000"
+    }
+  },
+  {
+    "flag": "conv-only",
+    "mode": 1,
+    "repeat": 3,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 66447.837,
+      "prompt_per_token_ms": 1.0139135284423828,
+      "prompt_per_second": 986.2774013245909,
+      "predicted_n": 128,
+      "predicted_ms": 2450.126,
+      "predicted_per_token_ms": 19.141609375,
+      "predicted_per_second": 52.242211216892514,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 66.4564499070002,
+    "wall_seconds": 68.9069206690001,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "conv-only",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "1",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "0",
+        "GGML_VK_MMID_SELECTOR": "0"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:10:18Z",
+      "temp1_input": "67000",
+      "power1_average": "108709000",
+      "freq1_input": "2776000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:11:33Z",
+      "temp1_input": "67000",
+      "power1_average": "108869000",
+      "freq1_input": "2773000000"
+    }
+  },
+  {
+    "flag": "baseline-repeat",
+    "mode": 1,
+    "repeat": 4,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 68660.863,
+      "prompt_per_token_ms": 1.047681625366211,
+      "prompt_per_second": 954.4884397972103,
+      "predicted_n": 128,
+      "predicted_ms": 2446.142,
+      "predicted_per_token_ms": 19.110484375,
+      "predicted_per_second": 52.32729743408192,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 68.67071530599969,
+    "wall_seconds": 71.11629798899958,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "baseline-repeat",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "0",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "0",
+        "GGML_VK_MMID_SELECTOR": "0"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:11:33Z",
+      "temp1_input": "67000",
+      "power1_average": "108869000",
+      "freq1_input": "2773000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:12:51Z",
+      "temp1_input": "67000",
+      "power1_average": "106069000",
+      "freq1_input": "2709000000"
+    }
+  },
+  {
+    "flag": "conv-repeat",
+    "mode": 1,
+    "repeat": 1,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 66306.997,
+      "prompt_per_token_ms": 1.0117644805908204,
+      "prompt_per_second": 988.3723131059608,
+      "predicted_n": 128,
+      "predicted_ms": 2443.292,
+      "predicted_per_token_ms": 19.08821875,
+      "predicted_per_second": 52.38833508233973,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 66.31552496800032,
+    "wall_seconds": 68.75916938499904,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "conv-repeat",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "1",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "0",
+        "GGML_VK_MMID_SELECTOR": "0"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:13:04Z",
+      "temp1_input": "57000",
+      "power1_average": "15228000",
+      "freq1_input": "812000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:14:18Z",
+      "temp1_input": "67000",
+      "power1_average": "109213000",
+      "freq1_input": "2773000000"
+    }
+  },
+  {
+    "flag": "combined",
+    "mode": 1,
+    "repeat": 2,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 62689.682,
+      "prompt_per_token_ms": 0.9565686340332031,
+      "prompt_per_second": 1045.403293001231,
+      "predicted_n": 128,
+      "predicted_ms": 2440.32,
+      "predicted_per_token_ms": 19.065,
+      "predicted_per_second": 52.452137424600046,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 62.699605288000384,
+    "wall_seconds": 65.1394869550004,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "combined",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "1",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "1",
+        "GGML_VK_MMID_SELECTOR": "1"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:14:18Z",
+      "temp1_input": "67000",
+      "power1_average": "109213000",
+      "freq1_input": "2773000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:15:29Z",
+      "temp1_input": "68000",
+      "power1_average": "109345000",
+      "freq1_input": "2776000000"
+    }
+  },
+  {
+    "flag": "combined-repeat",
+    "mode": 1,
+    "repeat": 3,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 62493.575,
+      "prompt_per_token_ms": 0.9535762786865234,
+      "prompt_per_second": 1048.6838046951227,
+      "predicted_n": 128,
+      "predicted_ms": 2440.76,
+      "predicted_per_token_ms": 19.0684375,
+      "predicted_per_second": 52.44268178763991,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 62.503026030999536,
+    "wall_seconds": 64.94320205799886,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": {
+      "name": "combined-repeat",
+      "env": {
+        "GGML_VK_SSM_CONV_FUSED": "1",
+        "GGML_VK_MMID_FAST_TILE": "0",
+        "GGML_VK_MMID_FAST_DEQUANT": "0",
+        "GGML_VK_MMID_FAST_BK": "32",
+        "GGML_VK_MMID_COMPACT": "1",
+        "GGML_VK_MMID_SELECTOR": "1"
+      }
+    },
+    "hardware_before": {
+      "utc": "2026-11-04T23:15:29Z",
+      "temp1_input": "68000",
+      "power1_average": "109345000",
+      "freq1_input": "2776000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T23:16:41Z",
+      "temp1_input": "67000",
+      "power1_average": "106112000",
+      "freq1_input": "2706000000"
+    }
+  }
+]

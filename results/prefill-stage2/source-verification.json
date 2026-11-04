@@ -1,0 +1,8 @@
+{
+  "profile": "prefill-stage2",
+  "upstream_commit": "4795079b04f5e0ada6e5d2e85b12bac1e27e7873",
+  "patches": "0001\u20130007",
+  "verified_changed_files": 30,
+  "patch_and_reconstructed_hashes": "patches/manifest.json",
+  "status": "passed"
+}

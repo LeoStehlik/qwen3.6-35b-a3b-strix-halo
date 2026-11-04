@@ -1,13 +1,44 @@
 # Validation, failures and deployment decision
 
-As of 2026-11-04 22:07 UTC, the local trial endpoint serves MR plus tiled
-convolution-input copies and unused draft-head elimination. The user accepted
-the observed MR numerical variance and requested further performance work,
-followed by their own real OpenClaw prompts. The earlier equivalence failure
-remains evidence; it is not the practical task-quality acceptance criterion.
-No OpenClaw gateway restart was part of this work.
+As of 2026-11-04 23:21:56 UTC, the endpoint runs the selected expert-row kernel
+and fused convolution together, on top of the previously accepted MR/tiled
+concat/unused-head profile. Direct correctness, state, tool and cache checks
+passed. The user is testing ordinary OpenClaw quality before adopting the pair
+as the next baseline. No OpenClaw gateway restart was part of this work.
 
-## Follow-up optimization checks
+## Expert selection and convolution fusion
+
+- Row-count policy: ≤32 rows use 64×32/128 threads; larger experts retain 64×64.
+  Each compact/selector variant passed 26 row-boundary and 12 routing cases.
+  The explicit 1/32/48/64-row boundary test passed four CPU-reference layouts
+  and 334,080 exact ownership checks per mode, including compact off.
+- Exhaustive FP4 decode testing passed 1,048,576 exact checks per arithmetic
+  mode, all four modes, including every scale byte. Arithmetic decoding was
+  slower and is not selected; K64/K128 were also rejected before model tests.
+- Convolution fusion passed 40 CPU-reference cases both off and on. The final
+  allocator-overlap handling is additionally exercised by full model and state
+  checks. Failed initial fixture/oracle assumptions remain documented.
+- Seven `test-mtp-hidden` cases passed with both changes enabled, including
+  checkpoint restoration, multiple sequences and speculative verification.
+  Required hidden and ordinary-versus-MTP sparse logits have zero error.
+- Two combined runs measured 1,045.40 and 1,048.68 tok/s, versus 958.91 and
+  954.49 controls: +9.44% mean throughput, 5.91 seconds saved at 64K.
+  All ten uninstrumented runs have identical output hashes and draft counts.
+- Live exact tool name/arguments and tool-result continuation passed on an
+  11,243-token prompt. After displacement by an unrelated request, 11,310 tokens
+  restored from RAM and the continuation again returned the correct `42`.
+  Logs confirm restored recurrent checkpoints, including token 11,310.
+  This establishes the tested 11K scenario, not general 64K cache/task quality.
+
+[Full experiment](EXPERT-PREFILL.md),
+[correctness evidence](../results/prefill-stage2/correctness.json),
+[state checks](../results/prefill-stage2/state-check.json),
+[endpoint readiness](../results/prefill-stage2/live-readiness.json).
+
+The sections below retain earlier checks and their limits. User acceptance of
+MR variance remains in force; exact old-kernel wording is not a task-quality gate.
+
+## Previous tiled-concat and unused-head checks — 22:07 UTC
 
 - 139/139 CONCAT CPU-reference cases passed with the tiled path enabled.
   The 27 added cases also passed with it disabled, with exact zero error.

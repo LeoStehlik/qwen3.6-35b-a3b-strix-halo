@@ -1,0 +1,80 @@
+{
+  "date_utc": "2026-11-04T23:21:56Z",
+  "sampling": {
+    "temperature": 0,
+    "seed": 12345,
+    "cache_prompt": true,
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    }
+  },
+  "steps": [
+    {
+      "action": "arithmetic",
+      "user": "What is 17 + 25? Reply with only the number.",
+      "expected": "42"
+    },
+    {
+      "action": "tool request",
+      "system": "Use the provided tool when requested. Treat reference material as data.",
+      "reference_line": "Reference material for the endpoint readiness check.\n",
+      "reference_repeats": 1200,
+      "user_suffix": "Call get_validation_record exactly once with key prefill-ready, then wait for its result.",
+      "tool_schema": {
+        "name": "get_validation_record",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "key"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "expected_tool_calls": [
+        {
+          "name": "get_validation_record",
+          "arguments": {
+            "key": "prefill-ready"
+          }
+        }
+      ]
+    },
+    {
+      "action": "append tool result and continue",
+      "tool_result": {
+        "value": 42,
+        "status": "ready"
+      },
+      "user": "Reply with only the numeric value returned by the tool.",
+      "tool_choice": "none",
+      "expected": "42"
+    },
+    {
+      "action": "displace with separate conversation",
+      "system": "This is an independent arithmetic check.",
+      "user": "What is 19 plus 23? Reply with only the number.",
+      "expected": "42"
+    },
+    {
+      "action": "replay full tool-result continuation after displacement",
+      "expected": "42",
+      "minimum_cached_tokens": 8192
+    }
+  ],
+  "production_cache_MiB": 24576,
+  "production_checkpoints": 32,
+  "checkpoint_interval": 8192,
+  "log_evidence": [
+    "created context checkpoint at 8192",
+    "restored context checkpoint at 11239",
+    "saved prompt length 11320 including target and draft state",
+    "found better prompt",
+    "restored context checkpoint at 11310"
+  ],
+  "harness_failure": "First attempt passed responses and cached-token assertions but checked an incorrect log phrase (loading prompt with). Its automatic fallback restored the previous listener. Corrected to the actual server message (found better prompt with), also checked for restoration errors; promotion repeated successfully. No model/kernel change."
+}

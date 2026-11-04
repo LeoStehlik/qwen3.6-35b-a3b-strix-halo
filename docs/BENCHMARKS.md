@@ -109,6 +109,39 @@ The source profile also retains `test-mtp-hidden` for the target's sparse-output
 and hidden-row contract. Headline timings use the server/MTP track; do not infer
 a new synthetic target-only throughput number from them.
 
+## Expert selector and convolution fusion
+
+Performance testing of the selected pair is complete. These commands are for
+future reproduction on an isolated host, not a request to interrupt live traffic.
+`prefill-stage2` holds all earlier accepted switches on in both modes and toggles
+the selected pair. Component flags are `GGML_VK_MMID_SELECTOR` (compact enabled
+in both modes), `GGML_VK_MMID_COMPACT` (selector off) and `GGML_VK_SSM_CONV_FUSED`
+(selector/compact off). Each isolates the named contribution.
+
+```bash
+python3 benchmarks/run-prefill.py --kind server --flag prefill-stage2 \
+  --bin-dir work/prefill-stage2/build-vulkan/bin --model "$model" \
+  --output runs/prefill-stage2 --repetitions 2
+```
+
+`--profile-experts` additionally enables expert counts/stage timing and attention
+profiling. It adds overhead and must not be used for headline throughput.
+
+```bash
+python3 benchmarks/analyze-experts.py path/to/measured-server.log \
+  --output runs/expert-profile.json
+```
+
+The parser checks measured-request row populations before calculating logical
+padding. It reports aggregate dispatch timing and row-count buckets separately;
+those buckets do not measure physical occupancy or per-bucket elapsed time.
+
+The profile builds `test-mmid-fp4` (exhaustive decode) and `test-mmid-ownership`
+(exact mixed-row ownership), alongside `test-backend-ops` and `test-mtp-hidden`.
+The new backend patterns are `MMID_ROWS`, `MMID_MIXED_BOUNDARIES` and
+`CONCAT_SSM_CONV_SILU`. Raw per-operator screens, correctness totals, state checks
+and all server runs are in [the evidence](../results/prefill-stage2/).
+
 ## Full-model numerical gate (historical equivalence diagnostic)
 
 Analysis needs NumPy. Captures write large arrays into ignored `runs/`; do not

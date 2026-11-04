@@ -1,8 +1,9 @@
 # Handoff for Francis
 
-Updated 2026-11-04 UTC after the follow-up prefill optimizations and endpoint
-readiness checks at 22:07. The user's first Telegram request completed at 22:11:58.
-This is a dated snapshot; verify process state before acting.
+Updated 2026-11-04 UTC after promotion and endpoint checks at **23:21:56 UTC**.
+The user has started real OpenClaw requests on the new pair. Performance testing
+is complete; ordinary answer-quality acceptance is pending. This is a dated
+snapshot; verify process state before acting.
 
 ## Goal and constraints
 
@@ -33,15 +34,15 @@ Do not reopen equivalence forensics without evidence of malfunction.
 | Existing OpenClaw provider/model | `tiercelmoe/tiercel-qwen36-a3b-fast` |
 | Active unit | `qwen36-prefill-test.service` |
 | Unit persistence | **Transient**, under `/run/user/1000/systemd/transient/` |
-| Actual binary | `$HOME/src/rocmfp4-prefill-next/build-vulkan/bin/llama-server` |
-| Launch helper | `scripts/serve.py --optimized-prefill --binary <above> --host 100.96.8.54` |
-| Enabled | Foundation, sparse target logits, MR H=2, tiled concat, unused draft-head skip |
-| Disabled | Indirect MoE dispatch, smaller MoE tiles, all profiler/oracle/trace diagnostics |
+| Actual binary | `$HOME/src/rocmfp4-prefill-stage2/build-vulkan/bin/llama-server` |
+| Launch helper | `scripts/serve.py --expert-prefill --binary <above> --host 100.96.8.54` |
+| Enabled | Prior optimizations + compact expert lists, ≤32-row narrow selector, fused convolution/SiLU |
+| Disabled | Old max-row-grid indirect experiment, global narrow tiles, arithmetic decode, deeper K, all profiler/oracle/trace diagnostics |
 | KV / batch / ubatch / slots | F16 / 2048 / 1024 / 1 |
 | Served context | 131,072; 150K initial prompts do not fit this configuration |
 | Prompt cache / checkpoints | 24,576 MiB; idle slots; 32 checkpoints every 8,192 tokens |
 | Readiness | Health OK, actual completion `42`, exact tool arguments and result continuation `42` |
-| Reuse check | 2,743 cached tokens; log confirms a small context checkpoint restored |
+| Reuse check | 11,239 tokens reused for tool continuation; 11,310 restored after displacement; logs confirm RAM and checkpoint restore |
 
 `qwen36-rocmfpx.service` remains **inactive but enabled for boot**. It is the
 older persistent unit, not the unit currently serving. The transient replacement
@@ -60,46 +61,104 @@ The older failing boot unit was stopped and the stable transient baseline
 restored. It was subsequently replaced by the tested optimized trial below.
 The Mac/OpenClaw was not restarted.
 
-## Latest result
+## Latest result and acceptance status
 
-The first real Telegram request completed at 22:11:58: **50,437 prompt tokens
-in 49.01 s (1,029.18 tok/s)** and **4,408 generated tokens at 70.20 tok/s**.
-Draft acceptance was 94.402%. A separate 4,049-token request completed at
-22:12:26, at 1,322.15 tok/s prefill and 96.30 tok/s generation. These are
-user-initiated workload observations, not paired benchmarks or an assessment
-of answer quality. Only aggregate timings are retained in GitHub.
+The new pair is **promoted on the existing endpoint**. Direct operator, state,
+tool and cache checks passed. The user is now testing ordinary OpenClaw answer
+quality; if that remains sound, this becomes the next baseline. Do not claim
+that the user's quality acceptance has already arrived. No more timing sweeps
+or kernel experiments are requested for this pair.
 
-MR stayed enabled in both modes. The final binary's paired 65,536-token cold
-server/MTP request measured:
+Two cold 65,536-token server/MTP runs per configuration, with all previous
+accepted optimizations retained:
 
-| Metric | MR only | MR + new changes |
+| Configuration | Prefill samples | Mean improvement |
 |---|---:|---:|
-| Prefill | 821.97 tok/s | **955.71 tok/s (+16.27%)** |
-| Prefill time | 79.73 s | **68.57 s (11.16 s saved)** |
-| Short generation check | 49.17 tok/s | **52.35 tok/s** |
+| Previous baseline | 958.91 / 954.49 tok/s | — |
+| Expert selector only | 1,012.94 / 1,014.01 tok/s | +5.93% |
+| Convolution fusion only | 986.28 / 988.37 tok/s | +3.20% |
+| Both | **1,045.40 / 1,048.68 tok/s** | **+9.44%** |
 
-Two earlier combined trials measured 957.56 and 952.95 tok/s. Their controls
-varied from 776.01 to 833.70 tok/s; the cause is not established. Do not select
-the slowest control to inflate the gain. The final pair uses the exact served
-build after a workgroup-count guard was added and tested. All eight server
-runs produced identical output hashes and draft counts.
+Mean prefill time falls 68.50→62.59 seconds, saving 5.91 seconds. Mean generation
+is essentially unchanged, 52.33→52.45 tok/s. All ten uninstrumented runs have
+identical output hashes and draft behavior (63 drafted / 58 accepted).
+These numbers use the fixed source fixture, F16 KV, 2048/1024 batch/ubatch,
+MR H=2 and MTP; they are not the historic ~741 target-only synthetic track.
+Timing disables reuse/checkpoints; the live service retains both.
 
-Patch 0005 tiles recurrent convolution-input copies through shared memory,
-coalescing large transposed reads and output writes without changing value bits.
-Patch 0006 omits the MTP draft vocabulary projection when no logits or generic
-embeddings are requested, retaining hidden/state computation and actual drafting.
-Both can be disabled independently; source defaults are off.
+Selected additions, on top of the entire previous profile:
 
-139/139 CONCAT CPU-reference cases passed with the new path enabled. The 27
-added cases passed with it disabled and again enabled on the final build.
-The target hidden/output regression passed. The new draft regression found nine
-required logit/hidden rows and saved draft KV state bit-identical across head-skip
-off/on, including two physical prompt ubatches, a tail, drafting and restore.
+```text
+GGML_VK_MMID_COMPACT=1
+GGML_VK_MMID_SELECTOR=1
+GGML_VK_SSM_CONV_FUSED=1
+GGML_VK_MMID_FAST_TILE=0
+GGML_VK_MMID_FAST_DEQUANT=0
+GGML_VK_MMID_FAST_BK=32
+```
 
-See [step 10](docs/EXPERIMENTS.md), [validation](docs/VALIDATION.md), and
-[structured evidence](results/prefill-next/summary.json). No new synthetic
-benchmark was run. This does not establish sustained 1K throughput at 64K+
-or broad practical quality; the user is testing their normal OpenClaw session.
+The expert policy uses 64×32/128 threads for experts with ≤32 rows and the old
+64×64 kernel otherwise. It keeps the existing K tile and accumulation order.
+The unmeasured 33–47-row interval conservatively retains the old kernel.
+Compact tile maps explicitly carry logical expert IDs/counts; an early grid.z
+count bug was caught before any model run and fixed. Four exact mixed-row cases
+per mode cover 1/32/48/64 rows, empty gaps, non-contiguous IDs and first/final
+expert boundaries. All 334,080 value checks per mode match, including compact off.
+
+The convolution path fuses eligible concat/history, four-tap convolution and
+SiLU. It uses the elided concat allocation as safe scratch when allocator
+aliasing prevents direct output, then copies after a barrier. Forty reference
+cases passed off/on; full model/state tests exercise the production layout.
+The two additions remain independently switchable with the launcher options
+`--disable-expert-selector` and `--disable-conv-fusion`.
+
+Seven target/MTP state cases passed with both selected changes, including
+checkpoint restore, speculative verification and multiple sequences. Required
+hidden/sparse-output comparisons have zero error. The live 11,243-token tool
+request produced the exact function and arguments; continuation returned `42`.
+After an unrelated request displaced it, 11,310 tokens restored and the same
+continuation again returned `42`. The server log confirms target/draft RAM
+restoration and recurrent checkpoint reuse. This is the tested 11K scenario,
+not a general 64K displaced-cache quality result.
+
+The first readiness script incorrectly expected a different log phrase after
+all response/cache checks passed. Its fallback unnecessarily restored the old
+listener. The assertion was corrected against the actual server source/log;
+subsequent promotion and checks passed without kernel changes.
+
+Routing-list reuse was discarded: its ceiling is below 0.4% of total prefill.
+Arithmetic FP4 decode passed exhaustive all-byte checks but was slower. Deeper
+K tiles passed operator checks, were slower and had no model-level validation.
+A tail-only selector's single +0.4% difference was inconclusive. Do not revive
+these unchanged. Compiler residency limits and logical tile fill are not
+measured runtime occupancy or DRAM bandwidth.
+
+See [full experiment](docs/EXPERT-PREFILL.md),
+[validation](docs/VALIDATION.md),
+[measurements](results/prefill-stage2/summary.json) and
+[live readiness](results/prefill-stage2/live-readiness.json).
+
+## First real traffic on the promoted pair
+
+Read-only observation at 23:26:41 UTC: the user's first request processed
+**73,093 tokens at 1,012.02 tok/s**, with production checkpoints enabled.
+Follow-ups restored checkpoints at tokens 72,065 and 73,325 and completed.
+A later full 79,548-token pass measured **993.07 tok/s**. Generation across
+these completed requests was 49.26–62.73 tok/s. No server errors were observed;
+more requests were active at capture. These are workload observations, not
+paired speedup measurements or an answer-quality verdict. Aggregate-only
+[evidence](results/prefill-stage2/live-traffic-observations.json) is retained.
+
+## Previous accepted step
+
+The preceding `prefill-next` profile reached about 956 tok/s after tiled concat
+and unused draft-head elimination (final paired control 821.97 tok/s). The first
+real Telegram request on that build processed 50,437 tokens at 1,029.18 tok/s
+and generated 4,408 tokens at 70.20 tok/s. The user reported useful answers,
+sound tools and adequate reasoning through a context reported as 78.5K.
+These observations concern the previous build, not acceptance of the new pair.
+Its build remains available as the immediate prior fallback. Detailed evidence
+is in [step 10](docs/EXPERIMENTS.md) and [prior results](results/prefill-next/summary.json).
 
 ## Earlier attention result and numerical evidence
 
@@ -125,15 +184,16 @@ failed its source-comparison answer. MR's cold/restored wording changed with
 MTP on, but not in the MTP-off control. That observation remains in the
 [numerical investigation](docs/NUMERICAL-INVESTIGATION.md); it does not by itself
 identify a serialization bug or invalidate different valid answers.
-The newer small checkpoint/tool check must not be described as complete
-long-context displaced-cache validation.
+The new 11K checkpoint/tool check does not erase that earlier 65K observation
+or establish complete long-context displaced-cache validation.
 
 ## Source and evidence locations
 
 | Path under `$HOME` | Purpose |
 |---|---|
 | `qwen3.6-35b-a3b-strix-halo/` | This durable GitHub repository |
-| `src/rocmfp4-prefill-next/` | **Currently serving** source/build, profile 0001–0006 |
+| `src/rocmfp4-prefill-stage2/` | **Currently serving** source/build, profile 0001–0007 |
+| `src/rocmfp4-prefill-next/` | Previous accepted source/build, profile 0001–0006 |
 | `src/rocmfp4-mtp-output/` | Stable fallback, without MR |
 | `src/rocmfp4-fa-mr/` | Earlier MR port and numerical investigation |
 | `src/rocmfp4-sparse/` | Pinned base, sparse checkout |
@@ -141,7 +201,8 @@ long-context displaced-cache validation.
 | `src/rocmfp4-moe-tiles/` | Rejected tile experiment |
 | `src/rocmfp4-fa-profile/` | Diagnostic profiling source/build |
 | `models/qwen36-rocmfpx/` | Existing weights, projector, template |
-| `.cache/prefill-next.hhm3990y/` | New protocol, builds, tests, timing, deploy/check scripts and evidence |
+| `.cache/prefill-stage2.u4wqau5y/` | Current raw profiles, kernel/operator tests, repeats, state/endpoint checks and promotion scripts |
+| `.cache/prefill-next.hhm3990y/` | Previous protocol, builds, tests, timing and endpoint evidence |
 | `.cache/fa-mr.MuLSLc/` | Earlier MR raw logs, captures and results |
 | `.cache/fa-divergence.LwnTjA/` | Repeatability, layer traces, router replay and 64K quality evidence |
 | `.cache/fa-profile.b5wpyH/` | Prior operator profile |
@@ -151,8 +212,9 @@ long-context displaced-cache validation.
 | `.cache/qwen38-ubatch-compare.fp9Hef/` | Qwen3.8 comparison and original prompt |
 
 Preserve the source trees' uncommitted work. Some older trees are incomplete
-checkouts. The new `prefill-next` profile reconstructs the served source from
-pinned upstream plus six patches, with checksums. A failed local-clone attempt
+checkouts. The `prefill-stage2` profile reconstructs the served source from
+pinned upstream plus seven patches, with checksums; all 30 changed-file hashes
+passed reconstruction. The previous `prefill-next` profile remains available. A failed local-clone attempt
 was retained under the new evidence directory; official-source reconstruction
 succeeded. The first build's WebUI asset step failed; the working build disables
 the WebUI, matching the existing API-only runtime.
@@ -187,26 +249,28 @@ python3 ops/restore-francis-baseline.py --bind-host "$(tailscale ip -4)" --dry-r
 
 Omitting `--dry-run` restores a stopped baseline, waits for health and verifies
 a completion. It does not change the older boot unit or restart OpenClaw.
-The current optimized trial was started on a free port with:
+The current promoted pair was started after the authorized local stop with:
 
 ```bash
 systemd-run --user --unit=qwen36-prefill-test python3 \
   "$HOME/qwen3.6-35b-a3b-strix-halo/scripts/serve.py" \
-  --binary "$HOME/src/rocmfp4-prefill-next/build-vulkan/bin/llama-server" \
-  --optimized-prefill --host 100.96.8.54
+  --binary "$HOME/src/rocmfp4-prefill-stage2/build-vulkan/bin/llama-server" \
+  --expert-prefill --host 100.96.8.54
 ```
 
 This is a reconstruction command, not an instruction to restart the live unit.
 
 ## Next work
 
-1. Observe the user's Telegram/OpenClaw task and multi-turn tool/cache behavior.
-   The user will assess answer quality. Local API checks are already complete.
-2. Measure longer contexts if requested; 64K results do not establish 128K/150K
-   throughput. Keep the served context limit explicit.
-3. If more optimization is requested, profile the combined build first. Repeated
-   routing and remaining attention copies are unmeasured possibilities.
-4. Treat boot persistence and context expansion as separate operational changes.
+1. Watch the user's real OpenClaw requests read-only. Assess exact tool arguments,
+   tool-result continuation, cache behavior and useful answers. The user supplies
+   the prompts and quality verdict; no artificial OpenClaw agent turns.
+2. If ordinary quality remains sound, record the pair as the new accepted
+   baseline. Performance testing is complete; do not keep benchmarking it or
+   interrupt the service for documentation.
+3. Keep the 64K throughput and 11K cache-check scopes explicit. Broader context,
+   boot persistence and context expansion are separate work, not authorized
+   changes to make while the user tests.
 
-Keep the failed smaller-tile, no-gain indirect-dispatch and earlier numerical
-experiments in [the history](docs/EXPERIMENTS.md). Do not rerun them unchanged.
+Keep failed/rejected experiments and their conditions in the history. Publish
+only aggregate real-traffic measurements, never user conversations or credentials.

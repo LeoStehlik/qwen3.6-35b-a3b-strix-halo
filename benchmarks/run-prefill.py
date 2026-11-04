@@ -17,21 +17,31 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 FLAGS = ('GGML_VK_FA_MR', 'LLAMA_MTP_SPARSE_LOGITS', 'GGML_VK_MMID_SMALLN', 'GGML_VK_MMID_INDIRECT',
-         'GGML_VK_CONCAT_TRANSPOSE', 'LLAMA_MTP_SKIP_UNUSED_HEAD', 'prefill-next')
+         'GGML_VK_CONCAT_TRANSPOSE', 'LLAMA_MTP_SKIP_UNUSED_HEAD', 'prefill-next', 'prefill-stage2', 'GGML_VK_MMID_COMPACT', 'GGML_VK_MMID_SELECTOR', 'GGML_VK_SSM_CONV_FUSED')
 
 def environment(flag, mode):
     env = os.environ.copy()
     for key in ('GGML_VK_FA_PROFILE', 'GGML_VK_PERF_LOGGER', 'GGML_VK_PERF_LOGGER_CONCURRENT',
-                'GGML_VK_FA_F32_OUTPUT', 'GGML_CPU_FA_F32_REFERENCE'):
+                'GGML_VK_FA_F32_OUTPUT', 'GGML_CPU_FA_F32_REFERENCE', 'GGML_VK_MMID_PROFILE'):
         env.pop(key, None)
     env.update(GGML_VK_FA_KV_CONTIG='1', GGML_VK_MMID_ROWLISTS='1', LLAMA_CONV_TAIL_X='1',
                GGML_VK_MMID_INDIRECT='0', LLAMA_MTP_SPARSE_LOGITS='1', GGML_VK_MMID_SMALLN='0',
                GGML_VK_FA_MR='0', GGML_VK_FA_MR_H='2', GGML_VK_FA_MR_TRACE='1',
                GGML_VK_CONCAT_TRANSPOSE='0', LLAMA_MTP_SKIP_UNUSED_HEAD='0',
                GGML_VK_FA_MR_LAZY='1', GGML_VK_FA_MR_NOEB='1', GGML_VK_FA_MR_VPOST='1')
-    if flag in ('GGML_VK_CONCAT_TRANSPOSE', 'LLAMA_MTP_SKIP_UNUSED_HEAD', 'prefill-next'):
+    env.update(GGML_VK_MMID_COMPACT='0', GGML_VK_MMID_SELECTOR='0', GGML_VK_SSM_CONV_FUSED='0',
+               GGML_VK_MMID_FAST_TILE='0', GGML_VK_MMID_FAST_DEQUANT='0', GGML_VK_MMID_FAST_BK='32')
+    if flag in ('GGML_VK_CONCAT_TRANSPOSE', 'LLAMA_MTP_SKIP_UNUSED_HEAD', 'prefill-next', 'prefill-stage2'):
         env['GGML_VK_FA_MR'] = '1'
-    if flag == 'prefill-next':
+    if flag in ('GGML_VK_MMID_COMPACT', 'GGML_VK_MMID_SELECTOR', 'GGML_VK_SSM_CONV_FUSED'):
+        env.update(GGML_VK_FA_MR='1', GGML_VK_CONCAT_TRANSPOSE='1', LLAMA_MTP_SKIP_UNUSED_HEAD='1')
+        if flag == 'GGML_VK_MMID_SELECTOR':
+            env['GGML_VK_MMID_COMPACT'] = '1'
+        env[flag] = str(mode)
+    elif flag == 'prefill-stage2':
+        env.update(GGML_VK_CONCAT_TRANSPOSE='1', LLAMA_MTP_SKIP_UNUSED_HEAD='1',
+                   GGML_VK_MMID_COMPACT=str(mode), GGML_VK_MMID_SELECTOR=str(mode), GGML_VK_SSM_CONV_FUSED=str(mode))
+    elif flag == 'prefill-next':
         env.update(GGML_VK_CONCAT_TRANSPOSE=str(mode), LLAMA_MTP_SKIP_UNUSED_HEAD=str(mode))
     else:
         env[flag] = str(mode)
@@ -65,6 +75,8 @@ def server(args, mode, repeat):
     env = environment(args.flag, mode)
     if args.profile_attention:
         env.update(GGML_VK_FA_PROFILE='1', GGML_VK_PERF_LOGGER_FREQUENCY='1000000')
+    if getattr(args, 'profile_experts', False):
+        env['GGML_VK_MMID_PROFILE'] = '1'
     save(label + '-command.json', {'argv': cmd, 'explicit_environment': {k: v for k, v in env.items() if k.startswith(('GGML_', 'LLAMA_'))}})
     with (args.output / (label + '.log')).open('w') as log:
         proc = subprocess.Popen(cmd, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
@@ -135,7 +147,10 @@ def main():
     parser.add_argument('--repetitions', type=int, default=2)
     parser.add_argument('--port', type=int, default=18082)
     parser.add_argument('--profile-attention', action='store_true', help='Diagnostic server run; adds profiling overhead')
+    parser.add_argument('--profile-experts', action='store_true', help='Diagnostic expert stages, row counts and selector timings; implies --profile-attention')
     args = parser.parse_args()
+    if args.profile_experts:
+        args.profile_attention = True
     if args.repetitions < 1:
         parser.error('repetitions must be positive')
     if args.profile_attention and args.kind != 'server':

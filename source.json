@@ -30,6 +30,15 @@
       "0004-multi-row-attention-and-validation.patch",
       "0005-tiled-convolution-input-concat.patch",
       "0006-mtp-unused-draft-head.patch"
+    ],
+    "prefill-stage2": [
+      "0001-prefill-foundation.patch",
+      "0002-mtp-sparse-logits.patch",
+      "0003-attention-profiling.patch",
+      "0004-multi-row-attention-and-validation.patch",
+      "0005-tiled-convolution-input-concat.patch",
+      "0006-mtp-unused-draft-head.patch",
+      "0007-expert-row-selection-and-convolution-fusion.patch"
     ]
   }
 }

@@ -1,0 +1,72 @@
+{
+  "selector_operator_checks": {
+    "compact": {
+      "balanced_rows": 26,
+      "mixed_and_empty_experts": 12,
+      "passed": 38,
+      "total": 38
+    },
+    "compact-narrow": {
+      "balanced_rows": 26,
+      "mixed_and_empty_experts": 12,
+      "passed": 38,
+      "total": 38
+    },
+    "selector": {
+      "balanced_rows": 26,
+      "mixed_and_empty_experts": 12,
+      "passed": 38,
+      "total": 38
+    },
+    "tail-selector": {
+      "balanced_rows": 26,
+      "mixed_and_empty_experts": 12,
+      "passed": 38,
+      "total": 38
+    }
+  },
+  "fp4_exhaustive": {
+    "modes": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "checks_per_mode": 1048576,
+    "mismatches_per_mode": 0,
+    "coverage": "Every packed byte x all256 scale bytes, both low/high nibbles, alignedK64 and unalignedK32 paths; direct expected scalar values, no Q8 CPU matmul staging."
+  },
+  "convolution": {
+    "off": {
+      "passed": 40,
+      "total": 40
+    },
+    "on": {
+      "passed": 40,
+      "total": 40
+    },
+    "coverage": "Model-layout weights, odd and tile boundaries, padded/offset inputs, two sequences, 8192 channels, extra-consumer and kernel-width fallback. Final allocator-overlap path additionally exercised in full model/state tests."
+  },
+  "ownership": {
+    "modes": [
+      "off",
+      "compact",
+      "selector",
+      "tail-selector"
+    ],
+    "CPU_reference_cases_per_mode": 4,
+    "exact_values_per_mode": 334080,
+    "mismatches": 0,
+    "detail": "ownership-comparison.json"
+  },
+  "state": {
+    "status": "passed",
+    "cases": 7,
+    "detail": "state-check.json"
+  },
+  "endpoint": {
+    "status": "passed",
+    "detail": "live-readiness.json"
+  },
+  "ordinary_OpenClaw_quality": "pending user test of this promoted pair"
+}

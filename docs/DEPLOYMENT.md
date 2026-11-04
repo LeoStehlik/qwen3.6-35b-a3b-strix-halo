@@ -123,7 +123,24 @@ client. `--optimized-prefill` enables MR and both new optimizations together;
 the original stable launcher remains available without this option. Builds
 disable the embedded WebUI, matching the existing API-only inference binaries.
 
-## 7. Cache and integration
+## 7. Selected expert and convolution kernels
+
+The current endpoint uses `prefill-stage2`, adding row-count-based expert tile
+selection and fused convolution on top of `prefill-next`:
+
+```bash
+python3 scripts/prepare-source.py --profile prefill-stage2
+bash scripts/build.sh work/prefill-stage2
+python3 scripts/serve.py --expert-prefill --port 18082 --dry-run
+```
+
+The last command only prints configuration. Omit `--dry-run` only on an intended
+free port. The selected pair is enabled by `--expert-prefill`; use
+`--disable-expert-selector` or `--disable-conv-fusion` to isolate components.
+The old stable and `--optimized-prefill` launches remain available. See
+[measured gains and validation](EXPERT-PREFILL.md).
+
+## 8. Cache and integration
 
 Keep the existing OpenClaw provider/model identity and stable prefixes.
 `cache_prompt: true` enables the tested reuse. Faster cold prefill does not

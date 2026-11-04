@@ -1,0 +1,465 @@
+{
+  "status": "passed",
+  "executable": "test-mtp-hidden",
+  "configuration": "Combined selected flags, MR H=2 and prior accepted optimizations enabled",
+  "scope": "Same optimized backend: hidden-row order, ordinary versus MTP sparse logits, verification, multiple sequences and checkpoint restore. Not an off/on model equivalence test.",
+  "cases": [
+    {
+      "name": "zero-logit-prefill-two-ubatches",
+      "tokens": 2048,
+      "comparisons": [
+        {
+          "comparison": "hidden",
+          "elements": 4194304,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        }
+      ]
+    },
+    {
+      "name": "partial-tail-last-logit",
+      "tokens": 17,
+      "comparisons": [
+        {
+          "comparison": "hidden",
+          "elements": 34816,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.00468929131,
+          "max_abs": 0.157465935
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        }
+      ]
+    },
+    {
+      "name": "speculative-verification",
+      "tokens": 7,
+      "comparisons": [
+        {
+          "comparison": "hidden",
+          "elements": 14336,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        }
+      ]
+    },
+    {
+      "name": "verification-after-checkpoint-restore",
+      "tokens": 7,
+      "comparisons": [
+        {
+          "comparison": "hidden",
+          "elements": 14336,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        }
+      ]
+    },
+    {
+      "name": "two-unequal-sequences",
+      "tokens": 1700,
+      "comparisons": [
+        {
+          "comparison": "hidden",
+          "elements": 3481600,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0045249291,
+          "max_abs": 0.137243271
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.00386304738,
+          "max_abs": 0.136153221
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        }
+      ]
+    },
+    {
+      "name": "two-sequence-verification",
+      "tokens": 12,
+      "comparisons": [
+        {
+          "comparison": "hidden",
+          "elements": 24576,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        }
+      ]
+    },
+    {
+      "name": "interleaved-input-hidden-row-order",
+      "tokens": 258,
+      "comparisons": [
+        {
+          "comparison": "hidden",
+          "elements": 528384,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.00422594329,
+          "max_abs": 0.158870697
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        },
+        {
+          "comparison": "all-output-vs-sparse-kernel (diagnostic)",
+          "elements": 248320,
+          "nrmse": 0.0040683715,
+          "max_abs": 0.171886444
+        },
+        {
+          "comparison": "ordinary-vs-MTP-sparse-logits",
+          "elements": 248320,
+          "nrmse": 0.0,
+          "max_abs": 0.0
+        }
+      ]
+    }
+  ],
+  "diagnostic_note": "all-output-vs-sparse-kernel is a non-gating diagnostic of differing matrix execution shapes, retained here. Required hidden and ordinary-vs-MTP sparse logits comparisons have zero error."
+}

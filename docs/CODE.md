@@ -13,10 +13,11 @@ Build directories and binaries are not committed.
 | 0004 | MR kernel, V transpose, guarded dispatch, numerical tests and diagnostic references | Vulkan host/shaders, CPU attention, backend/model tests, perplexity exporter |
 | 0005 | Tiled bit-preserving copies for recurrent convolution inputs | Vulkan host, `concat_transpose.comp`, backend tests |
 | 0006 | Skip unused draft vocabulary projection on zero-logit MTP calls | `qwen35moe.cpp`, `test-mtp-unused-head.cpp` |
+| 0007 | Expert row-count selection, compact tile lists, fused convolution/SiLU and diagnostics/tests | Vulkan host/shaders, backend tests, `test-mmid-fp4.cpp`, `test-mmid-ownership.cpp` |
 | experimental/5001 | Smaller per-expert MoE tiles; slower in this experiment | Vulkan host and routing tests |
 
 Profiles: `stable` = 0001–0002; `profile` = 0001–0003; `mr` = 0001–0004;
-`prefill-next` = 0001–0006; `moe-tiles` = 0001–0002 plus 5001. The rejected MoE-tile patch is a sibling,
+`prefill-next` = 0001–0006; `prefill-stage2` = 0001–0007; `moe-tiles` = 0001–0002 plus 5001. The rejected MoE-tile patch is a sibling,
 not an extra step to apply on top of MR.
 
 ## Runtime switches
@@ -26,7 +27,7 @@ not an extra step to apply on top of MR.
 | `GGML_VK_FA_KV_CONTIG` | `1` | Repack eligible strided F16 KV for attention |
 | `GGML_VK_MMID_ROWLISTS` | `1` | Build/use per-expert row lists |
 | `LLAMA_CONV_TAIL_X` | `1` | Convolution-tail graph preparation |
-| `GGML_VK_MMID_INDIRECT` | `0` | Indirect dispatch; no measured gain |
+| `GGML_VK_MMID_INDIRECT` | `0` | Older maximum-row-grid indirect experiment; no measured gain |
 | `LLAMA_MTP_SPARSE_LOGITS` | `1` | Preserve hidden rows while selecting vocabulary outputs |
 | `GGML_VK_MMID_SMALLN` | `0` | Only the rejected MoE-tile profile implements this |
 | `GGML_VK_FA_MR` | `1` | MR attention, enabled by `--optimized-prefill` |
@@ -34,13 +35,19 @@ not an extra step to apply on top of MR.
 | `GGML_VK_FA_MR_LAZY`, `..._NOEB`, `..._VPOST` | `1` | Ported scheduling options; all default on within MR |
 | `GGML_VK_CONCAT_TRANSPOSE` | `1` | Tiled copies of eligible convolution inputs |
 | `LLAMA_MTP_SKIP_UNUSED_HEAD` | `1` | Skip the draft vocabulary head when no logits are requested |
+| `GGML_VK_MMID_COMPACT` | `1` | Dispatch live expert/tile pairs through compact work lists |
+| `GGML_VK_MMID_SELECTOR` | `1` | Narrow 64×32 kernel for experts with ≤32 rows; old 64×64 otherwise |
+| `GGML_VK_SSM_CONV_FUSED` | `1` | Fuse eligible concat, four-tap convolution and SiLU |
+| `GGML_VK_MMID_FAST_TILE`, `..._FAST_DEQUANT` | `0` | Rejected global tile/arithmetic decode experiments |
+| `GGML_VK_MMID_FAST_BK` | `32` | Retain the original K tile; deeper K was slower |
 
-The launcher without `--optimized-prefill` retains the original stable profile
-and sets the new switches to zero. Both new switches are opt-in and can be
-disabled separately for same-binary comparisons.
+The launcher without opt-in profile flags retains the original stable profile.
+`--optimized-prefill` selects the previous profile; `--expert-prefill` selects
+the new combined profile. `--disable-expert-selector` and `--disable-conv-fusion`
+control its additions independently. Source defaults for the additions are off.
 
 `GGML_VK_FA_PROFILE`, `GGML_VK_PERF_LOGGER`, `GGML_VK_FA_MR_TRACE`,
-`GGML_VK_FA_F32_OUTPUT` and `GGML_CPU_FA_F32_REFERENCE` are diagnostic
+`GGML_VK_FA_F32_OUTPUT`, `GGML_CPU_FA_F32_REFERENCE` and `GGML_VK_MMID_PROFILE` are diagnostic
 **presence-based** switches. Unset them for normal serving; assigning `0` does
 not necessarily disable them. `scripts/serve.py` clears these diagnostics.
 
@@ -98,3 +105,23 @@ and state restoration, and compares the saved KV state across both modes.
 - `FA_MR_DUMP_INITIAL` / `FA_MR_CAPTURE_FIRST` are test-only capture controls.
 
 See [third-party notices](../THIRD_PARTY_NOTICES.md) for kernel provenance.
+
+## Expert selection and fused convolution
+
+Compact work lists carry the logical expert ID independently of dispatch grid.z.
+The matrix reader receives the original expert count explicitly in compact mode;
+the original path keeps its original interpretation. Separate narrow and normal
+dispatches own disjoint experts. K=32, the existing accumulator precision and
+reduction order are retained. The policy's 33–47-row interval conservatively
+uses the original kernel; measured 48+ buckets did not justify a global switch.
+
+The convolution shader uses a padded shared-memory tile for 32 channels × 32
+tokens, gathering three history rows and the transposed activation. Four-tap
+convolution and SiLU consume that tile. Type, shape, stride, consumer, workgroup
+and storage checks guard eligibility. If output aliases activation storage, an
+eligible elided concat allocation supplies scratch, followed by a barrier and
+copy. Unsafe overlap or unsupported graphs retain the original operations.
+
+The patch also corrects stale fusion labels after an overlap veto. Per-call
+expert counts and GPU timestamp queries are diagnostic only; normal serving
+unsets those controls. See [full experiment](EXPERT-PREFILL.md).

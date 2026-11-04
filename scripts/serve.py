@@ -9,8 +9,9 @@ ROOT = Path(__file__).resolve().parents[1]
 MODEL = 'Qwen3.6-35B-A3B-MTP-ROCmFP4-STRIX-embF16-headQ6.gguf'
 
 def command(args):
-    optimized = getattr(args, 'optimized_prefill', False)
-    profile = 'prefill-next' if optimized else ('mr' if args.experimental_mr else 'stable')
+    expert = getattr(args, 'expert_prefill', False)
+    optimized = expert or getattr(args, 'optimized_prefill', False)
+    profile = 'prefill-stage2' if expert else ('prefill-next' if optimized else ('mr' if args.experimental_mr else 'stable'))
     binary = args.binary or ROOT / 'work' / profile / 'build-vulkan/bin/llama-server'
     cmd = [str(binary), '--model', str(args.model_dir / MODEL),
            '--mmproj', str(args.model_dir / 'mmproj-F32.gguf'),
@@ -28,7 +29,7 @@ def command(args):
     env = os.environ.copy()
     # Presence enables diagnostic flags; setting them to "0" is insufficient.
     for key in ('GGML_VK_FA_PROFILE', 'GGML_VK_PERF_LOGGER', 'GGML_VK_PERF_LOGGER_CONCURRENT',
-                'GGML_VK_FA_F32_OUTPUT', 'GGML_CPU_FA_F32_REFERENCE', 'GGML_VK_FA_MR_TRACE'):
+                'GGML_VK_FA_F32_OUTPUT', 'GGML_CPU_FA_F32_REFERENCE', 'GGML_VK_FA_MR_TRACE', 'GGML_VK_MMID_PROFILE'):
         env.pop(key, None)
     overrides = dict(GGML_VK_FA_KV_CONTIG='1', GGML_VK_MMID_ROWLISTS='1', LLAMA_CONV_TAIL_X='1',
                      GGML_VK_MMID_INDIRECT='0', LLAMA_MTP_SPARSE_LOGITS='1',
@@ -36,6 +37,11 @@ def command(args):
                      GGML_VK_CONCAT_TRANSPOSE='1' if optimized else '0',
                      LLAMA_MTP_SKIP_UNUSED_HEAD='1' if optimized else '0',
                      GGML_VK_FA_MR_H='2', GGML_VK_FA_MR_LAZY='1', GGML_VK_FA_MR_NOEB='1', GGML_VK_FA_MR_VPOST='1')
+    selector = expert and not getattr(args, 'disable_expert_selector', False)
+    overrides.update(GGML_VK_MMID_COMPACT='1' if selector else '0',
+                     GGML_VK_MMID_SELECTOR='1' if selector else '0',
+                     GGML_VK_SSM_CONV_FUSED='1' if expert and not getattr(args, 'disable_conv_fusion', False) else '0',
+                     GGML_VK_MMID_FAST_TILE='0', GGML_VK_MMID_FAST_DEQUANT='0', GGML_VK_MMID_FAST_BK='32')
     env.update(overrides)
     return cmd, env, overrides
 
@@ -47,6 +53,9 @@ def main():
     parser.add_argument('--port', type=int, default=8082)
     parser.add_argument('--experimental-mr', action='store_true', help='Explicitly enable unpromoted MR attention; see docs/VALIDATION.md')
     parser.add_argument('--optimized-prefill', action='store_true', help='Enable MR plus tiled convolution-input copies and unused draft-head elimination; see docs/EXPERIMENTS.md')
+    parser.add_argument('--expert-prefill', action='store_true', help='Enable the prefill-stage2 profile; see docs/EXPERT-PREFILL.md')
+    parser.add_argument('--disable-expert-selector', action='store_true')
+    parser.add_argument('--disable-conv-fusion', action='store_true')
     parser.add_argument('--dry-run', action='store_true')
     args = parser.parse_args()
     cmd, env, overrides = command(args)

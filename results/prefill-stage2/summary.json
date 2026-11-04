@@ -1,0 +1,77 @@
+{
+  "track": "Cold 65536-token server/MTP fixture, F16 KV, b2048/ub1024; profiling off",
+  "components": {
+    "baseline": {
+      "repeats": 2,
+      "prompt_tok_per_sec": [
+        958.9100404813787,
+        954.4884397972103
+      ],
+      "mean_prompt_tok_per_sec": 956.6992401392945,
+      "mean_prompt_seconds": 68.50256300000001,
+      "mean_decode_tok_per_sec": 52.327596922234996,
+      "throughput_gain_percent": 0.0
+    },
+    "selector": {
+      "repeats": 2,
+      "prompt_tok_per_sec": [
+        1012.9411360115674,
+        1014.0127821373825
+      ],
+      "mean_prompt_tok_per_sec": 1013.476959074475,
+      "mean_prompt_seconds": 64.664537,
+      "mean_decode_tok_per_sec": 52.31420515580882,
+      "throughput_gain_percent": 5.934751126896853
+    },
+    "convolution": {
+      "repeats": 2,
+      "prompt_tok_per_sec": [
+        986.2774013245909,
+        988.3723131059608
+      ],
+      "mean_prompt_tok_per_sec": 987.3248572152759,
+      "mean_prompt_seconds": 66.37741700000001,
+      "mean_decode_tok_per_sec": 52.31527314961612,
+      "throughput_gain_percent": 3.2011750183393417
+    },
+    "combined": {
+      "repeats": 2,
+      "prompt_tok_per_sec": [
+        1045.403293001231,
+        1048.6838046951227
+      ],
+      "mean_prompt_tok_per_sec": 1047.043548848177,
+      "mean_prompt_seconds": 62.5916285,
+      "mean_decode_tok_per_sec": 52.447409606119976,
+      "throughput_gain_percent": 9.443334427204974
+    }
+  },
+  "output_hashes": [
+    "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300"
+  ],
+  "all_draft_counts": [
+    [
+      63,
+      58
+    ]
+  ],
+  "model_changed": false,
+  "KV_precision_changed": false,
+  "seconds_saved": 5.91093450000001,
+  "selected_policy": "GGML_VK_MMID_COMPACT=1; GGML_VK_MMID_SELECTOR=1 (expert rows<=32 narrow64x32/128threads; otherwise old64x64); GGML_VK_SSM_CONV_FUSED=1",
+  "rejected_or_unselected": {
+    "routing_reuse": "<0.4% total ceiling",
+    "arithmetic_decoding": "exhaustively correct but slower",
+    "K64_K128": "operator checks passed, slower, no model-level validation",
+    "global_narrow_tile": "faster small rows, slower48/64/128",
+    "tail_selector": "1018.04tok/s in one run, only0.4% over primary; inconclusive and unselected",
+    "compact_only": "954.66tok/s; effectively flat against954.49\u2013958.91baseline"
+  },
+  "deployment": {
+    "status": "promoted to existing endpoint",
+    "profile": "prefill-stage2",
+    "live_readiness": "live-readiness.json",
+    "ordinary_OpenClaw_quality": "pending user acceptance",
+    "performance_testing": "complete; no additional timing sweep planned"
+  }
+}

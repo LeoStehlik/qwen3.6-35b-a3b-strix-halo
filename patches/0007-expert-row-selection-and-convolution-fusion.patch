@@ -1,0 +1,962 @@
+diff --git a/ggml/src/ggml-vulkan/ggml-vulkan.cpp b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+index e2d07b8..5abddc6 100644
+--- a/ggml/src/ggml-vulkan/ggml-vulkan.cpp
++++ b/ggml/src/ggml-vulkan/ggml-vulkan.cpp
+@@ -791,6 +791,7 @@ struct vk_device_struct {
+ 
+     vk_pipeline pipeline_concat_i8, pipeline_concat_i16, pipeline_concat_i32, pipeline_concat_i64;
+     vk_pipeline pipeline_concat_transpose_i32;
++    vk_pipeline pipeline_ssm_conv_concat_silu;
+     vk_pipeline pipeline_upscale_nearest_f32, pipeline_upscale_bilinear_f32, pipeline_upscale_bicubic_f32, pipeline_upscale_bilinear_antialias_f32;
+     vk_pipeline pipeline_scale_f32;
+     vk_pipeline pipeline_log[2];
+@@ -1189,6 +1190,7 @@ struct vk_op_mmid_row_lists_push_constants {
+     uint32_t args_off; // uint32 offset of dispatch args; zero disables indirect dispatch
+     uint32_t gx;
+     uint32_t bn;
++    uint32_t compact, tile_capacity, small_bn, threshold;
+ };
+ 
+ struct vk_op_glu_push_constants {
+@@ -1816,6 +1818,7 @@ std::mutex vk_memory_logger::log_mutex;
+ static bool vk_perf_logger_enabled = false;
+ static bool vk_perf_logger_concurrent = false;
+ static bool vk_fa_profile_enabled = false;
++static bool vk_mmid_profile_enabled = false;
+ static bool vk_enable_sync_logger = false;
+ // number of calls between perf logger prints
+ static uint32_t vk_perf_logger_frequency = 1;
+@@ -2069,6 +2072,17 @@ struct ggml_backend_vk_context {
+     uint32_t fa_profile_capacity {};
+     uint64_t profile_graph_id {};
+     std::vector<fa_profile_entry> fa_profile_entries;
++    struct mmid_profile_entry {
++        std::string name, weight_type;
++        uint32_t m, k, tokens, experts, selected, bm, bn;
++        size_t counts_offset;
++        bool quantize_y, dequant_x, selector;
++    };
++    vk::QueryPool mmid_profile_pool;
++    uint32_t mmid_profile_capacity {};
++    std::vector<mmid_profile_entry> mmid_profile_entries;
++    vk_buffer mmid_counts_buffer;
++    size_t mmid_counts_used {};
+ };
+ 
+ static void * const vk_ptr_base = (void *)(uintptr_t) 0x1000;  // NOLINT
+@@ -4295,7 +4309,43 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+         CREATE_MM2(GGML_TYPE_IQ4_NL,  pipeline_dequant_mul_mat_mat_id[GGML_TYPE_IQ4_NL],  matmul_id_subgroup_iq4_nl_f32,  mmq_wg_denoms, warptile_mmq, vk_mat_mat_id_push_constants, mul_mat_id_param_count, _id);
+         CREATE_MM2(GGML_TYPE_MXFP4,   pipeline_dequant_mul_mat_mat_id[GGML_TYPE_MXFP4],   matmul_id_subgroup_mxfp4_f32,   mmq_wg_denoms, warptile_mmq, vk_mat_mat_id_push_constants, mul_mat_id_param_count, _id);
+         CREATE_MM2(GGML_TYPE_Q4_0_ROCMFP4, pipeline_dequant_mul_mat_mat_id[GGML_TYPE_Q4_0_ROCMFP4], matmul_id_subgroup_rocmfp4_f32, mmq_wg_denoms, warptile_mmq, vk_mat_mat_id_push_constants, mul_mat_id_param_count, _id);
+-        CREATE_MM2(GGML_TYPE_Q4_0_ROCMFP4_FAST, pipeline_dequant_mul_mat_mat_id[GGML_TYPE_Q4_0_ROCMFP4_FAST], matmul_id_subgroup_rocmfp4_fast_f32, mmq_wg_denoms, warptile_mmq, vk_mat_mat_id_push_constants, mul_mat_id_param_count, _id);
++        auto l_fast_tile=l_warptile_mmq, m_fast_tile=m_warptile_mmq, s_fast_tile=s_warptile_mmq;
++        auto l_fast_denoms=l_mmq_wg_denoms, m_fast_denoms=m_mmq_wg_denoms, s_fast_denoms=s_mmq_wg_denoms;
++        const char *fast_tile_env=getenv("GGML_VK_MMID_FAST_TILE");
++        const int fast_tile=fast_tile_env?atoi(fast_tile_env):0;
++        if (device->vendor_id==VK_VENDOR_ID_AMD && fast_tile>=1 && fast_tile<=3) {
++            // Retain the selected accumulator precision and reduction order. Adjust only M/N work partitioning.
++            const uint32_t bm=fast_tile==1?128:64, bn=32, threads=fast_tile==3?128:64;
++            m_fast_tile={threads,bm,bn,32,bm/(threads/subgroup_size_8),bn,2,
++                device->coopmat_m,device->coopmat_n,device->coopmat_k,subgroup_size_8};
++            m_fast_denoms={bm,bn,1};
++        }
++        const char * fast_bk_env=getenv("GGML_VK_MMID_FAST_BK");
++        const int fast_bk=fast_bk_env?atoi(fast_bk_env):32;
++        if (device->vendor_id==VK_VENDOR_ID_AMD && (fast_bk==64 || fast_bk==128)) m_fast_tile[3]=fast_bk;
++        const char * fast_dequant_env=getenv("GGML_VK_MMID_FAST_DEQUANT");
++        const uint32_t fast_dequant=fast_dequant_env?(uint32_t)atoi(fast_dequant_env)&3u:0u;
++        l_fast_tile.push_back(fast_dequant);
++        m_fast_tile.push_back(fast_dequant);
++        s_fast_tile.push_back(fast_dequant);
++        CREATE_MM2(GGML_TYPE_Q4_0_ROCMFP4_FAST, pipeline_dequant_mul_mat_mat_id[GGML_TYPE_Q4_0_ROCMFP4_FAST], matmul_id_subgroup_rocmfp4_fast_f32, fast_denoms, fast_tile, vk_mat_mat_id_push_constants, mul_mat_id_param_count, _id);
++        if (device->vendor_id==VK_VENDOR_ID_AMD && !device->mul_mat_id_l[GGML_TYPE_Q4_0_ROCMFP4_FAST]) {
++            const std::vector<uint32_t> small_spec={128,64,32,32,64/(128/subgroup_size_8),32,2,
++                device->coopmat_m,device->coopmat_n,device->coopmat_k,subgroup_size_8,0};
++#define CREATE_FAST_SMALL(ACC, SUFFIX) \
++            ggml_vk_create_pipeline(device,device->pipeline_dequant_mul_mat_mat_id[GGML_TYPE_Q4_0_ROCMFP4_FAST].ACC->l, \
++                "mmid_fast_small" #SUFFIX,matmul_id_subgroup_rocmfp4_fast_f32 ## SUFFIX ## _cm1_len, \
++                matmul_id_subgroup_rocmfp4_fast_f32 ## SUFFIX ## _cm1_data,"main",5,sizeof(vk_mat_mat_id_push_constants), \
++                {64,32,1},small_spec,1,false,true); \
++            ggml_vk_create_pipeline(device,device->pipeline_dequant_mul_mat_mat_id[GGML_TYPE_Q4_0_ROCMFP4_FAST].ACC->a_l, \
++                "mmid_fast_small_aligned" #SUFFIX,matmul_id_subgroup_rocmfp4_fast_f32_aligned ## SUFFIX ## _cm1_len, \
++                matmul_id_subgroup_rocmfp4_fast_f32_aligned ## SUFFIX ## _cm1_data,"main",5,sizeof(vk_mat_mat_id_push_constants), \
++                {64,32,1},small_spec,64,false,true);
++            if (device->coopmat_acc_f16_support) { CREATE_FAST_SMALL(f16acc,_f16acc) }
++            if (device->coopmat_acc_f32_support) { CREATE_FAST_SMALL(f32acc,) }
++#undef CREATE_FAST_SMALL
++        }
++
+         CREATE_MM2(GGML_TYPE_NVFP4,   pipeline_dequant_mul_mat_mat_id[GGML_TYPE_NVFP4],   matmul_id_subgroup_nvfp4_f32,   mmq_wg_denoms, warptile_mmq, vk_mat_mat_id_push_constants, mul_mat_id_param_count, _id);
+ #undef CREATE_MM2
+ #undef CREATE_MM
+@@ -5083,6 +5133,7 @@ static void ggml_vk_load_shaders(vk_device& device, vk_pipeline requested) {
+     ggml_vk_create_pipeline(device, device->pipeline_concat_i8, "concat_i8", concat_i8_len, concat_i8_data, "main", 3, sizeof(vk_op_binary_push_constants), {512, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_concat_i16, "concat_i16", concat_i16_len, concat_i16_data, "main", 3, sizeof(vk_op_binary_push_constants), {512, 1, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_concat_i32, "concat_i32", concat_i32_len, concat_i32_data, "main", 3, sizeof(vk_op_binary_push_constants), {512, 1, 1}, {}, 1);
++    ggml_vk_create_pipeline(device, device->pipeline_ssm_conv_concat_silu, "ssm_conv_concat_silu", ssm_conv_concat_silu_len, ssm_conv_concat_silu_data, "main", 4, 12*sizeof(uint32_t), {32, 32, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_concat_transpose_i32, "concat_transpose_i32", concat_transpose_i32_len, concat_transpose_i32_data, "main", 3, sizeof(vk_op_binary_push_constants), {32, 32, 1}, {}, 1);
+     ggml_vk_create_pipeline(device, device->pipeline_concat_i64, "concat_i64", concat_i64_len, concat_i64_data, "main", 3, sizeof(vk_op_binary_push_constants), {512, 1, 1}, {}, 1);
+ 
+@@ -6639,6 +6690,7 @@ static void ggml_vk_instance_init() {
+     vk_perf_logger_enabled = getenv("GGML_VK_PERF_LOGGER") != nullptr;
+     vk_perf_logger_concurrent = getenv("GGML_VK_PERF_LOGGER_CONCURRENT") != nullptr;
+     vk_fa_profile_enabled = getenv("GGML_VK_FA_PROFILE") != nullptr;
++    vk_mmid_profile_enabled = vk_fa_profile_enabled && getenv("GGML_VK_MMID_PROFILE") != nullptr;
+     if (vk_fa_profile_enabled) {
+         vk_perf_logger_enabled = true;
+         GGML_ASSERT(!vk_perf_logger_concurrent);
+@@ -8145,7 +8197,7 @@ static void ggml_vk_matmul_id(
+         "batch_stride_a: " << batch_stride_a << ", batch_stride_b: " << batch_stride_b << ", batch_stride_d: " << batch_stride_d << ", " <<
+         "n_as: " << n_as << ", nei0: " << nei0 << ", nei1: " << nei1 << ", nbi1: " << nbi1 << ", ne11: " << ne11 << ")");
+     const vk_mat_mat_id_push_constants pc = { m, n, k, stride_a, stride_b, stride_d, batch_stride_a, batch_stride_b, batch_stride_d,
+-                                              nei0, nei1, nbi1, ne11, padded_n, use_row_lists };
++                                              nei0, nei1, nbi1, ne11, use_row_lists>=2u?n_as:padded_n, use_row_lists };
+     if (indirect_args) {
+         ggml_vk_dispatch_pipeline_indirect(ctx, subctx, pipeline, { a, b, d, ids, expert_count_buf }, pc, *indirect_args);
+     } else {
+@@ -9437,11 +9489,23 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context&
+ 
+     // Backport of Strix 79097254: cover the busiest expert, preserving every live tile.
+     static const bool mmid_indirect = [] { const char * e = getenv("GGML_VK_MMID_INDIRECT"); return e && atoi(e) != 0; }();
+-    const bool use_indirect = mmid_indirect && use_row_lists;
++    static const bool compact_requested=[] { const char *e=getenv("GGML_VK_MMID_COMPACT");return e && atoi(e)!=0; }();
++    static const int selector_requested=[] { const char *e=getenv("GGML_VK_MMID_SELECTOR");return e?atoi(e):0; }();
++    const uint32_t tile_capacity=(uint32_t)(n_as+CEIL_DIV(nei0*nei1,32));
++    const bool use_compact=compact_requested && use_row_lists && !qx_needs_dequant && !quantize_y &&
++        ctx->device->vendor_id==VK_VENDOR_ID_AMD && ctx->device->coopmat_support && !ctx->device->coopmat2 &&
++        src0->type==GGML_TYPE_Q4_0_ROCMFP4_FAST && nei1>32 && nei1<=65535 && nei0<=65535 && n_as<=65535 &&
++        tile_capacity<=ctx->device->properties.limits.maxComputeWorkGroupCount[1] &&
++        (pipeline->wg_denoms[1]==32 || pipeline->wg_denoms[1]==64);
++    const bool use_selector=use_compact && selector_requested && pipeline->wg_denoms[0]==64 && pipeline->wg_denoms[1]==64;
++    vk_pipeline small_pipeline=use_selector?(aligned?mmp->a_l:mmp->l):nullptr;
++    const bool use_indirect = (mmid_indirect || use_compact) && use_row_lists;
+     const uint32_t args_off = (uint32_t)(3 * n_as + 1 + nei0 * nei1);
++    const uint32_t map_offset=args_off+8;
++    const uint32_t small_map_offset=map_offset+tile_capacity;
+     uint32_t expert_count_size = sizeof(uint32_t) * n_as;
+     if (use_row_lists) {
+-        expert_count_size = sizeof(uint32_t) * (args_off + 4);
++        expert_count_size = sizeof(uint32_t) * (use_compact?args_off+8+2*tile_capacity:args_off+4);
+     }
+ 
+     {
+@@ -9465,6 +9529,7 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context&
+ 
+         // Request descriptor sets
+         ggml_pipeline_request_descriptor_sets(ctx, pipeline, 1);
++        if (use_selector) ggml_pipeline_request_descriptor_sets(ctx,small_pipeline,1);
+         if (qx_needs_dequant) {
+             ggml_pipeline_request_descriptor_sets(ctx, to_fp16_vk_0, 1);
+         }
+@@ -9527,6 +9592,21 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context&
+             ggml_vk_sync_buffers(ctx, subctx);
+         }
+     }
++    const uint32_t mmid_query_base = (uint32_t) ctx->mmid_profile_entries.size() * 6;
++    auto mmid_stamp = [&](uint32_t stage) {
++        if (vk_mmid_profile_enabled) {
++            GGML_ASSERT(mmid_query_base + stage < ctx->mmid_profile_capacity);
++            subctx->s->buffer->buf.writeTimestamp(vk::PipelineStageFlagBits::eAllCommands,
++                                                  ctx->mmid_profile_pool, mmid_query_base + stage);
++        }
++    };
++    if (vk_mmid_profile_enabled) {
++        ctx->mmid_profile_entries.push_back({dst->name, ggml_type_name(src0->type),
++            (uint32_t)ne01, (uint32_t)ne10, (uint32_t)nei1, (uint32_t)n_as, (uint32_t)nei0,
++            pipeline->wg_denoms[0], pipeline->wg_denoms[1], ctx->mmid_counts_used, quantize_y, qx_needs_dequant, use_selector});
++        ctx->mmid_counts_used += n_as * sizeof(uint32_t);
++    }
++    mmid_stamp(0);
+     // Count how many times each expert is used
+     vk_subbuffer expert_count_buf = ggml_vk_subbuffer(ctx, ctx->prealloc_split_k, 0);
+     if (ctx->prealloc_split_k_need_sync) {
+@@ -9542,6 +9622,7 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context&
+             { vk_subbuffer{ d_ids, ids_buf_offset, ids_sz }, expert_count_buf }, pc, { (uint32_t)n_as, 1, 1});
+     }
+ 
++    mmid_stamp(1);
+     if (x_non_contig) {
+         ggml_vk_cpy_to_contiguous(ctx, subctx, to_fp16_vk_0, src0, ggml_vk_subbuffer(ctx, d_Qx, qx_buf_offset), ggml_vk_subbuffer(ctx, d_X, 0));
+     } else if (qx_needs_dequant) {
+@@ -9589,6 +9670,7 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context&
+     }
+     ggml_vk_sync_buffers(ctx, subctx);
+ 
++    mmid_stamp(2);
+     if (use_row_lists) {
+         // Prefix-sum the expert counts and scatter (ii0, ii1) into per-expert row lists
+         const std::vector<uint32_t> pc = { (uint32_t)nei0,
+@@ -9599,7 +9681,8 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context&
+                                            (uint32_t)n_as,
+                                            use_indirect ? args_off : 0u,
+                                            CEIL_DIV((uint32_t)ne01, pipeline->wg_denoms[0]),
+-                                           pipeline->wg_denoms[1] };
++                                           pipeline->wg_denoms[1],
++                                           use_compact?(use_selector?(selector_requested==2?3u:2u):1u):0u,tile_capacity,32u,32u };
+         ggml_vk_dispatch_pipeline(ctx, subctx, ctx->device->pipeline_mmid_row_lists,
+             { vk_subbuffer{ d_ids, ids_buf_offset, ids_sz }, expert_count_buf }, pc, { 1, 1, 1});
+         if (use_indirect) {
+@@ -9613,6 +9696,7 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context&
+             fprintf(stderr, "ggml_vulkan: MUL_MAT_ID indirect dispatch engaged (GGML_VK_MMID_INDIRECT)\n");
+         }
+     }
++    mmid_stamp(3);
+     const vk_subbuffer indirect_args = { expert_count_buf.buffer, expert_count_buf.offset + sizeof(uint32_t) * args_off, sizeof(uint32_t) * 3 };
+ 
+     uint32_t stride_batch_x = ne00*ne01;
+@@ -9635,8 +9719,28 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context&
+         ne01, ne21, ne10, ne10, stride_b_y, ne01,
+         stride_batch_x, stride_batch_y, ne20*ne21,
+         n_as, nei0, nei1, nbi1 / ggml_type_size(ids->type), ne11, padded_n,
+-        use_row_lists ? 1u : 0u, use_indirect ? &indirect_args : nullptr
++        use_compact?map_offset+2u:(use_row_lists?1u:0u), use_indirect ? &indirect_args : nullptr
+     );  // NOLINT
++    mmid_stamp(4);
++    if (use_selector) {
++        // Disjoint experts write disjoint result rows; no dependency between the two kernels.
++        const vk_subbuffer small_args={expert_count_buf.buffer,expert_count_buf.offset+sizeof(uint32_t)*(args_off+3),sizeof(uint32_t)*3};
++        ggml_vk_matmul_id(ctx,subctx,small_pipeline,
++            {d_X,x_buf_offset,x_sz},{d_Y,y_buf_offset,y_sz},{d_D,d_buf_offset,d_sz},{d_ids,ids_buf_offset,ids_sz},expert_count_buf,
++            ne01,ne21,ne10,ne10,stride_b_y,ne01,stride_batch_x,stride_batch_y,ne20*ne21,
++            n_as,nei0,nei1,nbi1/ggml_type_size(ids->type),ne11,padded_n,small_map_offset+2u,&small_args);
++    }
++    mmid_stamp(5);
++    if (vk_mmid_profile_enabled) {
++        // Diagnostic readback only; no count buffer or copy exists when profiling is off.
++        const auto & entry=ctx->mmid_profile_entries.back();
++        GGML_ASSERT(ctx->mmid_counts_used <= ctx->mmid_counts_buffer->size);
++        ggml_vk_sync_buffers(ctx, subctx);
++        subctx->s->buffer->buf.copyBuffer(expert_count_buf.buffer->buffer,ctx->mmid_counts_buffer->buffer,
++            vk::BufferCopy(expert_count_buf.offset,entry.counts_offset,entry.experts*sizeof(uint32_t)));
++        subctx->s->buffer->buf.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,vk::PipelineStageFlagBits::eHost,{},
++            {vk::MemoryBarrier(vk::AccessFlagBits::eTransferWrite,vk::AccessFlagBits::eHostRead)},{},{});
++    }
+ 
+     if (x_non_contig || qx_needs_dequant) {
+         ctx->prealloc_x_need_sync = true;
+@@ -12047,6 +12151,63 @@ static void ggml_vk_opt_step_sgd(ggml_backend_vk_context * ctx, vk_context& subc
+     ggml_vk_op_f32<vk_op_push_constants>(ctx, subctx, src0, src1, src2, nullptr, dst, GGML_OP_OPT_STEP_SGD, { (uint32_t)n, 0, 0.0f, 0.0f, 0.0f, 0.0f });
+ }
+ 
++static bool ggml_vk_tensors_overlap(const ggml_tensor * a, const ggml_tensor * b, bool elementwise);
++
++// Opt-in four-tap recurrent convolution fusion, preserving the original fallback.
++static bool ggml_vk_can_fuse_conv_concat_silu(ggml_backend_vk_context * ctx, const ggml_cgraph * graph, int i) {
++    static const bool enabled = [] { const char *e=getenv("GGML_VK_SSM_CONV_FUSED"); return e && atoi(e)!=0; }();
++    if (!enabled || i+2>=graph->n_nodes ||
++        !ggml_can_fuse_subgraph(graph, i, {GGML_OP_CONCAT, GGML_OP_SSM_CONV, GGML_OP_UNARY}, {i+2})) return false;
++    const auto * concat=graph->nodes[i];
++    const auto * conv=graph->nodes[i+1];
++    const auto * dst=graph->nodes[i+2];
++    if (conv->src[0]!=concat || dst->src[0]!=conv || ggml_get_unary_op(dst)!=GGML_UNARY_OP_SILU) return false;
++    const auto * a=concat->src[0]; const auto * b=concat->src[1]; const auto * w=conv->src[1];
++    if (ggml_get_op_params_i32(concat,0)!=0 || a->type!=GGML_TYPE_F32 || b->type!=GGML_TYPE_F32 ||
++        w->type!=GGML_TYPE_F32 || dst->type!=GGML_TYPE_F32 || a->ne[0]!=3 || w->ne[0]!=4 ||
++        b->ne[0]<32 || b->ne[1]<32 || a->ne[3]!=1 || b->ne[3]!=1 ||
++        a->nb[0]!=4 || b->nb[1]!=4 || w->nb[0]!=4 || !ggml_is_contiguous(dst) ||
++        dst->ne[0]!=b->ne[1] || dst->ne[1]!=b->ne[0] || dst->ne[2]!=b->ne[2] ||
++        dst->ne[3]!=1 || dst->ne[0]>32*65535 || dst->ne[1]>32*65535 || dst->ne[2]>65535) return false;
++    for (const auto * t : {a,b,w,dst}) {
++        if (ggml_nbytes(t)>ctx->device->properties.limits.maxStorageBufferRange) return false;
++        for (int d=0; d<4; ++d) if (t->nb[d]%4 || t->nb[d]/4>UINT32_MAX) return false;
++    }
++    return true;
++}
++
++static void ggml_vk_conv_concat_silu(ggml_backend_vk_context * ctx, vk_context & subctx,
++                                    const ggml_cgraph * graph, int i) {
++    const auto * a=graph->nodes[i]->src[0]; const auto * b=graph->nodes[i]->src[1];
++    const auto * w=graph->nodes[i+1]->src[1]; const auto * dst=graph->nodes[i+2];
++    // The allocator may recycle an input for the final output. In that case use the
++    // already allocated, elided concat as scratch, then copy after the full dispatch.
++    const bool alias=ggml_vk_tensors_overlap(a,dst,false) || ggml_vk_tensors_overlap(b,dst,false) ||
++                     ggml_vk_tensors_overlap(w,dst,false);
++    const auto * output=alias?graph->nodes[i]:dst;
++    const std::vector<uint32_t> pc = {
++        (uint32_t)dst->ne[0], (uint32_t)dst->ne[1], (uint32_t)dst->ne[2],
++        (uint32_t)(a->nb[1]/4), (uint32_t)(a->nb[2]/4),
++        (uint32_t)(b->nb[0]/4), (uint32_t)(b->nb[2]/4), (uint32_t)(w->nb[1]/4),
++        get_misalign_bytes(ctx,a)/4, get_misalign_bytes(ctx,b)/4,
++        get_misalign_bytes(ctx,w)/4, get_misalign_bytes(ctx,output)/4};
++    auto pipeline=ctx->device->pipeline_ssm_conv_concat_silu;
++    ggml_pipeline_request_descriptor_sets(ctx,pipeline,1);
++    ggml_vk_dispatch_pipeline(ctx,subctx,pipeline,
++        {ggml_vk_tensor_subbuffer(ctx,a,true),ggml_vk_tensor_subbuffer(ctx,b,true),
++         ggml_vk_tensor_subbuffer(ctx,w,true),ggml_vk_tensor_subbuffer(ctx,output,true)},
++        pc,{(uint32_t)dst->ne[0],(uint32_t)dst->ne[1],(uint32_t)dst->ne[2]});
++    if (alias) {
++        ggml_vk_sync_buffers(ctx,subctx);
++        const auto srcbuf=ggml_vk_tensor_subbuffer(ctx,output,true);
++        const auto dstbuf=ggml_vk_tensor_subbuffer(ctx,dst,true);
++        subctx->s->buffer->buf.copyBuffer(srcbuf.buffer->buffer,dstbuf.buffer->buffer,
++            vk::BufferCopy(srcbuf.offset+get_misalign_bytes(ctx,output),
++                           dstbuf.offset+get_misalign_bytes(ctx,dst),ggml_nbytes(dst)));
++        ggml_vk_sync_buffers(ctx,subctx);
++    }
++}
++
+ static void ggml_vk_concat(ggml_backend_vk_context * ctx, vk_context& subctx, const ggml_tensor * src0, const ggml_tensor * src1, ggml_tensor * dst) {
+     int * op_params = (int *)dst->op_params;
+ 
+@@ -14401,7 +14562,8 @@ static bool ggml_vk_build_graph(ggml_backend_vk_context * ctx, ggml_cgraph * cgr
+ 
+         break;
+     case GGML_OP_CONCAT:
+-        ggml_vk_concat(ctx, compute_ctx, src0, src1, node);
++        if (ctx->num_additional_fused_ops==2) ggml_vk_conv_concat_silu(ctx,compute_ctx,cgraph,node_idx);
++        else ggml_vk_concat(ctx, compute_ctx, src0, src1, node);
+ 
+         break;
+     case GGML_OP_UPSCALE:
+@@ -14857,6 +15019,11 @@ static void ggml_vk_cleanup(ggml_backend_vk_context * ctx) {
+     if (vk_perf_logger_enabled) {
+         ctx->perf_logger->print_timings(true);
+     }
++    ggml_vk_destroy_buffer(ctx->mmid_counts_buffer);
++    if (ctx->mmid_profile_pool) {
++        ctx->device->device.destroyQueryPool(ctx->mmid_profile_pool);
++        ctx->mmid_profile_pool = nullptr;
++    }
+     if (ctx->fa_profile_pool) {
+         ctx->device->device.destroyQueryPool(ctx->fa_profile_pool);
+         ctx->fa_profile_pool = nullptr;
+@@ -15886,6 +16053,28 @@ static ggml_status ggml_backend_vk_graph_compute(ggml_backend_t backend, ggml_cg
+             ctx->device->device.resetQueryPool(ctx->fa_profile_pool, 0, required);
+             ctx->fa_profile_entries.clear();
+         }
++        if (vk_mmid_profile_enabled) {
++            const uint32_t required = 6 * (uint32_t)cgraph->n_nodes;
++            if (ctx->mmid_profile_capacity < required) {
++                if (ctx->mmid_profile_pool) ctx->device->device.destroyQueryPool(ctx->mmid_profile_pool);
++                ctx->mmid_profile_pool = ctx->device->device.createQueryPool(
++                    vk::QueryPoolCreateInfo({}, vk::QueryType::eTimestamp, required));
++                ctx->mmid_profile_capacity = required;
++            }
++            ctx->device->device.resetQueryPool(ctx->mmid_profile_pool, 0, required);
++            ctx->mmid_profile_entries.clear();
++            ctx->mmid_counts_used=0;
++            size_t count_bytes=4;
++            for (int i=0;i<cgraph->n_nodes;++i) {
++                const auto * node=cgraph->nodes[i];
++                if (node->op==GGML_OP_MUL_MAT_ID) count_bytes+=node->src[0]->ne[2]*sizeof(uint32_t);
++            }
++            if (!ctx->mmid_counts_buffer || ctx->mmid_counts_buffer->size<count_bytes) {
++                ggml_vk_destroy_buffer(ctx->mmid_counts_buffer);
++                ctx->mmid_counts_buffer=ggml_vk_create_buffer(ctx->device,count_bytes,
++                    {vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent});
++            }
++        }
+         // allocate/resize the query pool
+         if (ctx->num_queries < cgraph->n_nodes + 1) {
+             if (ctx->query_pool) {
+@@ -15959,7 +16148,11 @@ static ggml_status ggml_backend_vk_graph_compute(ggml_backend_t backend, ggml_cg
+         const char *fusion_string {};
+         if (!ctx->device->disable_fusion) {
+             uint32_t num_adds = ggml_vk_fuse_multi_add(ctx, cgraph, i);
+-            if (num_adds) {
++            if (ggml_vk_can_fuse_conv_concat_silu(ctx,cgraph,i)) {
++                ctx->num_additional_fused_ops=2;
++                fusion_string="CONCAT_SSM_CONV_SILU";
++                std::fill_n(op_srcs_fused_elementwise,3,false);
++            } else if (num_adds) {
+                 ctx->num_additional_fused_ops = num_adds - 1;
+                 fusion_string = "MULTI_ADD";
+                 std::fill_n(op_srcs_fused_elementwise, ctx->num_additional_fused_ops + 1, true);
+@@ -16126,7 +16319,18 @@ static ggml_status ggml_backend_vk_graph_compute(ggml_backend_t backend, ggml_cg
+                     }
+                 }
+             }
++            if (need_disable && ggml_vk_can_fuse_conv_concat_silu(ctx,cgraph,i)) {
++                const auto * cat=cgraph->nodes[i];
++                const auto * w=cgraph->nodes[i+1]->src[1];
++                // The fused dispatch writes the concat allocation before copying to
++                // the aliased final output. It must not overlap any live input.
++                need_disable=ggml_vk_tensors_overlap(cat,cat->src[0],false) ||
++                             ggml_vk_tensors_overlap(cat,cat->src[1],false) ||
++                             ggml_vk_tensors_overlap(cat,w,false) ||
++                             ggml_vk_tensors_overlap(cat,cgraph->nodes[i+2],false);
++            }
+             if (need_disable) {
++                fusion_string=nullptr;
+                 ctx->num_additional_fused_ops = 0;
+                 ctx->fused_ops_write_mask = 1;
+                 ctx->fused_topk_moe_mode = TOPK_MOE_COUNT;
+@@ -16252,6 +16456,30 @@ static ggml_status ggml_backend_vk_graph_compute(ggml_backend_t backend, ggml_cg
+                     e.q_heads, e.kv_heads, e.hsk, e.hsv);
+             }
+         }
++        if (vk_mmid_profile_enabled && !ctx->mmid_profile_entries.empty()) {
++            const uint32_t count = (uint32_t)ctx->mmid_profile_entries.size() * 6;
++            std::vector<uint64_t> times(count);
++            VK_CHECK(ctx->device->device.getQueryPoolResults(ctx->mmid_profile_pool, 0, count,
++                count*sizeof(uint64_t), times.data(), sizeof(uint64_t),
++                vk::QueryResultFlagBits::e64 | vk::QueryResultFlagBits::eWait), "MMID profile timestamps");
++            for (size_t j=0; j<ctx->mmid_profile_entries.size(); ++j) {
++                const auto & e=ctx->mmid_profile_entries[j];
++                auto elapsed = [&](size_t i) -> unsigned long long {
++                    return (unsigned long long)((times[j*6+i+1]-times[j*6+i]) * ctx->device->properties.limits.timestampPeriod);
++                };
++                fprintf(stderr, "VKP_MMID\t%p\t%llu\t%s\t%s\t%u\t%u\t%u\t%u\t%u\t%u\t%u\t%d\t%d\t%llu\t%llu\t%llu\t%llu\n",
++                    (void*)ctx, (unsigned long long)ctx->profile_graph_id, e.name.c_str(), e.weight_type.c_str(),
++                    e.m,e.k,e.tokens,e.experts,e.selected,e.bm,e.bn,e.quantize_y,e.dequant_x,
++                    elapsed(0),elapsed(1),elapsed(2),elapsed(3)+elapsed(4));
++                if (e.selector) fprintf(stderr,"VKP_MMID_BUCKET\t%p\t%llu\t%s\t%llu\t%llu\n",(void*)ctx,
++                    (unsigned long long)ctx->profile_graph_id,e.name.c_str(),elapsed(3),elapsed(4));
++                const auto * rows=(const uint32_t*)((const uint8_t*)ctx->mmid_counts_buffer->ptr+e.counts_offset);
++                fprintf(stderr,"VKP_MMID_ROWS\t%p\t%llu\t%s",(void*)ctx,
++                    (unsigned long long)ctx->profile_graph_id,e.name.c_str());
++                for (uint32_t expert=0;expert<e.experts;++expert) fprintf(stderr,"\t%u",rows[expert]);
++                fprintf(stderr,"\n");
++            }
++        }
+         ctx->perf_logger->print_timings();
+     }
+ 
+@@ -16330,6 +16558,8 @@ static void ggml_vk_graph_optimize(ggml_backend_t backend, struct ggml_cgraph *
+             return false;
+         };
+ 
++        if (ggml_vk_can_fuse_conv_concat_silu(ctx,graph,first_unused) &&
++            keep_pattern({GGML_OP_CONCAT,GGML_OP_SSM_CONV,GGML_OP_UNARY})) continue;
+         if (keep_pattern(topk_moe_early_softmax_norm)) {
+             continue;
+         }
+@@ -16361,7 +16591,8 @@ static void ggml_vk_graph_optimize(ggml_backend_t backend, struct ggml_cgraph *
+                 continue;
+             }
+             // Don't pull forward nodes from fusion patterns
+-            if (match_pattern(topk_moe_early_softmax_norm, j) ||
++            if (ggml_vk_can_fuse_conv_concat_silu(ctx,graph,j) ||
++                match_pattern(topk_moe_early_softmax_norm, j) ||
+                 match_pattern(topk_moe_sigmoid_norm_bias, j) ||
+                 match_pattern(topk_moe_early_softmax, j) ||
+                 match_pattern(topk_moe_late_softmax, j)) {
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp b/ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp
+index 210cda7..5670622 100644
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp
+@@ -26,6 +26,10 @@ layout (push_constant) uniform parameter
+     uint args_off;
+     uint gx;
+     uint bn;
++    uint compact;
++    uint tile_capacity;
++    uint small_bn;
++    uint threshold;
+ } p;
+ 
+ #define BLOCK_SIZE 256
+@@ -38,6 +42,8 @@ layout (binding = 1) buffer RL {uint data_rl[];};
+ shared uint sh[BLOCK_SIZE];
+ shared uint sh_carry;
+ shared uint sh_max;
++shared uint tile_large;
++shared uint tile_small;
+ 
+ void main() {
+     const uint tid = gl_LocalInvocationID.x;
+@@ -49,6 +55,8 @@ void main() {
+     if (tid == 0) {
+         sh_carry = 0;
+         sh_max = 0;
++        tile_large=0;
++        tile_small=0;
+     }
+     barrier();
+     uint my_max = 0;
+@@ -102,4 +110,42 @@ void main() {
+             data_rl[ent_base + slot] = (ii1 << 16) | ii0;
+         }
+     }
++    if (p.compact!=0) {
++        barrier();
++        // Compact the exact live (expert, N-tile) pairs. Unlike a max-row grid,
++        // no workgroups are launched for empty expert/tile combinations.
++        for (uint expert=tid;expert<p.n_as;expert+=BLOCK_SIZE) {
++            const uint rows=data_rl[expert];
++            if (p.compact==3) {
++                // Use the narrow kernel only for a <=32-row tail; retain full 64-row tiles.
++                const uint full=rows/p.bn,tail=rows%p.bn;
++                const bool narrow=tail>0 && tail<=p.threshold;
++                const uint large=full+uint(tail>p.threshold);
++                const uint start=atomicAdd(tile_large,large);
++                for (uint tile=0;tile<large;++tile) data_rl[p.args_off+8+start+tile]=(tile<<16)|expert;
++                if (narrow) {
++                    const uint slot=atomicAdd(tile_small,1);
++                    const uint tile=full*(p.bn/p.small_bn);
++                    data_rl[p.args_off+8+p.tile_capacity+slot]=(tile<<16)|expert;
++                }
++                continue;
++            }
++            const bool small=p.compact==2 && rows<=p.threshold;
++            const uint bn=small?p.small_bn:p.bn;
++            const uint nt=(rows+bn-1)/bn;
++            const uint start=small?atomicAdd(tile_small,nt):atomicAdd(tile_large,nt);
++            const uint base=p.args_off+8+(small?p.tile_capacity:0);
++            for (uint tile=0;tile<nt;++tile) data_rl[base+start+tile]=(tile<<16)|expert;
++        }
++        barrier();
++        if (tid==0) {
++            data_rl[p.args_off]=p.gx;
++            data_rl[p.args_off+1]=tile_large;
++            data_rl[p.args_off+2]=1;
++            data_rl[p.args_off+3]=p.gx;
++            data_rl[p.args_off+4]=tile_small;
++            data_rl[p.args_off+5]=1;
++        }
++    }
++
+ }
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp
+index 39625b5..33e0154 100644
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp
+@@ -138,13 +138,20 @@ shared ACC_TYPE coopmat_stage[TM * TN * NUM_WARPS];
+ #endif
+ 
+ #include "mul_mm_id_funcs.glsl"
++// Expert-only runtime experiments use specialization; default keeps the original shader.
++layout(constant_id = 11) const uint FAST_DEQUANT = 0;
+ #include "mul_mm_funcs.glsl"
+ 
+ void main() {
+-    const uint ic = gl_WorkGroupID.y;
++    uint ic = gl_WorkGroupID.y;
+ 
+ #ifdef MUL_MAT_ID
+-    const uint expert_idx = gl_WorkGroupID.z;
++    uint expert_idx = gl_WorkGroupID.z;
++    if (p.use_row_lists>=2u) {
++        const uint tile=uint(data_expert_count[p.use_row_lists-2u+gl_WorkGroupID.y]);
++        expert_idx=tile & 65535u;
++        ic=tile >> 16u;
++    }
+     if (ic * BN >= data_expert_count[expert_idx]) {
+         return;
+     }
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_funcs.glsl b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_funcs.glsl
+index f523b95..6db30e4 100644
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_funcs.glsl
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_funcs.glsl
+@@ -490,7 +490,13 @@ void load_a_to_shmem(const uint pos_a, const uint row, const uint col, const uin
+                                                   kvalues_iq4nl[vui >> 12]);
+ #elif defined(DATA_A_MXFP4) || defined(DATA_A_ROCMFP4) || defined(DATA_A_ROCMFP4_FAST)
+             const uint idx = pos_a + col * p.stride_a / LOAD_VEC_A + row;
++#if defined(DATA_A_ROCMFP4_FAST)
++            // Each 32-value block stores 16 low nibbles followed by 16 high nibbles.
++            // Preserve that layout when a K tile contains more than one block.
++            const uint buf_idx = col * SHMEM_STRIDE + (row / 8u)*16u + (row & 7u);
++#else
+             const uint buf_idx = col * SHMEM_STRIDE + row * LOAD_VEC_A / 4;
++#endif
+ 
+             const uint ib = idx / 8;
+             const uint iqs = (idx & 0x07) * 2;
+@@ -506,11 +512,21 @@ void load_a_to_shmem(const uint pos_a, const uint row, const uint col, const uin
+             buf_a[buf_idx + 8] = FLOAT_TYPEV2(float(kvalues_rocmfp4[vui  >>  4]) * d1,
+                                               float(kvalues_rocmfp4[vui2 >>  4]) * d1);
+ #elif defined(DATA_A_ROCMFP4_FAST)
+-            const float d = ue4m3_to_fp32(data_a[ib].e);
+-            buf_a[buf_idx    ] = FLOAT_TYPEV2(float(kvalues_rocmfp4[vui  & 0xF]) * d,
+-                                              float(kvalues_rocmfp4[vui2 & 0xF]) * d);
+-            buf_a[buf_idx + 8] = FLOAT_TYPEV2(float(kvalues_rocmfp4[vui  >>  4]) * d,
+-                                              float(kvalues_rocmfp4[vui2 >>  4]) * d);
++            const float d = (FAST_DEQUANT & 1u)!=0 ?
++                rocmfp4_ue4m3_to_fp32_build(min(uint(data_a[ib].e),127u)) : ue4m3_to_fp32(data_a[ib].e);
++            if ((FAST_DEQUANT & 2u)!=0) {
++                const uvec4 q=uvec4(vui & 15u,vui2 & 15u,vui >> 4u,vui2 >> 4u);
++                const ivec4 magnitude=ivec4(q & 7u);
++                const ivec4 v=mix(magnitude,2*magnitude-4,greaterThan(magnitude,ivec4(4)));
++                const vec4 decoded=vec4(mix(v,-v,notEqual(q & 8u,uvec4(0))))*d;
++                buf_a[buf_idx]=FLOAT_TYPEV2(decoded.xy);
++                buf_a[buf_idx+8]=FLOAT_TYPEV2(decoded.zw);
++            } else {
++                buf_a[buf_idx    ] = FLOAT_TYPEV2(float(kvalues_rocmfp4[vui  & 0xF]) * d,
++                                                  float(kvalues_rocmfp4[vui2 & 0xF]) * d);
++                buf_a[buf_idx + 8] = FLOAT_TYPEV2(float(kvalues_rocmfp4[vui  >>  4]) * d,
++                                                  float(kvalues_rocmfp4[vui2 >>  4]) * d);
++            }
+ #else
+             const float d = e8m0_to_fp32(data_a[ib].e) * 0.5;
+             buf_a[buf_idx    ] = FLOAT_TYPEV2(kvalues_mxfp4[vui  & 0xF] * d,
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl
+index 9e219c7..f53ac80 100644
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl
+@@ -5,9 +5,10 @@ uint _ne1;
+ // Read this workgroup's row ids from the lists built by the mmid_row_lists
+ // prepass, stored after the expert counts in the same buffer:
+ // [counts n_as][offsets n_as+1][cursors n_as][entries packed (ii1 << 16) | ii0].
+-// The dispatch uses one z-slice per expert, so n_as == gl_NumWorkGroups.z.
++// Ordinary dispatch uses one z-slice per expert. Compact coopmat1 dispatch
++// passes n_as through its otherwise unused padded_N push-constant field.
+ void load_row_ids_from_lists(uint expert_idx, uint ic) {
+-    const uint n_as = gl_NumWorkGroups.z;
++    const uint n_as = p.use_row_lists>=2u ? p.padded_N : gl_NumWorkGroups.z;
+     _ne1 = uint(data_expert_count[expert_idx]);
+     const uint expert_off = uint(data_expert_count[n_as + expert_idx]);
+     const uint ent_base = 3 * n_as + 1 + expert_off + ic * BN;
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/ssm_conv_concat_silu.comp b/ggml/src/ggml-vulkan/vulkan-shaders/ssm_conv_concat_silu.comp
+new file mode 100644
+index 0000000..9f788cc
+--- /dev/null
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/ssm_conv_concat_silu.comp
+@@ -0,0 +1,51 @@
++#version 450
++#extension GL_EXT_control_flow_attributes : require
++
++// Four-tap recurrent convolution directly from [history | transposed input].
++// A channel-coalesced tile includes the three history/halo positions and is
++// reused by 32 output tokens. No concatenation or raw-convolution output is stored.
++layout(local_size_x = 32, local_size_y = 8, local_size_z = 1) in;
++layout(binding = 0) readonly buffer A { float history[]; };
++layout(binding = 1) readonly buffer B { float input_data[]; };
++layout(binding = 2) readonly buffer W { float weights[]; };
++layout(binding = 3) writeonly buffer D { float output_data[]; };
++layout(push_constant) uniform Params {
++    uint channels, tokens, sequences;
++    uint history_channel_stride, history_sequence_stride;
++    uint input_token_stride, input_sequence_stride;
++    uint weight_channel_stride;
++    uint history_offset, input_offset, weight_offset, output_offset;
++} p;
++shared float tile[35][33];
++
++void main() {
++    const uint x = gl_LocalInvocationID.x;
++    const uint y = gl_LocalInvocationID.y;
++    const uint c = gl_WorkGroupID.x * 32 + x;
++    const uint t0 = gl_WorkGroupID.y * 32;
++    const uint s = gl_WorkGroupID.z;
++    for (uint row = y; row < 35; row += 8) {
++        const uint t = t0 + row;
++        float value = 0.0;
++        if (c < p.channels && t < p.tokens + 3) {
++            if (t < 3) {
++                value = history[p.history_offset + s*p.history_sequence_stride + c*p.history_channel_stride + t];
++            } else {
++                value = input_data[p.input_offset + s*p.input_sequence_stride + (t-3)*p.input_token_stride + c];
++            }
++        }
++        tile[row][x] = value;
++    }
++    barrier();
++    if (c >= p.channels) return;
++    const uint w = p.weight_offset + c*p.weight_channel_stride;
++    const vec4 coeff = vec4(weights[w], weights[w+1], weights[w+2], weights[w+3]);
++    [[unroll]] for (uint row = y; row < 32; row += 8) {
++        const uint t = t0 + row;
++        if (t < p.tokens) {
++            const vec4 values = vec4(tile[row][x], tile[row+1][x], tile[row+2][x], tile[row+3][x]);
++            const float v = dot(values, coeff);
++            output_data[p.output_offset + (s*p.tokens+t)*p.channels+c] = v/(1.0+exp(-v));
++        }
++    }
++}
+diff --git a/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp b/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+index 1d090bb..a257ad0 100644
+--- a/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
++++ b/ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp
+@@ -886,6 +886,7 @@ void process_shaders() {
+     string_to_spv("concat_i8", "concat.comp", {{"A_TYPE", "uint8_t"}, {"B_TYPE", "uint8_t"}, {"D_TYPE", "uint8_t"}});
+     string_to_spv("concat_i16", "concat.comp", {{"A_TYPE", "uint16_t"}, {"B_TYPE", "uint16_t"}, {"D_TYPE", "uint16_t"}});
+     string_to_spv("concat_i32", "concat.comp", {{"A_TYPE", "uint"}, {"B_TYPE", "uint"}, {"D_TYPE", "uint"}});
++    string_to_spv("ssm_conv_concat_silu", "ssm_conv_concat_silu.comp", {});
+     string_to_spv("concat_transpose_i32", "concat_transpose.comp", {{"A_TYPE", "uint"}, {"B_TYPE", "uint"}, {"D_TYPE", "uint"}});
+     string_to_spv("concat_i64", "concat.comp", {{"A_TYPE", "uvec2"}, {"B_TYPE", "uvec2"}, {"D_TYPE", "uvec2"}});
+ 
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index 1e7908e..bbf4975 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -118,6 +118,8 @@ endfunction()
+ 
+ # build test-tokenizer-0 target once and add many tests
+ llama_build(test-mtp-hidden.cpp)
++llama_build(test-mmid-fp4.cpp)
++llama_build(test-mmid-ownership.cpp)
+ llama_build(test-mtp-unused-head.cpp)
+ llama_build(test-fa-mr-numeric.cpp)
+ llama_build(test-tokenizer-0.cpp)
+diff --git a/tests/test-backend-ops.cpp b/tests/test-backend-ops.cpp
+index edb6502..ab51f97 100644
+--- a/tests/test-backend-ops.cpp
++++ b/tests/test-backend-ops.cpp
+@@ -3640,6 +3640,31 @@ struct test_snake_fuse : public test_case {
+     }
+ };
+ 
++// Recurrent convolution fusion with tile boundaries, padded/offset views and fallback.
++struct test_conv_concat_silu : public test_case {
++    const int64_t tokens,channels,sequences,kernel;
++    const bool padded,extra_consumer;
++    test_conv_concat_silu(int64_t t,int64_t c,int64_t seq,bool pad,bool extra=false,int64_t k=4)
++        :tokens(t),channels(c),sequences(seq),kernel(k),padded(pad),extra_consumer(extra) {}
++    std::string op_desc(ggml_tensor *) override { return "CONCAT_SSM_CONV_SILU"; }
++    std::string vars() override { return VARS_TO_STR6(tokens,channels,sequences,kernel,padded,extra_consumer); }
++    bool run_whole_graph() override { return true; }
++    double max_nmse_err() override { return 1e-6; }
++    ggml_tensor * build_graph(ggml_context *ctx) override {
++        const int64_t pad=padded?5:0;
++        auto *hs=ggml_new_tensor_3d(ctx,GGML_TYPE_F32,kernel-1+pad,channels+pad,sequences);
++        auto *xs=ggml_new_tensor_3d(ctx,GGML_TYPE_F32,channels+pad,tokens+pad,sequences);
++        auto *ws=ggml_new_tensor_2d(ctx,GGML_TYPE_F32,kernel,channels);
++        auto *h=ggml_view_3d(ctx,hs,kernel-1,channels,sequences,hs->nb[1],hs->nb[2],padded?4:0);
++        auto *x=ggml_view_3d(ctx,xs,channels,tokens,sequences,xs->nb[1],xs->nb[2],padded?4:0);
++        auto *w=ws;
++        auto *cat=ggml_concat(ctx,h,ggml_transpose(ctx,x),0);
++        auto *out=ggml_silu(ctx,ggml_ssm_conv(ctx,cat,w));
++        if (extra_consumer) out=ggml_add(ctx,out,ggml_sum(ctx,cat));
++        return out;
++    }
++};
++
+ // GGML_OP_SSM_CONV
+ struct test_ssm_conv : public test_case {
+     const ggml_type type;
+@@ -4230,6 +4255,48 @@ struct test_mul_mat_id_dispatch : public test_mul_mat_id {
+     }
+ };
+ 
++// Controlled row-count regimes. These measure isolated kernels, not full-model throughput.
++struct test_mmid_rows : public test_mul_mat_id {
++    const int rows;
++    test_mmid_rows(int rows, int64_t m, int64_t k, bool broadcast, int experts=256)
++        :test_mul_mat_id(GGML_TYPE_Q4_0_ROCMFP4_FAST,GGML_TYPE_F32,experts,8,broadcast,m,experts*rows/8,k),rows(rows) {}
++    std::string vars() override { return test_mul_mat_id::vars()+",rows="+std::to_string(rows); }
++    std::string op_desc(ggml_tensor *) override { return "MMID_ROWS"; }
++    void initialize_tensors(ggml_context * ctx) override {
++        test_mul_mat_id::initialize_tensors(ctx);
++        for (auto *t=ggml_get_first_tensor(ctx);t;t=ggml_get_next_tensor(ctx,t)) {
++            if (t->type!=GGML_TYPE_I32 || ggml_is_view_op(t->op)) continue;
++            std::vector<int32_t> ids(t->ne[0]);
++            for (int64_t r=0;r<ggml_nrows(t);++r) {
++                for (int64_t i=0;i<t->ne[0];++i) ids[i]=(r*n_used+i)%n_mats;
++                ggml_backend_tensor_set(t,ids.data(),r*t->nb[1],ids.size()*sizeof(int32_t));
++            }
++        }
++    }
++};
++
++// Exact 1/32/48/64 row populations, gaps, non-contiguous IDs and both expert boundaries.
++struct test_mmid_mixed_boundaries : public test_mul_mat_id {
++    test_mmid_mixed_boundaries(int used,bool broadcast)
++        :test_mul_mat_id(GGML_TYPE_Q4_0_ROCMFP4_FAST,GGML_TYPE_F32,256,used,broadcast,128,145,256) {}
++    std::string op_desc(ggml_tensor *) override { return "MMID_MIXED_BOUNDARIES"; }
++    void initialize_tensors(ggml_context *ctx) override {
++        test_mul_mat_id::initialize_tensors(ctx);
++        for (auto *t=ggml_get_first_tensor(ctx);t;t=ggml_get_next_tensor(ctx,t)) {
++            if (strcmp(t->name,"ids") || t->op!=GGML_OP_NONE) continue;
++            std::vector<int32_t> data(t->ne[0],0);
++            for (int token=0;token<145;++token) {
++                for (int slot=0;slot<n_used;++slot) {
++                    const int experts[4]={slot==0?0:2+2*slot,17+3*slot,93+3*slot,slot==0?255:254-2*slot};
++                    const int r=(token*37+slot*19)%145;
++                    data[slot]=experts[r<1?0:r<33?1:r<81?2:3];
++                }
++                ggml_backend_tensor_set(t,data.data(),token*t->nb[1],data.size()*sizeof(int32_t));
++            }
++        }
++    }
++};
++
+ // GGML_OP_MUL_MAT_ID + GGML_OP_ADD or GGML_OP_MUL
+ struct test_mul_mat_id_fusion : public test_case {
+     const ggml_type type_a;
+@@ -7671,6 +7738,17 @@ static const ggml_type other_types[] = {
+ // Test cases for evaluation: should try to cover edge cases while using small input sizes to keep the runtime low
+ static std::vector<std::unique_ptr<test_case>> make_test_cases_eval() {
+     std::vector<std::unique_ptr<test_case>> test_cases;
++    for (int used : {1,8}) for (bool broadcast : {false,true})
++        test_cases.emplace_back(new test_mmid_mixed_boundaries(used,broadcast));
++    for (int rows : {1,3,7,16,31,32,33,63,64,65}) {
++        for (bool broadcast : {false,true}) {
++            test_cases.emplace_back(new test_mmid_rows(rows,128,256,broadcast,32));
++        }
++    }
++
++    for (int k : {32,96,288}) {
++        for (bool broadcast : {false,true}) test_cases.emplace_back(new test_mmid_rows(32,128,k,broadcast,32));
++    }
+     std::default_random_engine rng(0);
+ 
+     // unary ops
+@@ -8321,6 +8399,18 @@ static std::vector<std::unique_ptr<test_case>> make_test_cases_eval() {
+             }
+         }
+     }
++    for (int64_t tokens : {1,31,32,33,65,1024}) {
++        for (int64_t channels : {31,32,65}) {
++            for (bool padded : {false,true}) {
++                test_cases.emplace_back(new test_conv_concat_silu(tokens,channels,2,padded));
++            }
++        }
++    }
++    test_cases.emplace_back(new test_conv_concat_silu(1024,8192,1,false));
++    test_cases.emplace_back(new test_conv_concat_silu(1024,8192,1,true));
++    test_cases.emplace_back(new test_conv_concat_silu(65,65,2,true,true));
++    test_cases.emplace_back(new test_conv_concat_silu(65,65,2,true,false,3));
++
+     for (int64_t d_conv : {3, 4, 9}) {
+         for (int64_t d_inner: {1024, 1536, 2048}) {
+             test_cases.emplace_back(new test_ssm_conv(GGML_TYPE_F32, {d_conv, d_inner, 1, 1}, {d_conv, d_inner, 1, 1}));
+@@ -9231,6 +9321,11 @@ static std::vector<std::unique_ptr<test_case>> make_test_cases_eval() {
+ // Test cases for performance evaluation: should be representative of real-world use cases
+ static std::vector<std::unique_ptr<test_case>> make_test_cases_perf() {
+     std::vector<std::unique_ptr<test_case>> test_cases;
++    for (int rows : {2,4,8,16,24,32,48,64,96,128}) {
++        test_cases.emplace_back(new test_mmid_rows(rows,512,2048,true));
++        test_cases.emplace_back(new test_mmid_rows(rows,2048,512,false));
++    }
++
+ 
+     // Conv2d: K=CRS=NPQ=4096 matmul performance
+     uint32_t                        iwh_idx  = 0;
+diff --git a/tests/test-mmid-fp4.cpp b/tests/test-mmid-fp4.cpp
+new file mode 100644
+index 0000000..1f6ef8d
+--- /dev/null
++++ b/tests/test-mmid-fp4.cpp
+@@ -0,0 +1,62 @@
++// Exhaustive ROCmFP4 FAST decoding through the real Vulkan expert matmul shader.
++// Compare basis-vector products directly, avoiding CPU matmul's Q8 activation staging.
++#include "ggml.h"
++#include "ggml-backend.h"
++#include <cmath>
++#include <cstdio>
++#include <cstdint>
++#include <stdexcept>
++#include <vector>
++
++static void check(bool ok,const char *why) { if (!ok) throw std::runtime_error(why); }
++int main() {
++    ggml_backend_load_all();
++    auto backend=ggml_backend_init_by_name("Vulkan0",nullptr);
++    check(backend,"Vulkan0 unavailable");
++    constexpr int m=4096,n=128;
++    const int values[16]={0,1,2,3,4,6,8,10,0,-1,-2,-3,-4,-6,-8,-10};
++    size_t checked=0;
++    for (int k : {32,64}) {
++        ggml_init_params params={ggml_tensor_overhead()*16+ggml_graph_overhead(),nullptr,true};
++        auto ctx=ggml_init(params);check(ctx,"context");
++        auto a=ggml_new_tensor_3d(ctx,GGML_TYPE_Q4_0_ROCMFP4_FAST,k,m,1);
++        auto b=ggml_new_tensor_3d(ctx,GGML_TYPE_F32,k,1,n);
++        auto ids=ggml_new_tensor_2d(ctx,GGML_TYPE_I32,1,n);
++        auto out=ggml_mul_mat_id(ctx,a,b,ids);
++        auto graph=ggml_new_graph(ctx);ggml_build_forward_expand(graph,out);
++        auto buffer=ggml_backend_alloc_ctx_tensors(ctx,backend);check(buffer,"allocation");
++        check(ggml_type_size(a->type)==17 && ggml_blck_size(a->type)==32,"FP4 layout");
++        std::vector<uint8_t> packed(ggml_nbytes(a),0);
++        for (int row=0;row<m;++row) for (int block=0;block<k/32;++block) {
++            const int off=(row*(k/32)+block)*17;
++            for (int j=0;j<16;++j) packed[off+j]=(row%16) | (((j+block)%16)<<4);
++            packed[off+16]=row/16;
++        }
++        std::vector<float> input(k*n,0);
++        for (int token=0;token<n;++token) input[token*k+token%k]=1;
++        std::vector<int32_t> expert(n,0);
++        ggml_backend_tensor_set(a,packed.data(),0,packed.size());
++        ggml_backend_tensor_set(b,input.data(),0,ggml_nbytes(b));
++        ggml_backend_tensor_set(ids,expert.data(),0,ggml_nbytes(ids));
++        check(ggml_backend_graph_compute(backend,graph)==GGML_STATUS_SUCCESS,"compute");
++        std::vector<float> result(m*n);ggml_backend_tensor_get(out,result.data(),0,ggml_nbytes(out));
++        size_t errors=0;
++        for (int token=0;token<n;++token) for (int row=0;row<m;++row) {
++            const int pos=token%k,block=pos/32,j=pos%32;
++            const int scale_byte=row/16;
++            const int code=j<16?row%16:((j-16+block)%16);
++            const int exp=(scale_byte>>3)&15,man=scale_byte&7;
++            const float scale=scale_byte>=127?0.0f:(exp==0?std::ldexp(float(man),-10):std::ldexp(float(8+man),exp-11));
++            const float expected=values[code]*scale, got=result[token*m+row];
++            if (!std::isfinite(got) || got!=expected) {
++                if (errors++<8) std::fprintf(stderr,"k=%d scale=%d code=%d position=%d got=%.9g expected=%.9g\n",k,scale_byte,code,pos,got,expected);
++            }
++            ++checked;
++        }
++        std::printf("K=%d: %d values, %zu mismatches (all 256 packed bytes x 256 scale bytes)\n",k,m*n,errors);
++        check(errors==0,"decoded value mismatch");
++        ggml_backend_buffer_free(buffer);ggml_free(ctx);
++    }
++    ggml_backend_free(backend);
++    std::printf("PASS: %zu exact output checks\n",checked);
++}
+diff --git a/tests/test-mmid-ownership.cpp b/tests/test-mmid-ownership.cpp
+new file mode 100644
+index 0000000..4af8875
+--- /dev/null
++++ b/tests/test-mmid-ownership.cpp
+@@ -0,0 +1,74 @@
++// Exact routing/ownership oracle: one-hot activations select a known FP4 weight.
++// Separate from CPU MUL_MAT_ID, whose Q8 activation staging is not exact.
++#include "ggml.h"
++#include "ggml-backend.h"
++#include <cmath>
++#include <cstdio>
++#include <cstdint>
++#include <cstring>
++#include <limits>
++#include <stdexcept>
++#include <vector>
++static void require(bool ok,const char *why) { if (!ok) throw std::runtime_error(why); }
++int main() {
++    ggml_backend_load_all();auto backend=ggml_backend_init_by_name("Vulkan0",nullptr);
++    require(backend,"Vulkan0 unavailable");
++    constexpr int k=2048,m=128,n=145,experts=256,blocks=k/32;
++    const int values[16]={0,1,2,3,4,6,8,10,0,-1,-2,-3,-4,-6,-8,-10};
++    for (int used : {1,8}) for (bool broadcast : {false,true}) {
++        ggml_init_params ip={ggml_tensor_overhead()*16+ggml_graph_overhead(),nullptr,true};
++        auto ctx=ggml_init(ip);
++        auto a=ggml_new_tensor_3d(ctx,GGML_TYPE_Q4_0_ROCMFP4_FAST,k,m,experts);
++        auto b=ggml_new_tensor_3d(ctx,GGML_TYPE_F32,k,broadcast?1:used,n);
++        auto ids=ggml_new_tensor_2d(ctx,GGML_TYPE_I32,used,n);
++        auto out=ggml_mul_mat_id(ctx,a,b,ids);
++        auto graph=ggml_new_graph(ctx);ggml_build_forward_expand(graph,out);
++        auto buffer=ggml_backend_alloc_ctx_tensors(ctx,backend);require(buffer,"allocation");
++        std::vector<uint8_t> packed(ggml_nbytes(a));uint32_t rng=0x12345678;
++        for (size_t block=0;block<packed.size()/17;++block) {
++            for (int j=0;j<16;++j) {rng^=rng<<13;rng^=rng>>17;rng^=rng<<5;packed[block*17+j]=(uint8_t)rng;}
++            packed[block*17+16]=64+(block%16);
++        }
++        std::vector<int32_t> routing(n*used);int counts[experts]={};
++        for (int token=0;token<n;++token) for (int slot=0;slot<used;++slot) {
++            const int active[4]={slot==0?0:2+2*slot,17+3*slot,93+3*slot,slot==0?255:254-2*slot};
++            const int r=(token*37+slot*19)%145;
++            const int e=active[r<1?0:r<33?1:r<81?2:3];routing[token*used+slot]=e;++counts[e];
++        }
++        require(counts[0]==1 && counts[17]==32 && counts[93]==48 && counts[255]==64,"routing fixture");
++        require(counts[1]==0 && counts[254]==0,"zero-expert gaps");
++        std::vector<float> input(ggml_nelements(b),0);
++        const int rows=broadcast?1:used;
++        for (int token=0;token<n;++token) for (int slot=0;slot<rows;++slot) {
++            const int pos=broadcast?token:token*used+slot;
++            input[(token*rows+slot)*k+pos]=1;
++        }
++        std::vector<float> result(ggml_nelements(out),std::numeric_limits<float>::quiet_NaN());
++        ggml_backend_tensor_set(a,packed.data(),0,packed.size());
++        ggml_backend_tensor_set(b,input.data(),0,ggml_nbytes(b));
++        ggml_backend_tensor_set(ids,routing.data(),0,ggml_nbytes(ids));
++        ggml_backend_tensor_set(out,result.data(),0,ggml_nbytes(out));
++        require(ggml_backend_graph_compute(backend,graph)==GGML_STATUS_SUCCESS,"compute");
++        ggml_backend_tensor_get(out,result.data(),0,ggml_nbytes(out));
++        size_t errors=0;uint64_t hash=1469598103934665603ull;
++        for (int token=0;token<n;++token) for (int slot=0;slot<used;++slot) for (int row=0;row<m;++row) {
++            const int e=routing[token*used+slot],pos=broadcast?token:token*used+slot;
++            const size_t offset=((e*m+row)*blocks+pos/32)*17;
++            const uint8_t byte=packed[offset+pos%16];const int code=(pos%32)<16?byte&15:byte>>4;
++            const int sc=packed[offset+16],exp=sc>>3,man=sc&7;
++            const float expected=values[code]*std::ldexp(float(8+man),exp-11);
++            float got=result[(token*used+slot)*m+row];
++            if (!std::isfinite(got) || got!=expected) {
++                if (errors++<4) std::fprintf(stderr,"token=%d slot=%d expert=%d row=%d got=%g expected=%g\n",token,slot,e,row,got,expected);
++            }
++            if (got==0) { got=0; }
++            uint32_t bits;
++            std::memcpy(&bits,&got,4);
++            hash=(hash^bits)*1099511628211ull;
++        }
++        std::printf("used=%d broadcast=%d values=%zu errors=%zu hash=%016llx\n",used,broadcast,result.size(),errors,(unsigned long long)hash);
++        require(errors==0,"row ownership mismatch");
++        ggml_backend_buffer_free(buffer);ggml_free(ctx);
++    }
++    ggml_backend_free(backend);std::puts("PASS: mixed 1/32/48/64 rows, exact ownership, expert boundaries and gaps");
++}

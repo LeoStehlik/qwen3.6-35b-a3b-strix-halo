@@ -1,0 +1,138 @@
+{
+  "off": {
+    "CPU_reference_cases": 4,
+    "exact_rows": [
+      {
+        "used": 1,
+        "broadcast": false,
+        "values": 18560,
+        "errors": 0,
+        "hash": "b16871ed8926e983"
+      },
+      {
+        "used": 1,
+        "broadcast": true,
+        "values": 18560,
+        "errors": 0,
+        "hash": "b16871ed8926e983"
+      },
+      {
+        "used": 8,
+        "broadcast": false,
+        "values": 148480,
+        "errors": 0,
+        "hash": "fd089275b8743383"
+      },
+      {
+        "used": 8,
+        "broadcast": true,
+        "values": 148480,
+        "errors": 0,
+        "hash": "5bbb61d6cec03383"
+      }
+    ],
+    "exact_value_checks": 334080
+  },
+  "compact": {
+    "CPU_reference_cases": 4,
+    "exact_rows": [
+      {
+        "used": 1,
+        "broadcast": false,
+        "values": 18560,
+        "errors": 0,
+        "hash": "b16871ed8926e983"
+      },
+      {
+        "used": 1,
+        "broadcast": true,
+        "values": 18560,
+        "errors": 0,
+        "hash": "b16871ed8926e983"
+      },
+      {
+        "used": 8,
+        "broadcast": false,
+        "values": 148480,
+        "errors": 0,
+        "hash": "fd089275b8743383"
+      },
+      {
+        "used": 8,
+        "broadcast": true,
+        "values": 148480,
+        "errors": 0,
+        "hash": "5bbb61d6cec03383"
+      }
+    ],
+    "exact_value_checks": 334080
+  },
+  "selector": {
+    "CPU_reference_cases": 4,
+    "exact_rows": [
+      {
+        "used": 1,
+        "broadcast": false,
+        "values": 18560,
+        "errors": 0,
+        "hash": "b16871ed8926e983"
+      },
+      {
+        "used": 1,
+        "broadcast": true,
+        "values": 18560,
+        "errors": 0,
+        "hash": "b16871ed8926e983"
+      },
+      {
+        "used": 8,
+        "broadcast": false,
+        "values": 148480,
+        "errors": 0,
+        "hash": "fd089275b8743383"
+      },
+      {
+        "used": 8,
+        "broadcast": true,
+        "values": 148480,
+        "errors": 0,
+        "hash": "5bbb61d6cec03383"
+      }
+    ],
+    "exact_value_checks": 334080
+  },
+  "tail-selector": {
+    "CPU_reference_cases": 4,
+    "exact_rows": [
+      {
+        "used": 1,
+        "broadcast": false,
+        "values": 18560,
+        "errors": 0,
+        "hash": "b16871ed8926e983"
+      },
+      {
+        "used": 1,
+        "broadcast": true,
+        "values": 18560,
+        "errors": 0,
+        "hash": "b16871ed8926e983"
+      },
+      {
+        "used": 8,
+        "broadcast": false,
+        "values": 148480,
+        "errors": 0,
+        "hash": "fd089275b8743383"
+      },
+      {
+        "used": 8,
+        "broadcast": true,
+        "values": 148480,
+        "errors": 0,
+        "hash": "5bbb61d6cec03383"
+      }
+    ],
+    "exact_value_checks": 334080
+  }
+}

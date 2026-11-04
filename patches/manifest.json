@@ -188,5 +188,55 @@
         "sha256_after": "10aad10fa4d6531ab577c46836703fac8f416e9b89b32ed08f0d5a603edaaaac"
       }
     ]
+  },
+  {
+    "patch": "patches/0007-expert-row-selection-and-convolution-fusion.patch",
+    "sha256": "b7809f7daf9aa96c2af7548f6ecee0fdaa461e7c0db55c79865c8c18d0fd097d",
+    "files": [
+      {
+        "path": "ggml/src/ggml-vulkan/ggml-vulkan.cpp",
+        "sha256_after": "c1ffb66d5f877132287e3d85f0b92f34ed822ceee1896777989ce9f4d563cb77"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/mmid_row_lists.comp",
+        "sha256_after": "dddb85b0f67704bdcca2590f01c82880e6c2b751748674c92aacf88bf9aa10cc"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/mul_mm.comp",
+        "sha256_after": "54c15f1ea70904fb30c986593bd5b424992e02ddd38f914a3af11ddefde18d52"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_funcs.glsl",
+        "sha256_after": "fcfbec4a39ff3f7fef422370305d827ad1f7aa95b0bddb3beb8c2008cdbbec4f"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/mul_mm_id_funcs.glsl",
+        "sha256_after": "328e34b8597f7e2e6aa2adc98fb3304a5f193017f8e0893b6f96c2abb50f5bde"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/ssm_conv_concat_silu.comp",
+        "sha256_after": "922fa0f93440e8845027327f4c7679d516eb1fa70a4b31c03c9a4e0356724cdb"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+        "sha256_after": "8ec132f619f7542d95d8b0c8fbbd9a8e396e6f439ae394dcfd1a42c129ce8ebc"
+      },
+      {
+        "path": "tests/CMakeLists.txt",
+        "sha256_after": "d3fb12db70d877839d9e8949c381b4c152b28bc8cccd72d19abec824ce305bbd"
+      },
+      {
+        "path": "tests/test-backend-ops.cpp",
+        "sha256_after": "bad6d1c7eae8482312fc3250a36fc77e4e07776f0e5617e45efd330329fa4d35"
+      },
+      {
+        "path": "tests/test-mmid-fp4.cpp",
+        "sha256_after": "edf5af09c98b7bb1f4d98e456e0ec5acfab1b9f408520e0474be812212e1760e"
+      },
+      {
+        "path": "tests/test-mmid-ownership.cpp",
+        "sha256_after": "72b9464b2414e963c77c03af1c60ede3711017986a09b26976d6905bb3b263a8"
+      }
+    ]
   }
 ]

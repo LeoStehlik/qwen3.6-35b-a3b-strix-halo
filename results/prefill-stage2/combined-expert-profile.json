@@ -1,0 +1,99 @@
+{
+  "calls": 7872,
+  "rows": 64487424,
+  "buckets": [
+    {
+      "range": [
+        0,
+        0
+      ],
+      "expert_instances": 243627,
+      "rows": 0,
+      "tiles64": 0,
+      "tiles32": 0
+    },
+    {
+      "range": [
+        1,
+        8
+      ],
+      "expert_instances": 566901,
+      "rows": 2170542,
+      "tiles64": 566901,
+      "tiles32": 566901
+    },
+    {
+      "range": [
+        9,
+        16
+      ],
+      "expert_instances": 292800,
+      "rows": 3582618,
+      "tiles64": 292800,
+      "tiles32": 292800
+    },
+    {
+      "range": [
+        17,
+        32
+      ],
+      "expert_instances": 344673,
+      "rows": 8142780,
+      "tiles64": 344673,
+      "tiles32": 344673
+    },
+    {
+      "range": [
+        33,
+        64
+      ],
+      "expert_instances": 296733,
+      "rows": 13576371,
+      "tiles64": 296733,
+      "tiles32": 593466
+    },
+    {
+      "range": [
+        65,
+        128
+      ],
+      "expert_instances": 175746,
+      "rows": 15671757,
+      "tiles64": 351492,
+      "tiles32": 585561
+    },
+    {
+      "range": [
+        129,
+        256
+      ],
+      "expert_instances": 71619,
+      "rows": 12497325,
+      "tiles64": 236064,
+      "tiles32": 427869
+    },
+    {
+      "range": [
+        257,
+        1024
+      ],
+      "expert_instances": 23133,
+      "rows": 8846031,
+      "tiles64": 150783,
+      "tiles32": 288192
+    }
+  ],
+  "fill64": 0.4499398511953403,
+  "fill32": 0.6501876777324581,
+  "stages_seconds": {
+    "count": 0.137776992,
+    "stage": 0.015918489,
+    "lists": 0.125297022,
+    "matmul": 17.347005755
+  },
+  "selector_dispatch_seconds": {
+    "large": 10.718015298,
+    "small": 6.628990457
+  },
+  "notes": "Target and draft included. Warmup/decode excluded. Row buckets are work counts, not per-bucket elapsed time or hardware occupancy. Selector times include dispatch overhead and are instrumented."
+}

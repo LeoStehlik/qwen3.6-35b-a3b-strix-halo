@@ -1,0 +1,90 @@
+{
+  "checked_utc": "2026-11-04T23:26:41Z",
+  "source": "User-initiated OpenClaw requests on the promoted pair; server aggregate timings only. No prompts or outputs included.",
+  "production_cache_and_checkpoints": true,
+  "requests": [
+    {
+      "task": 29,
+      "restored_checkpoint_tokens": [],
+      "prefill": {
+        "milliseconds": 72225.07,
+        "tokens": 73093,
+        "tokens_per_second": 1012.02
+      },
+      "decode": {
+        "milliseconds": 819.46,
+        "tokens": 42,
+        "tokens_per_second": 51.25
+      },
+      "total": {
+        "milliseconds": 73044.54,
+        "tokens": 73135
+      },
+      "completed": true
+    },
+    {
+      "task": 91,
+      "restored_checkpoint_tokens": [
+        72065
+      ],
+      "prefill": {
+        "milliseconds": 1876.57,
+        "tokens": 1264,
+        "tokens_per_second": 673.57
+      },
+      "decode": {
+        "milliseconds": 2598.47,
+        "tokens": 163,
+        "tokens_per_second": 62.73
+      },
+      "total": {
+        "milliseconds": 4475.04,
+        "tokens": 1427
+      },
+      "completed": true
+    },
+    {
+      "task": 156,
+      "restored_checkpoint_tokens": [
+        73325
+      ],
+      "prefill": {
+        "milliseconds": 8005.51,
+        "tokens": 5932,
+        "tokens_per_second": 740.99
+      },
+      "decode": {
+        "milliseconds": 2728.64,
+        "tokens": 145,
+        "tokens_per_second": 53.14
+      },
+      "total": {
+        "milliseconds": 10734.15,
+        "tokens": 6077
+      },
+      "completed": true
+    },
+    {
+      "task": 230,
+      "restored_checkpoint_tokens": [],
+      "prefill": {
+        "milliseconds": 80103.13,
+        "tokens": 79548,
+        "tokens_per_second": 993.07
+      },
+      "decode": {
+        "milliseconds": 7186.84,
+        "tokens": 354,
+        "tokens_per_second": 49.26
+      },
+      "total": {
+        "milliseconds": 87289.97,
+        "tokens": 79902
+      },
+      "completed": true
+    }
+  ],
+  "active_request_at_capture": true,
+  "quality_verdict": "pending user assessment; timings and restored checkpoints do not establish answer quality",
+  "errors_observed": 0
+}

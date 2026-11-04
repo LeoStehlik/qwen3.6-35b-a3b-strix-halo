@@ -219,13 +219,49 @@ be disabled independently for diagnosis. Reconstructable patches, exact build
 hashes, test summaries and all timings are retained in
 [the evidence](../results/prefill-next/summary.json).
 
+## 11. Select expert tiles by row count and fuse convolution — 2026-11-04
+
+The next profile put expert matrix work near 20.5 seconds; routing work's total
+ceiling was below 0.4%, so routing reuse was discarded. In the measured 64K
+expert distribution, 67.98% of active expert instances had at most 32 rows.
+The selected policy uses a 64×32/128-thread kernel for those experts and the
+existing 64×64 kernel for the rest, with compact per-expert tile dispatch.
+Arithmetic FP4 decoding and deeper K tiles were correct in their operator tests
+but slower and were rejected. Runtime hardware occupancy/bandwidth was not
+measured; compiler and logical-tile statistics are labeled accordingly.
+
+Independent convolution fusion combines history/activation concatenation,
+four-tap convolution and SiLU. The final implementation safely uses the elided
+concat buffer as scratch when allocator aliasing prevents writing directly.
+A compact-dispatch expert-count bug was caught and fixed before model timing.
+Exact ownership tests cover holes, non-contiguous IDs and first/final experts.
+
+| Configuration | Repeated prefill tok/s | Mean improvement |
+|---|---:|---:|
+| Previous baseline | 958.91 / 954.49 | — |
+| Expert selector only | 1,012.94 / 1,014.01 | +5.93% |
+| Convolution only | 986.28 / 988.37 | +3.20% |
+| Combined | **1,045.40 / 1,048.68** | **+9.44%** |
+
+Same cold 64K server/MTP fixture and F16 KV; controls include all step-10 changes.
+Mean prefill falls 68.50→62.59 seconds. Generation remains about 52.4 tok/s.
+All ten uninstrumented outputs and draft counts match. The saved diagnostic
+profile confirms both paths execute; it is excluded from headline timings.
+
+**Decision: promote both to the existing endpoint for real OpenClaw acceptance.**
+At 23:21:56 UTC, state regression, exact tool arguments, tool-result continuation,
+checkpoint restoration and displaced cache checks passed. Ordinary answer quality
+is pending the user's real prompts. Performance testing is complete.
+The live build uses `prefill-stage2` / `--expert-prefill`. Both additions remain
+independently switchable. See [full analysis](EXPERT-PREFILL.md) and
+[structured evidence](../results/prefill-stage2/summary.json).
+
 ## Next work
 
-1. Observe the user's real OpenClaw prompts, tool loops and cache behavior;
-   assess useful answers without requiring old-kernel wording.
-2. Measure longer contexts before extrapolating 64K throughput to 128K or 150K.
-   The current served context is still 131,072.
-3. If further performance work is requested, profile the combined build;
-   repeated routing and remaining attention copies are unmeasured candidates.
-4. Treat boot persistence and larger served context as separate operational
-   changes; the current trial service is transient.
+1. Observe the user's real OpenClaw prompts and accept this as the new baseline
+   if useful answers, tools and continuation remain sound. Do not send artificial
+   OpenClaw turns or repeat the completed timing sweep.
+2. Keep 64K performance and the 11K displaced-cache check scoped to their actual
+   workloads; no 128K/150K throughput or broad quality claim has been established.
+3. Treat boot persistence and larger served context as separate operational
+   changes; the current service is transient and the served limit is 131,072.

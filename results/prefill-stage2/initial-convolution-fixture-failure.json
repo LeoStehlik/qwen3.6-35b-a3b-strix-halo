@@ -1,0 +1,6 @@
+{
+  "baseline_passed": 19,
+  "total": 40,
+  "failure": "21 cases using padded and misaligned weights failed even with fusion disabled. Existing Vulkan SSM shader has no weight offset push constant. Test weights changed to contiguous, aligned model layout; padded and offset history/activation inputs retained. Corrected tests pass 40/40 off and on.",
+  "failing_offset_bytes": 4
+}
