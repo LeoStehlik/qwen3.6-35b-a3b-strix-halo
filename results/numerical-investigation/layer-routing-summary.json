@@ -1,0 +1,338 @@
+{
+  "scope": "64 ubatches x 1024 tokens. Nine hidden/attention rows per ubatch; all router scores. Top-eight expert sets inferred from router logits using descending stable sort. Replay pins scores, hence identities AND weights.",
+  "first_difference": {
+    "name": "__fattn__-3",
+    "ubatch": 0,
+    "NRMSE": 0.0005256041236897214,
+    "max_row_NRMSE": 0.000650945017971292,
+    "maxabs": 0.002630949020385742,
+    "identical": false
+  },
+  "first_three_layers_identical_all_ubatches": true,
+  "replayed_router_tensors": {
+    "0": 2560,
+    "1": 2560
+  },
+  "layers": [
+    {
+      "layer": 0,
+      "first_ubatch_hidden_NRMSE": 0.0,
+      "final_ubatch_hidden_NRMSE": 0.0,
+      "expert_set_changes_first_ubatch": 0,
+      "expert_set_changes_final_ubatch": 0,
+      "expert_set_changes_all_65536_tokens": 0
+    },
+    {
+      "layer": 1,
+      "first_ubatch_hidden_NRMSE": 0.0,
+      "final_ubatch_hidden_NRMSE": 0.0,
+      "expert_set_changes_first_ubatch": 0,
+      "expert_set_changes_final_ubatch": 0,
+      "expert_set_changes_all_65536_tokens": 0
+    },
+    {
+      "layer": 2,
+      "first_ubatch_hidden_NRMSE": 0.0,
+      "final_ubatch_hidden_NRMSE": 0.0,
+      "expert_set_changes_first_ubatch": 0,
+      "expert_set_changes_final_ubatch": 0,
+      "expert_set_changes_all_65536_tokens": 0
+    },
+    {
+      "layer": 3,
+      "first_ubatch_hidden_NRMSE": 0.0006784657621043315,
+      "final_ubatch_hidden_NRMSE": 0.0021519676098864502,
+      "expert_set_changes_first_ubatch": 3,
+      "expert_set_changes_final_ubatch": 34,
+      "expert_set_changes_all_65536_tokens": 766
+    },
+    {
+      "layer": 4,
+      "first_ubatch_hidden_NRMSE": 0.001435861098624688,
+      "final_ubatch_hidden_NRMSE": 0.0030352951352156012,
+      "expert_set_changes_first_ubatch": 19,
+      "expert_set_changes_final_ubatch": 50,
+      "expert_set_changes_all_65536_tokens": 1856
+    },
+    {
+      "layer": 5,
+      "first_ubatch_hidden_NRMSE": 0.0019180705711347899,
+      "final_ubatch_hidden_NRMSE": 0.01097327248052283,
+      "expert_set_changes_first_ubatch": 23,
+      "expert_set_changes_final_ubatch": 88,
+      "expert_set_changes_all_65536_tokens": 2961
+    },
+    {
+      "layer": 6,
+      "first_ubatch_hidden_NRMSE": 0.0014734133847653344,
+      "final_ubatch_hidden_NRMSE": 0.011686794307250399,
+      "expert_set_changes_first_ubatch": 32,
+      "expert_set_changes_final_ubatch": 120,
+      "expert_set_changes_all_65536_tokens": 4148
+    },
+    {
+      "layer": 7,
+      "first_ubatch_hidden_NRMSE": 0.004600012112813762,
+      "final_ubatch_hidden_NRMSE": 0.01377675358247986,
+      "expert_set_changes_first_ubatch": 57,
+      "expert_set_changes_final_ubatch": 148,
+      "expert_set_changes_all_65536_tokens": 5783
+    },
+    {
+      "layer": 8,
+      "first_ubatch_hidden_NRMSE": 0.004238306072440229,
+      "final_ubatch_hidden_NRMSE": 0.01318665148631063,
+      "expert_set_changes_first_ubatch": 44,
+      "expert_set_changes_final_ubatch": 160,
+      "expert_set_changes_all_65536_tokens": 7295
+    },
+    {
+      "layer": 9,
+      "first_ubatch_hidden_NRMSE": 0.004317030399799803,
+      "final_ubatch_hidden_NRMSE": 0.013954726901859239,
+      "expert_set_changes_first_ubatch": 58,
+      "expert_set_changes_final_ubatch": 190,
+      "expert_set_changes_all_65536_tokens": 7799
+    },
+    {
+      "layer": 10,
+      "first_ubatch_hidden_NRMSE": 0.001828454466615316,
+      "final_ubatch_hidden_NRMSE": 0.012582757123683664,
+      "expert_set_changes_first_ubatch": 61,
+      "expert_set_changes_final_ubatch": 161,
+      "expert_set_changes_all_65536_tokens": 7743
+    },
+    {
+      "layer": 11,
+      "first_ubatch_hidden_NRMSE": 0.001982880790508626,
+      "final_ubatch_hidden_NRMSE": 0.02106276251146129,
+      "expert_set_changes_first_ubatch": 61,
+      "expert_set_changes_final_ubatch": 194,
+      "expert_set_changes_all_65536_tokens": 9101
+    },
+    {
+      "layer": 12,
+      "first_ubatch_hidden_NRMSE": 0.00197936898458934,
+      "final_ubatch_hidden_NRMSE": 0.038549905761086155,
+      "expert_set_changes_first_ubatch": 98,
+      "expert_set_changes_final_ubatch": 241,
+      "expert_set_changes_all_65536_tokens": 11535
+    },
+    {
+      "layer": 13,
+      "first_ubatch_hidden_NRMSE": 0.003247700817010766,
+      "final_ubatch_hidden_NRMSE": 0.04304163054924254,
+      "expert_set_changes_first_ubatch": 98,
+      "expert_set_changes_final_ubatch": 282,
+      "expert_set_changes_all_65536_tokens": 13755
+    },
+    {
+      "layer": 14,
+      "first_ubatch_hidden_NRMSE": 0.0030169706296413333,
+      "final_ubatch_hidden_NRMSE": 0.042882414952808985,
+      "expert_set_changes_first_ubatch": 116,
+      "expert_set_changes_final_ubatch": 336,
+      "expert_set_changes_all_65536_tokens": 16148
+    },
+    {
+      "layer": 15,
+      "first_ubatch_hidden_NRMSE": 0.0037821439089911176,
+      "final_ubatch_hidden_NRMSE": 0.054803015667679734,
+      "expert_set_changes_first_ubatch": 136,
+      "expert_set_changes_final_ubatch": 395,
+      "expert_set_changes_all_65536_tokens": 19336
+    },
+    {
+      "layer": 16,
+      "first_ubatch_hidden_NRMSE": 0.005385986058398682,
+      "final_ubatch_hidden_NRMSE": 0.06014948267609694,
+      "expert_set_changes_first_ubatch": 136,
+      "expert_set_changes_final_ubatch": 424,
+      "expert_set_changes_all_65536_tokens": 20697
+    },
+    {
+      "layer": 17,
+      "first_ubatch_hidden_NRMSE": 0.005424735843458337,
+      "final_ubatch_hidden_NRMSE": 0.06622957855629054,
+      "expert_set_changes_first_ubatch": 169,
+      "expert_set_changes_final_ubatch": 460,
+      "expert_set_changes_all_65536_tokens": 22322
+    },
+    {
+      "layer": 18,
+      "first_ubatch_hidden_NRMSE": 0.0054814730521303544,
+      "final_ubatch_hidden_NRMSE": 0.07155307460467687,
+      "expert_set_changes_first_ubatch": 151,
+      "expert_set_changes_final_ubatch": 469,
+      "expert_set_changes_all_65536_tokens": 23329
+    },
+    {
+      "layer": 19,
+      "first_ubatch_hidden_NRMSE": 0.00624145687222954,
+      "final_ubatch_hidden_NRMSE": 0.08859437626671085,
+      "expert_set_changes_first_ubatch": 195,
+      "expert_set_changes_final_ubatch": 535,
+      "expert_set_changes_all_65536_tokens": 26310
+    },
+    {
+      "layer": 20,
+      "first_ubatch_hidden_NRMSE": 0.006501077067822498,
+      "final_ubatch_hidden_NRMSE": 0.09462409265146722,
+      "expert_set_changes_first_ubatch": 239,
+      "expert_set_changes_final_ubatch": 570,
+      "expert_set_changes_all_65536_tokens": 29223
+    },
+    {
+      "layer": 21,
+      "first_ubatch_hidden_NRMSE": 0.006562768360718558,
+      "final_ubatch_hidden_NRMSE": 0.09762456637308868,
+      "expert_set_changes_first_ubatch": 214,
+      "expert_set_changes_final_ubatch": 567,
+      "expert_set_changes_all_65536_tokens": 29392
+    },
+    {
+      "layer": 22,
+      "first_ubatch_hidden_NRMSE": 0.006463136835309396,
+      "final_ubatch_hidden_NRMSE": 0.1008537715549079,
+      "expert_set_changes_first_ubatch": 205,
+      "expert_set_changes_final_ubatch": 514,
+      "expert_set_changes_all_65536_tokens": 27714
+    },
+    {
+      "layer": 23,
+      "first_ubatch_hidden_NRMSE": 0.008037594686290886,
+      "final_ubatch_hidden_NRMSE": 0.1510989039345951,
+      "expert_set_changes_first_ubatch": 253,
+      "expert_set_changes_final_ubatch": 549,
+      "expert_set_changes_all_65536_tokens": 29478
+    },
+    {
+      "layer": 24,
+      "first_ubatch_hidden_NRMSE": 0.008339711316227943,
+      "final_ubatch_hidden_NRMSE": 0.16745734886907157,
+      "expert_set_changes_first_ubatch": 288,
+      "expert_set_changes_final_ubatch": 606,
+      "expert_set_changes_all_65536_tokens": 33194
+    },
+    {
+      "layer": 25,
+      "first_ubatch_hidden_NRMSE": 0.008895508773122706,
+      "final_ubatch_hidden_NRMSE": 0.1983658549890979,
+      "expert_set_changes_first_ubatch": 260,
+      "expert_set_changes_final_ubatch": 585,
+      "expert_set_changes_all_65536_tokens": 33563
+    },
+    {
+      "layer": 26,
+      "first_ubatch_hidden_NRMSE": 0.00951060333727062,
+      "final_ubatch_hidden_NRMSE": 0.22105831438135554,
+      "expert_set_changes_first_ubatch": 299,
+      "expert_set_changes_final_ubatch": 654,
+      "expert_set_changes_all_65536_tokens": 34415
+    },
+    {
+      "layer": 27,
+      "first_ubatch_hidden_NRMSE": 0.01010019706174551,
+      "final_ubatch_hidden_NRMSE": 0.21119666047010735,
+      "expert_set_changes_first_ubatch": 282,
+      "expert_set_changes_final_ubatch": 653,
+      "expert_set_changes_all_65536_tokens": 35906
+    },
+    {
+      "layer": 28,
+      "first_ubatch_hidden_NRMSE": 0.009691162365383272,
+      "final_ubatch_hidden_NRMSE": 0.20432535523131787,
+      "expert_set_changes_first_ubatch": 306,
+      "expert_set_changes_final_ubatch": 667,
+      "expert_set_changes_all_65536_tokens": 36120
+    },
+    {
+      "layer": 29,
+      "first_ubatch_hidden_NRMSE": 0.009967870225192263,
+      "final_ubatch_hidden_NRMSE": 0.23129411304846503,
+      "expert_set_changes_first_ubatch": 295,
+      "expert_set_changes_final_ubatch": 660,
+      "expert_set_changes_all_65536_tokens": 36815
+    },
+    {
+      "layer": 30,
+      "first_ubatch_hidden_NRMSE": 0.010256997143894716,
+      "final_ubatch_hidden_NRMSE": 0.25729775166088925,
+      "expert_set_changes_first_ubatch": 305,
+      "expert_set_changes_final_ubatch": 673,
+      "expert_set_changes_all_65536_tokens": 36507
+    },
+    {
+      "layer": 31,
+      "first_ubatch_hidden_NRMSE": 0.031906892770897345,
+      "final_ubatch_hidden_NRMSE": 0.26816724002692094,
+      "expert_set_changes_first_ubatch": 314,
+      "expert_set_changes_final_ubatch": 693,
+      "expert_set_changes_all_65536_tokens": 36884
+    },
+    {
+      "layer": 32,
+      "first_ubatch_hidden_NRMSE": 0.033577203725183254,
+      "final_ubatch_hidden_NRMSE": 0.2723952480528821,
+      "expert_set_changes_first_ubatch": 284,
+      "expert_set_changes_final_ubatch": 632,
+      "expert_set_changes_all_65536_tokens": 33927
+    },
+    {
+      "layer": 33,
+      "first_ubatch_hidden_NRMSE": 0.03374815235652628,
+      "final_ubatch_hidden_NRMSE": 0.2702246092466076,
+      "expert_set_changes_first_ubatch": 288,
+      "expert_set_changes_final_ubatch": 650,
+      "expert_set_changes_all_65536_tokens": 34728
+    },
+    {
+      "layer": 34,
+      "first_ubatch_hidden_NRMSE": 0.021102092169042123,
+      "final_ubatch_hidden_NRMSE": 0.290992121155522,
+      "expert_set_changes_first_ubatch": 293,
+      "expert_set_changes_final_ubatch": 633,
+      "expert_set_changes_all_65536_tokens": 35465
+    },
+    {
+      "layer": 35,
+      "first_ubatch_hidden_NRMSE": 0.029709505373179537,
+      "final_ubatch_hidden_NRMSE": 0.2881968247256096,
+      "expert_set_changes_first_ubatch": 314,
+      "expert_set_changes_final_ubatch": 723,
+      "expert_set_changes_all_65536_tokens": 39453
+    },
+    {
+      "layer": 36,
+      "first_ubatch_hidden_NRMSE": 0.03363911549196122,
+      "final_ubatch_hidden_NRMSE": 0.2959450762637993,
+      "expert_set_changes_first_ubatch": 336,
+      "expert_set_changes_final_ubatch": 706,
+      "expert_set_changes_all_65536_tokens": 39872
+    },
+    {
+      "layer": 37,
+      "first_ubatch_hidden_NRMSE": 0.035705908892068955,
+      "final_ubatch_hidden_NRMSE": 0.29678905015798335,
+      "expert_set_changes_first_ubatch": 311,
+      "expert_set_changes_final_ubatch": 679,
+      "expert_set_changes_all_65536_tokens": 37577
+    },
+    {
+      "layer": 38,
+      "first_ubatch_hidden_NRMSE": 0.019262074036549132,
+      "final_ubatch_hidden_NRMSE": 0.3138123070469995,
+      "expert_set_changes_first_ubatch": 324,
+      "expert_set_changes_final_ubatch": 660,
+      "expert_set_changes_all_65536_tokens": 38102
+    },
+    {
+      "layer": 39,
+      "first_ubatch_hidden_NRMSE": 0.00868920492679305,
+      "final_ubatch_hidden_NRMSE": 0.30904299452837497,
+      "expert_set_changes_first_ubatch": 336,
+      "expert_set_changes_final_ubatch": 620,
+      "expert_set_changes_all_65536_tokens": 39031
+    }
+  ]
+}

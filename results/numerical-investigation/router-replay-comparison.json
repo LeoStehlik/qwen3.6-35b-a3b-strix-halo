@@ -1,0 +1,38 @@
+{
+  "layers-2048-mode-1": {
+    "logits_identical": false,
+    "hidden_NRMSE": 0.08475044896863507,
+    "mean_KL": 0.07587901822974173,
+    "per_row_KL": [
+      2.700701913283626e-05,
+      3.162343501608041e-05,
+      0.296648548331907,
+      0.0068088941329110045
+    ],
+    "logit_NRMSE": 0.06342886163426624
+  },
+  "router-replay-2048-mode-0": {
+    "logits_identical": true,
+    "hidden_NRMSE": 0.0,
+    "mean_KL": 0.0,
+    "per_row_KL": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "logit_NRMSE": 0.0
+  },
+  "router-replay-2048-mode-1": {
+    "logits_identical": false,
+    "hidden_NRMSE": 0.011961377815206812,
+    "mean_KL": 0.00017091092355801482,
+    "per_row_KL": [
+      7.644825619783787e-06,
+      2.994463567247616e-06,
+      0.00037827367097539866,
+      0.00029473073406962924
+    ],
+    "logit_NRMSE": 0.00902858562604898
+  }
+}

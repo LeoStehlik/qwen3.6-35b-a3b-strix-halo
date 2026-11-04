@@ -1,0 +1,334 @@
+[
+  {
+    "mode": 0,
+    "context_tokens": 65768,
+    "checks": {
+      "comparison": false,
+      "displacement": true,
+      "comparison_restored": false,
+      "restored_prefix_cache": true,
+      "tool_selection_arguments": true,
+      "tool_result_continuation": true
+    },
+    "all_passed": false,
+    "restored_cached_tokens": 65880,
+    "responses": {
+      "comparison": {
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"included_prs\": [\n    21481,\n    21577,\n    21602\n  ]\n}"
+        },
+        "usage": {
+          "completion_tokens": 41,
+          "prompt_tokens": 65884,
+          "total_tokens": 65925,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 65884,
+          "prompt_ms": 103038.503,
+          "prompt_per_token_ms": 1.5639381792240907,
+          "prompt_per_second": 639.411463499232,
+          "predicted_n": 41,
+          "predicted_ms": 552.389,
+          "predicted_per_token_ms": 13.47290243902439,
+          "predicted_per_second": 74.22305657788262,
+          "draft_n": 35,
+          "draft_n_accepted": 32
+        },
+        "finish_reason": "stop"
+      },
+      "displacement": {
+        "message": {
+          "role": "assistant",
+          "content": "42"
+        },
+        "usage": {
+          "completion_tokens": 3,
+          "prompt_tokens": 76,
+          "total_tokens": 79,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 76,
+          "prompt_ms": 286.155,
+          "prompt_per_token_ms": 3.7651973684210525,
+          "prompt_per_second": 265.5903269207248,
+          "predicted_n": 3,
+          "predicted_ms": 50.299,
+          "predicted_per_token_ms": 16.766333333333332,
+          "predicted_per_second": 59.64333286944075,
+          "draft_n": 5,
+          "draft_n_accepted": 5
+        },
+        "finish_reason": "stop"
+      },
+      "comparison-restored": {
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"included_prs\": [\n    21481,\n    21577,\n    21602\n  ]\n}"
+        },
+        "usage": {
+          "completion_tokens": 41,
+          "prompt_tokens": 65884,
+          "total_tokens": 65925,
+          "prompt_tokens_details": {
+            "cached_tokens": 65880
+          }
+        },
+        "timings": {
+          "cache_n": 65880,
+          "prompt_n": 4,
+          "prompt_ms": 74.845,
+          "prompt_per_token_ms": 18.71125,
+          "prompt_per_second": 53.44378381989445,
+          "predicted_n": 41,
+          "predicted_ms": 507.439,
+          "predicted_per_token_ms": 12.376560975609756,
+          "predicted_per_second": 80.79788900734866,
+          "draft_n": 35,
+          "draft_n_accepted": 32
+        },
+        "finish_reason": "stop"
+      },
+      "tool": {
+        "message": {
+          "role": "assistant",
+          "content": "The deployment note in SOURCE B specifies the repository as `lab/halo-prefill` and the release ref as `c06a44e`. I will use the `lookup_release` tool with these parameters.\n\n```json\n{\n  \"repository\": \"lab/halo-prefill\",\n  \"ref\": \"c06a44e\"\n}\n```\n</think>\n\n",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "lookup_release",
+                "arguments": "{\"repository\":\"lab/halo-prefill\",\"ref\":\"c06a44e\"}"
+              },
+              "id": "wcQLkmBOGZZn1A9qMESzRJl0qIcouZbY"
+            }
+          ]
+        },
+        "usage": {
+          "completion_tokens": 134,
+          "prompt_tokens": 66339,
+          "total_tokens": 66473,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 66339,
+          "prompt_ms": 102354.449,
+          "prompt_per_token_ms": 1.5429000889371258,
+          "prompt_per_second": 648.1301071729672,
+          "predicted_n": 134,
+          "predicted_ms": 1984.388,
+          "predicted_per_token_ms": 14.80886567164179,
+          "predicted_per_second": 67.52711667274747,
+          "draft_n": 109,
+          "draft_n_accepted": 101
+        },
+        "finish_reason": "tool_calls"
+      },
+      "continuation": {
+        "message": {
+          "role": "assistant",
+          "content": "```json\n{\n  \"artifact\": \"halo-bundle-73\",\n  \"approval_code\": \"APPROVE-6J9T\",\n  \"nonce\": \"N7Q2-K9V4\"\n}\n```"
+        },
+        "usage": {
+          "completion_tokens": 54,
+          "prompt_tokens": 66478,
+          "total_tokens": 66532,
+          "prompt_tokens_details": {
+            "cached_tokens": 66335
+          }
+        },
+        "timings": {
+          "cache_n": 66335,
+          "prompt_n": 143,
+          "prompt_ms": 605.809,
+          "prompt_per_token_ms": 4.236426573426574,
+          "prompt_per_second": 236.0479953252593,
+          "predicted_n": 54,
+          "predicted_ms": 656.75,
+          "predicted_per_token_ms": 12.162037037037036,
+          "predicted_per_second": 82.22306813856109,
+          "draft_n": 47,
+          "draft_n_accepted": 47
+        },
+        "finish_reason": "stop"
+      }
+    }
+  },
+  {
+    "mode": 1,
+    "context_tokens": 65768,
+    "checks": {
+      "comparison": false,
+      "displacement": true,
+      "comparison_restored": false,
+      "restored_prefix_cache": true,
+      "tool_selection_arguments": true,
+      "tool_result_continuation": true
+    },
+    "all_passed": false,
+    "restored_cached_tokens": 65880,
+    "responses": {
+      "comparison": {
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"included_prs\": [\n    21481,\n    21577,\n    21601\n  ]\n}"
+        },
+        "usage": {
+          "completion_tokens": 41,
+          "prompt_tokens": 65884,
+          "total_tokens": 65925,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 65884,
+          "prompt_ms": 83544.777,
+          "prompt_per_token_ms": 1.2680586637119786,
+          "prompt_per_second": 788.6070484095014,
+          "predicted_n": 41,
+          "predicted_ms": 516.003,
+          "predicted_per_token_ms": 12.585439024390245,
+          "predicted_per_second": 79.45690238235048,
+          "draft_n": 35,
+          "draft_n_accepted": 32
+        },
+        "finish_reason": "stop"
+      },
+      "displacement": {
+        "message": {
+          "role": "assistant",
+          "content": "42"
+        },
+        "usage": {
+          "completion_tokens": 3,
+          "prompt_tokens": 76,
+          "total_tokens": 79,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 76,
+          "prompt_ms": 314.692,
+          "prompt_per_token_ms": 4.140684210526316,
+          "prompt_per_second": 241.5059804507264,
+          "predicted_n": 3,
+          "predicted_ms": 50.674,
+          "predicted_per_token_ms": 16.891333333333332,
+          "predicted_per_second": 59.201957611398356,
+          "draft_n": 5,
+          "draft_n_accepted": 5
+        },
+        "finish_reason": "stop"
+      },
+      "comparison-restored": {
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"included_prs\": [\n    21481,\n    21577,\n    21602\n  ]\n}"
+        },
+        "usage": {
+          "completion_tokens": 41,
+          "prompt_tokens": 65884,
+          "total_tokens": 65925,
+          "prompt_tokens_details": {
+            "cached_tokens": 65880
+          }
+        },
+        "timings": {
+          "cache_n": 65880,
+          "prompt_n": 4,
+          "prompt_ms": 67.075,
+          "prompt_per_token_ms": 16.76875,
+          "prompt_per_second": 59.63473723443906,
+          "predicted_n": 41,
+          "predicted_ms": 496.033,
+          "predicted_per_token_ms": 12.098365853658537,
+          "predicted_per_second": 82.65579104616023,
+          "draft_n": 33,
+          "draft_n_accepted": 32
+        },
+        "finish_reason": "stop"
+      },
+      "tool": {
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "type": "function",
+              "function": {
+                "name": "lookup_release",
+                "arguments": "{\"repository\":\"lab/halo-prefill\",\"ref\":\"c06a44e\"}"
+              },
+              "id": "OBOLCI2355pzI66PewExk6sGSpGK8ovF"
+            }
+          ]
+        },
+        "usage": {
+          "completion_tokens": 50,
+          "prompt_tokens": 66339,
+          "total_tokens": 66389,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "timings": {
+          "cache_n": 0,
+          "prompt_n": 66339,
+          "prompt_ms": 83470.1,
+          "prompt_per_token_ms": 1.258235728606099,
+          "prompt_per_second": 794.7636339240039,
+          "predicted_n": 50,
+          "predicted_ms": 607.201,
+          "predicted_per_token_ms": 12.144020000000001,
+          "predicted_per_second": 82.34505542645681,
+          "draft_n": 44,
+          "draft_n_accepted": 41
+        },
+        "finish_reason": "tool_calls"
+      },
+      "continuation": {
+        "message": {
+          "role": "assistant",
+          "content": "{\n  \"artifact\": \"halo-bundle-73\",\n  \"approval_code\": \"APPROVE-6J9T\",\n  \"nonce\": \"N7Q2-K9V4\"\n}"
+        },
+        "usage": {
+          "completion_tokens": 49,
+          "prompt_tokens": 66478,
+          "total_tokens": 66527,
+          "prompt_tokens_details": {
+            "cached_tokens": 66335
+          }
+        },
+        "timings": {
+          "cache_n": 66335,
+          "prompt_n": 143,
+          "prompt_ms": 521.953,
+          "prompt_per_token_ms": 3.650020979020979,
+          "prompt_per_second": 273.9710280427548,
+          "predicted_n": 49,
+          "predicted_ms": 541.428,
+          "predicted_per_token_ms": 11.049551020408163,
+          "predicted_per_second": 90.50141477721877,
+          "draft_n": 40,
+          "draft_n_accepted": 40
+        },
+        "finish_reason": "stop"
+      }
+    }
+  }
+]

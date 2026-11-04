@@ -1,0 +1,27 @@
+{
+  "date_utc": "2026-11-04",
+  "dominant_mechanism": "Deterministic attention-rounding differences amplified by MoE router scores (choices and weights).",
+  "equivalence_gate": "still failed; thresholds unchanged",
+  "kernel_changes_this_investigation": false,
+  "repeatability": "3 saved logits/hidden captures per mode bit-identical, including earlier capture",
+  "trace_neutrality": "terminal logits and hidden bit-identical at 2K and 64K",
+  "64k_router_replay": {
+    "baseline_self_replay_identical": true,
+    "ordinary_mean_KL": 0.603342948674028,
+    "pinned_router_mean_KL": 0.014676937249248803,
+    "mean_KL_reduction_factor": 41.10823248937093,
+    "scope": "Diagnostic intervention; not serving algorithm"
+  },
+  "64k_attention_oracle": {
+    "baseline_NRMSE": 0.0069779071855884545,
+    "MR_NRMSE": 0.00019353408883026143,
+    "MR_error_reduction_factor": 36.05518401312965,
+    "scope": "25 selected query/head pairs in layer 3 at final 64K ubatch; actual scaled F16 inputs"
+  },
+  "64k_perplexity": "32767 scored tokens; predefined 1% margin passed; apparent 0.07486% improvement within uncertainty",
+  "tasks": "Both modes passed tool choice, arguments and continuation; both failed source comparison. MR cold/restored answer differed with MTP on.",
+  "MTP_off_control": "Both modes produced identical cold/restored/repeated text (same wrong PR set); does not prove hidden-state equivalence or identify a specific bug.",
+  "decision": "Keep MR experimental and disabled in normal serving. Isolate MTP/verification/batching interaction and broaden quality evidence before promotion.",
+  "throughput_remeasured": false,
+  "raw_artifacts": "Local only; source, protocols, sanitized result summaries published."
+}

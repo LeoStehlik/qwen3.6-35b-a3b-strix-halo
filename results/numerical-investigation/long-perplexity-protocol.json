@@ -1,0 +1,13 @@
+{
+  "source": "https://huggingface.co/datasets/ggml-org/ci/resolve/main/wikitext-2-raw-v1.zip",
+  "archive_sha256": "ef7edb566e3e2b2d31b29c1fdb0c89a4cc683597484c3dc2517919c615435a11",
+  "text_sha256": "173c87a53759e0201f33e0ccf978e510c2042d7f2cb78229d9a50d79b9e7dd08",
+  "text_bytes": 1290590,
+  "split": "test",
+  "redistributed": false,
+  "planned_context": 65536,
+  "chunks": 1,
+  "score": "last 32767 next-token positions of the first 65536-token chunk",
+  "quality_margin": "paired mean NLL upper approximate 95% block interval less than log(1.01); diagnostic evidence, not automatic promotion",
+  "model_weights_changed": false
+}

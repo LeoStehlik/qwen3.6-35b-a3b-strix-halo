@@ -1,0 +1,21 @@
+{
+  "scope": "Post-hoc observations, preserving the original predeclared task checks and failures.",
+  "modes": [
+    {
+      "mode": 0,
+      "cold_vs_restored_same_text": true,
+      "cold_answer": "{\n  \"included_prs\": [\n    21481,\n    21577,\n    21602\n  ]\n}",
+      "restored_answer": "{\n  \"included_prs\": [\n    21481,\n    21577,\n    21602\n  ]\n}",
+      "cached_tokens": 65880,
+      "restored_prompt_tokens_evaluated": 4
+    },
+    {
+      "mode": 1,
+      "cold_vs_restored_same_text": false,
+      "cold_answer": "{\n  \"included_prs\": [\n    21481,\n    21577,\n    21601\n  ]\n}",
+      "restored_answer": "{\n  \"included_prs\": [\n    21481,\n    21577,\n    21602\n  ]\n}",
+      "cached_tokens": 65880,
+      "restored_prompt_tokens_evaluated": 4
+    }
+  ]
+}

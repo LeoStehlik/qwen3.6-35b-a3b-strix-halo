@@ -31,8 +31,17 @@ prompt with a 2K warmup. Neither result establishes sustained 1,000 tok/s,
 
 **Deployment status:** the validated MTP sparse-logit build remains the normal
 server. MR attention is disabled. Its 30 operator tests and MTP regression pass,
-and one prose perplexity check changed only +0.03%, but the 64K numerical gate
-failed. Read [validation and limitations](docs/VALIDATION.md) before enabling MR.
+but the 64K numerical-equivalence gate still fails. The follow-up investigation
+found deterministic attention-rounding differences amplified by MoE routing:
+diagnostic router-score replay reduces mean KL 41×. Sampled attention near 64K
+is 36× closer to an FP64 reference with MR, and a paired 64K text check found
+no measured quality loss (PPL 5.8105 → 5.8062). These are bounded diagnostic
+findings, not broad capability equivalence or permission to promote the kernel.
+Both modes passed a 65K+ tool/continuation smoke check and failed its source
+comparison. MR also changed its answer after cache restoration with MTP enabled;
+that serving interaction needs isolation before promotion.
+Read the [numerical investigation](docs/NUMERICAL-INVESTIGATION.md) and
+[validation limits](docs/VALIDATION.md) before enabling MR.
 
 ## Start here
 
@@ -44,6 +53,8 @@ failed. Read [validation and limitations](docs/VALIDATION.md) before enabling MR
 - [Code and patch guide](docs/CODE.md): ordered changes and runtime flags.
 - [Benchmark reproduction](docs/BENCHMARKS.md): fixtures, commands and conditions.
 - [Validation](docs/VALIDATION.md): successes, failures and promotion requirements.
+- [Numerical investigation](docs/NUMERICAL-INVESTIGATION.md): repeatability,
+  layer tracing, causal router replay and long-context reference/quality checks.
 - [Structured evidence](results/): sanitized individual runs and summaries.
 
 ```bash

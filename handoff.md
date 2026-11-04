@@ -1,7 +1,7 @@
 # Handoff for Francis
 
-Updated 2026-11-04 UTC. Read this before resuming inference work. This records
-the state observed when publishing the experiment, not a live monitoring feed.
+Updated 2026-11-04 UTC after the numerical investigation. Read this before
+resuming inference work. This is a dated snapshot, not a live monitoring feed.
 
 ## Goal and constraints
 
@@ -39,9 +39,19 @@ not automatically become a persistent boot configuration. Do not assume a reboot
 would reproduce today's binary/settings. Making the validated configuration
 persistent is separate pending operational work.
 
-`qwen38-dflash2.service` is active. Its router at loopback 8081 was left running
-with model targets unloaded during experiments. Verify residency before a new
-benchmark; never mix simultaneous GPU workloads and claim isolated timings.
+`qwen38-dflash2.service` is active. After the host reboot its router at loopback
+8081 had autoloaded a Q4 target on CPU while GPU permissions were unavailable.
+It was left running during this correctness investigation. Verify residency
+before a new benchmark; these later correctness runs are not isolated throughput
+measurements and do not replace the earlier performance results.
+
+At the start of this investigation, the host had recently rebooted. The
+transient Qwen3.6 unit was gone and the older boot unit was failing to find
+Vulkan0. The account lacked render-node permissions. Membership in `render`
+and `video` was added, and a user ACL on the current render node restored access
+without rebooting or logging out. The failing older unit was stopped and the
+validated transient baseline restored with the durable recovery helper. Health
+and an actual `42` completion passed. The Mac/OpenClaw was not restarted.
 
 ## What just succeeded
 
@@ -67,7 +77,23 @@ sample changed perplexity by only +0.03%. But the separate 64K code-prompt test
 failed its numerical-equivalence gate: mean KL 0.60334 and top-token agreement
 108/128. At the first attention layer, MR was closer to an FP64 oracle than the
 old kernel, so the observed divergence is not by itself proof of worse quality.
-Its cause and long-context task impact still need investigation.
+The follow-up investigation supports attention-rounding changes amplified by
+MoE routing as the dominant mechanism. All three captures per mode reproduce
+exactly; diagnostic replay of baseline router scores reduces mean KL 41×.
+Sampled layer-3 attention near 64K is 36× closer to an independent FP64 reference
+with MR. A 64K text check found PPL 5.8105 → 5.8062, within the predeclared margin.
+These findings do not establish general capability equivalence or clear the
+original gate. Read [the investigation](docs/NUMERICAL-INVESTIGATION.md).
+
+The new 65K+ source/tool smoke test passed tool choice, exact arguments and
+tool-result continuation in both modes, but both returned a wrong PR set.
+MR's cold/restored PR answer also changed despite greedy settings; baseline's
+did not. Prefix reuse occurred in both (65,880 tokens), which is not proof of
+output consistency. This needs isolation before any production promotion.
+In the follow-up with MTP disabled, both modes returned identical text cold and
+after two restorations (still the same wrong PR set). Focus the next diagnostic
+on MTP/verification/batching, while treating saved-state correctness as unproven
+until logits/hidden states are compared under identical token batches.
 
 Do not silently relax the failed gate, promote the kernel from speed alone, or
 say the candidate's production cache validation passed: that prepared script
@@ -86,6 +112,7 @@ was never executed. Read [validation](docs/VALIDATION.md).
 | `src/rocmfp4-fa-mr/` | Experimental MR source/build and numerical tests |
 | `models/qwen36-rocmfpx/` | Existing weights, projector, template |
 | `.cache/fa-mr.MuLSLc/` | Complete MR raw logs, captures, scripts and results |
+| `.cache/fa-divergence.LwnTjA/` | Repeatability, layer traces, router replay, 64K reference and quality evidence |
 | `.cache/fa-profile.b5wpyH/` | Prior operator profile |
 | `.cache/mtp-output.fVUPF0/` | MTP fix evidence and original restore script |
 | `.cache/moe-tiles.5TfjSU/` | Rejected tile evidence |
@@ -131,21 +158,27 @@ Remove `--dry-run` only when the inference unit is intentionally stopped and
 restoration is wanted. The helper refuses to stop/restart an active unit. It
 starts the transient baseline, waits for health and verifies a completion. It
 does not change the older enabled boot unit or restart OpenClaw. The helper was
-validated in dry-run mode during documentation; it was not used to replace the
-already-running service.
+first validated in dry-run mode during documentation, then used successfully
+to restore the missing transient baseline after the host reboot.
 
 ## Next investigation
 
-1. Inspect 64K layer/state divergence and evaluate long-context quality on
-   representative code, retrieval, source-comparison and tool tasks.
-2. Keep precision changes distinct from scheduling/indexing changes. The CPU
+1. Isolate the MR/MTP cold-versus-restored answer change. Use the saved synthetic
+   task context and a fixed teacher-forced continuation; compare target logits
+   and hidden states before and after restoration using identical token batches.
+   Then separate draft state and speculative verification from target state and
+   batch-shape numerics. Matching text alone is not a state-equivalence test.
+2. Expand long-context quality coverage on representative code, retrieval,
+   source-comparison and tool tasks. Preserve the completed layer/replay controls
+   and failed equivalence gate; do not rerun them unchanged without cause.
+3. Keep precision changes distinct from scheduling/indexing changes. The CPU
    F32 oracle and old-kernel F32-output variant are diagnostics, not default
    runtime switches. Presence-based switches must be unset, not assigned `0`.
-3. If quality warrants promotion, test MR with production cache/checkpoints,
+4. If quality warrants promotion, test MR with production cache/checkpoints,
    speculative rollback and actual multi-turn OpenClaw traffic before adoption.
-4. Reprofile. Convolution-input materialization and routing reuse are possible
+5. Reprofile. Convolution-input materialization and routing reuse are possible
    next targets; no gains for them have been established here.
-5. Treat persistence of the current stable unit and a larger served context as
+6. Treat persistence of the current stable unit and a larger served context as
    explicit operational changes, separate from this documentation task.
 
 The failed smaller-tile and no-gain indirect-dispatch experiments are preserved

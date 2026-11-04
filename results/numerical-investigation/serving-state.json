@@ -1,0 +1,13 @@
+{
+  "checked_utc": "2026-11-04T21:31:03Z",
+  "health": {
+    "status": "ok"
+  },
+  "MR": "0",
+  "binary": "$HOME/src/rocmfp4-mtp-output/build-vulkan/bin/llama-server",
+  "unit": "qwen36-prefill-test.service",
+  "unit_persistence": "transient",
+  "any_processing": false,
+  "normal_endpoint_port": 8082,
+  "remote_OpenClaw_restarted": false
+}

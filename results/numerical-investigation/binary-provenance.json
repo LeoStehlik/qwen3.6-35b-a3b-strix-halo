@@ -1,0 +1,8 @@
+{
+  "libllama.so": "9b98556d2cd134720ebb7fb5ce24c3a015d336a525eafd8f8e14dcbe1367ede6",
+  "libggml-vulkan.so": "f258b4c1f0b2c84e09cd4e98a95f9d58b31d9ce21077d8b804b7ee0c3069639c",
+  "llama-perplexity": "fbd1791ae76ce1fa3f75514f5a004e63352ca4187f124db7c363786a63e24013",
+  "llama-server": "d4b37ef0445d83fe04b1d9519d9cbe58a16ca26586d355edf93ae378cf4fe77e",
+  "test-fa-numeric-trace-replay-deep": "276a751b4e53ce6be57491a643e21116f761c4692a0fd431ad964ad8d02eee5a",
+  "published-trace-numerics": "1880ceec868b1102f284d924cbfe4fc47fe72440506fbc56d81b73bd2a1b4c4e"
+}

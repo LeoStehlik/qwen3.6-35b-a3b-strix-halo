@@ -58,14 +58,42 @@ but MR still differed at model level (mean KL 0.64754, 110/128 greedy matches).
 Disabling the three MR scheduling options produced identical captured
 first-layer output to normal MR.
 
-These observations are consistent with numerical sensitivity in the quantized
-hybrid model, but the cause and downstream quality impact are **unresolved**.
-Do not label MR quality-equivalent or defective from this evidence alone.
+The follow-up [numerical investigation](NUMERICAL-INVESTIGATION.md) now supports
+MoE routing as a major amplifier of deterministic attention-rounding differences.
+Three captures per mode were bit-identical. Tracing preserved terminal outputs;
+layers 0–2 stayed identical and the first difference appeared at full-attention
+layer 3. Small score changes cross near-ties in its top-eight expert selection.
+
+Replaying all baseline router scores into MR, a diagnostic that pins both
+choices and weights, reduced 64K mean KL from 0.60334 to 0.01468. Baseline
+replay into itself was bit-identical. Residual drift remains; this intervention
+is not a runtime fix and does not pass every original equivalence threshold.
+
+At the last ubatch of the 64K prompt, MR was about 36× closer to an independent
+FP64 reference on 25 selected query/head pairs in layer 3. On a separate 64K
+WikiText chunk, PPL changed from 5.810504 to 5.806155 (−0.07486%), meeting the
+predeclared 1% margin across 32,767 scored positions. This explains much of the
+discrepancy without establishing broad model-quality equivalence.
+
+**The numerical gate remains failed and unchanged.** The new evidence makes
+"different from the old kernel" an inadequate stand-alone quality verdict.
+Neither that observation nor the speedup is sufficient for promotion.
+
+A new 65K+ synthetic source/tool scenario passed tool selection, exact argument
+retrieval and tool-result continuation in both modes. Both failed the source
+comparison's expected PR set. Both reused 65,880 cached tokens after displacement,
+but MR's wrong answer changed after restoration while baseline's stayed the same.
+This is an unresolved output-consistency observation; successful token reuse
+must not be reported as successful end-to-end cache validation. See the
+[recorded task results](../results/numerical-investigation/task-comparison.json).
+With MTP disabled, both modes returned identical cold/restored/repeated text on
+this scenario. The remaining interaction involves MTP or its execution pattern;
+that control does not identify a serialization bug or establish state equality.
 
 ## Before promotion
 
-1. Inspect layer/state divergence beyond the first attention layer; distinguish
-   rounding/route changes from an indexing, synchronization or state bug.
+1. Preserve the deterministic tracing/replay evidence and investigate any new
+   discrepancy that is not explained by the observed rounding/routing mechanism.
 2. Evaluate several text/code samples at 32K and 64K+, plus retrieval, source
    comparison and tool-selection tasks with assessable answers.
 3. Test multi-turn tool-result continuation, prefix displacement/restoration

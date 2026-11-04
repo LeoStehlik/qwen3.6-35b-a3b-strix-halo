@@ -1,0 +1,14 @@
+{
+  "scored_tokens": 32767,
+  "baseline_perplexity": 5.810503975334304,
+  "candidate_perplexity": 5.806154514986501,
+  "perplexity_change_percent": -0.07485513074710903,
+  "paired_mean_NLL_change": -0.0007488316118912153,
+  "approximate_128_token_block_standard_error": 0.0005142004611169304,
+  "approximate_95_percent_NLL_interval": [
+    -0.0017566645156803988,
+    0.00025900129189796817
+  ],
+  "scope": "First 65536-token chunk of WikiText-2 raw test split; last 32767 next-token positions scored. Paired fixed-input comparison, not a general agent-capability benchmark.",
+  "within_one_percent_perplexity_margin": true
+}

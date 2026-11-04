@@ -1,0 +1,24 @@
+{
+  "created_utc": "2026-11-04T21:18:36Z",
+  "context_sha256": "6216544b0f26e4f2f41e0bd530956ab2e7ff4f3903ca8cc5a377f97d0c605b39",
+  "scope": "One synthetic >64K source comparison / retrieval / tool continuation scenario, each mode; greedy decoding and MTP. Includes prefix displacement/restoration. No real tool execution.",
+  "expected_comparison": {
+    "included_prs": [
+      21481,
+      21577
+    ]
+  },
+  "expected_tool": {
+    "name": "lookup_release",
+    "arguments": {
+      "repository": "lab/halo-prefill",
+      "ref": "c06a44e"
+    }
+  },
+  "expected_continuation": {
+    "artifact": "halo-bundle-73",
+    "approval_code": "APPROVE-6J9T",
+    "nonce": "N7Q2-K9V4"
+  },
+  "acceptance": "Both modes must satisfy every exact expected field. The displaced/replayed comparison must also match and reuse at least 8192 cached tokens. No promotion based on this smoke test alone."
+}

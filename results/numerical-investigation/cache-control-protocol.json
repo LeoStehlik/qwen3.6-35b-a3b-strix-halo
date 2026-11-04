@@ -1,0 +1,13 @@
+{
+  "created_utc": "2026-11-04T21:27:06Z",
+  "purpose": "Follow up changed MR cold/restored answer by removing MTP. Identical prior context, questions, greedy settings and production checkpoints. Separately recorded diagnostic, not replacement of failed task results. Disabling MTP can change batching; this does not by itself isolate serialization correctness.",
+  "modes": [
+    1,
+    0
+  ],
+  "checks": [
+    "same answer cold/restored",
+    "same answer across two restored repeats",
+    "at least 8192 cached tokens"
+  ]
+}

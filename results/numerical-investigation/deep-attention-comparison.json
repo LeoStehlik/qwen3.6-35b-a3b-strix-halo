@@ -1,0 +1,189 @@
+{
+  "scope": "First full-attention layer (layer 3), final 1024-query ubatch of 65536 tokens; 25 selected query/head pairs. Independent FP64 softmax/value calculation using actual scaled-F16 Q and stored F16 K/V. Router replay is active but preceding layers and captured inputs are bit-identical.",
+  "inputs_identical": {
+    "q": true,
+    "k": true,
+    "v": true,
+    "m": true
+  },
+  "selected_query_head_pairs": 25,
+  "baseline_NRMSE_vs_FP64_oracle": 0.0069779071855884545,
+  "candidate_NRMSE_vs_FP64_oracle": 0.00019353408883026143,
+  "records": [
+    {
+      "row": 0,
+      "absolute_token": 64512,
+      "head": 0,
+      "baseline_NRMSE": 0.0018131006252546382,
+      "candidate_NRMSE": 6.392092868211335e-05
+    },
+    {
+      "row": 0,
+      "absolute_token": 64512,
+      "head": 1,
+      "baseline_NRMSE": 0.0010264213931403035,
+      "candidate_NRMSE": 3.8754565539294054e-05
+    },
+    {
+      "row": 0,
+      "absolute_token": 64512,
+      "head": 7,
+      "baseline_NRMSE": 0.0006111082631966129,
+      "candidate_NRMSE": 2.9397587461805692e-05
+    },
+    {
+      "row": 31,
+      "absolute_token": 64543,
+      "head": 0,
+      "baseline_NRMSE": 0.0008172187066487307,
+      "candidate_NRMSE": 5.61956180826716e-05
+    },
+    {
+      "row": 31,
+      "absolute_token": 64543,
+      "head": 1,
+      "baseline_NRMSE": 0.001191643572793405,
+      "candidate_NRMSE": 6.10436086220504e-05
+    },
+    {
+      "row": 31,
+      "absolute_token": 64543,
+      "head": 7,
+      "baseline_NRMSE": 0.0005551054939226411,
+      "candidate_NRMSE": 3.128775192737443e-05
+    },
+    {
+      "row": 255,
+      "absolute_token": 64767,
+      "head": 0,
+      "baseline_NRMSE": 0.0008430311164339822,
+      "candidate_NRMSE": 3.989602782976102e-05
+    },
+    {
+      "row": 255,
+      "absolute_token": 64767,
+      "head": 1,
+      "baseline_NRMSE": 0.0010869521182791369,
+      "candidate_NRMSE": 6.523372267801008e-05
+    },
+    {
+      "row": 255,
+      "absolute_token": 64767,
+      "head": 7,
+      "baseline_NRMSE": 0.0006185817431343317,
+      "candidate_NRMSE": 5.7823402265718144e-05
+    },
+    {
+      "row": 767,
+      "absolute_token": 65279,
+      "head": 0,
+      "baseline_NRMSE": 0.0004773057015808809,
+      "candidate_NRMSE": 9.649939901959163e-05
+    },
+    {
+      "row": 767,
+      "absolute_token": 65279,
+      "head": 1,
+      "baseline_NRMSE": 0.0013840209321357019,
+      "candidate_NRMSE": 3.6216064458049894e-05
+    },
+    {
+      "row": 767,
+      "absolute_token": 65279,
+      "head": 7,
+      "baseline_NRMSE": 0.0006410388472153052,
+      "candidate_NRMSE": 8.384589828179036e-05
+    },
+    {
+      "row": 1023,
+      "absolute_token": 65535,
+      "head": 0,
+      "baseline_NRMSE": 0.01922629999899337,
+      "candidate_NRMSE": 0.00023201810472664802
+    },
+    {
+      "row": 1023,
+      "absolute_token": 65535,
+      "head": 1,
+      "baseline_NRMSE": 0.008942562658400512,
+      "candidate_NRMSE": 8.540492180669675e-05
+    },
+    {
+      "row": 1023,
+      "absolute_token": 65535,
+      "head": 7,
+      "baseline_NRMSE": 0.017998133435342366,
+      "candidate_NRMSE": 0.0001779264970181518
+    },
+    {
+      "row": 0,
+      "absolute_token": 64512,
+      "head": 8,
+      "baseline_NRMSE": 0.0006448904391786954,
+      "candidate_NRMSE": 4.263384300319919e-05
+    },
+    {
+      "row": 0,
+      "absolute_token": 64512,
+      "head": 15,
+      "baseline_NRMSE": 0.0017599185965790208,
+      "candidate_NRMSE": 6.227751463557844e-05
+    },
+    {
+      "row": 31,
+      "absolute_token": 64543,
+      "head": 8,
+      "baseline_NRMSE": 0.0011233546240276542,
+      "candidate_NRMSE": 9.617458619415874e-05
+    },
+    {
+      "row": 31,
+      "absolute_token": 64543,
+      "head": 15,
+      "baseline_NRMSE": 0.0018177856496677366,
+      "candidate_NRMSE": 6.764526789843688e-05
+    },
+    {
+      "row": 255,
+      "absolute_token": 64767,
+      "head": 8,
+      "baseline_NRMSE": 0.0012074175290123846,
+      "candidate_NRMSE": 2.0870745523467544e-05
+    },
+    {
+      "row": 255,
+      "absolute_token": 64767,
+      "head": 15,
+      "baseline_NRMSE": 0.0019311059967648384,
+      "candidate_NRMSE": 7.163244883656628e-05
+    },
+    {
+      "row": 767,
+      "absolute_token": 65279,
+      "head": 8,
+      "baseline_NRMSE": 0.0008602861080603652,
+      "candidate_NRMSE": 6.28026080005672e-05
+    },
+    {
+      "row": 767,
+      "absolute_token": 65279,
+      "head": 15,
+      "baseline_NRMSE": 0.0015609178304699612,
+      "candidate_NRMSE": 7.719717265821505e-05
+    },
+    {
+      "row": 1023,
+      "absolute_token": 65535,
+      "head": 8,
+      "baseline_NRMSE": 0.013635460548040308,
+      "candidate_NRMSE": 0.0001883776681321942
+    },
+    {
+      "row": 1023,
+      "absolute_token": 65535,
+      "head": 15,
+      "baseline_NRMSE": 0.013770694770205748,
+      "candidate_NRMSE": 0.0006297810312199262
+    }
+  ]
+}

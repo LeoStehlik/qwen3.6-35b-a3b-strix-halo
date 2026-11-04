@@ -140,10 +140,29 @@ and a prose perplexity comparison are encouraging, but the predefined model
 numerical-equivalence gate failed. Full investigation and limits are in
 [VALIDATION.md](VALIDATION.md). [Measurements](../results/multi-row-attention/summary.json).
 
+## 9. Diagnose the numerical discrepancy — 2026-11-04
+
+Three fresh-process captures per mode, including the retained earlier capture,
+were bit-identical within each mode. Layer tracing was neutral to terminal
+outputs. The first difference occurred at layer 3 attention, followed by
+near-tie crossings in MoE expert routing. Diagnostic replay of baseline router
+scores reduced 64K mean KL from 0.60334 to 0.01468 (about 41×), while baseline
+replay into itself stayed identical. Replay pins both expert choices and weights.
+
+On identical layer-3 inputs near the end of the 64K prompt, sampled MR attention
+was about 36× closer to an independent FP64 reference than the existing kernel.
+A separate 64K text check scored 32,767 positions: PPL 5.810504 → 5.806155,
+−0.07486%, within the predeclared 1% margin. The apparent improvement is within
+uncertainty. No kernel or serving-default change was made.
+
+**Decision: the dominant numerical mechanism is supported; retain the failed
+equivalence gate and keep MR experimental.** Full methods, quality checks and
+limits are in [the investigation](NUMERICAL-INVESTIGATION.md).
+
 ## Next work
 
-1. Resolve the full-model numerical difference and test representative 64K+
-   tasks, tool selection, retrieval, and checkpoint continuation.
+1. Expand representative 64K+ task and corpus coverage using assessable answers;
+   the numerical investigation does not establish general capability equivalence.
 2. Once quality permits, validate MR under production cache/checkpoint settings
    and real OpenClaw traffic. Existing tests do not establish that outcome.
 3. Reprofile the resulting build. The previous profile points to recurrent
