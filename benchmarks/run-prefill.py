@@ -16,7 +16,8 @@ import time
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-FLAGS = ('GGML_VK_FA_MR', 'LLAMA_MTP_SPARSE_LOGITS', 'GGML_VK_MMID_SMALLN', 'GGML_VK_MMID_INDIRECT')
+FLAGS = ('GGML_VK_FA_MR', 'LLAMA_MTP_SPARSE_LOGITS', 'GGML_VK_MMID_SMALLN', 'GGML_VK_MMID_INDIRECT',
+         'GGML_VK_CONCAT_TRANSPOSE', 'LLAMA_MTP_SKIP_UNUSED_HEAD', 'prefill-next')
 
 def environment(flag, mode):
     env = os.environ.copy()
@@ -26,8 +27,14 @@ def environment(flag, mode):
     env.update(GGML_VK_FA_KV_CONTIG='1', GGML_VK_MMID_ROWLISTS='1', LLAMA_CONV_TAIL_X='1',
                GGML_VK_MMID_INDIRECT='0', LLAMA_MTP_SPARSE_LOGITS='1', GGML_VK_MMID_SMALLN='0',
                GGML_VK_FA_MR='0', GGML_VK_FA_MR_H='2', GGML_VK_FA_MR_TRACE='1',
+               GGML_VK_CONCAT_TRANSPOSE='0', LLAMA_MTP_SKIP_UNUSED_HEAD='0',
                GGML_VK_FA_MR_LAZY='1', GGML_VK_FA_MR_NOEB='1', GGML_VK_FA_MR_VPOST='1')
-    env[flag] = str(mode)
+    if flag in ('GGML_VK_CONCAT_TRANSPOSE', 'LLAMA_MTP_SKIP_UNUSED_HEAD', 'prefill-next'):
+        env['GGML_VK_FA_MR'] = '1'
+    if flag == 'prefill-next':
+        env.update(GGML_VK_CONCAT_TRANSPOSE=str(mode), LLAMA_MTP_SKIP_UNUSED_HEAD=str(mode))
+    else:
+        env[flag] = str(mode)
     return env
 
 def post(base, path, payload):
@@ -39,6 +46,7 @@ def server(args, mode, repeat):
     base = f'http://127.0.0.1:{args.port}'
     # Refuse a busy port before starting so requests cannot reach another server.
     with socket.socket() as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(('127.0.0.1', args.port))
     label = f'{args.flag}-{mode}-r{repeat}'
     cmd = [str(args.bin_dir / 'llama-server'), '--model', str(args.model),

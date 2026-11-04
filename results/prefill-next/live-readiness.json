@@ -1,0 +1,24 @@
+{
+  "checked_utc": "2026-11-04T22:07:26Z",
+  "status": "ready",
+  "port": 8082,
+  "model": "tiercel-qwen36-a3b-fast",
+  "binary": "$HOME/src/rocmfp4-prefill-next/build-vulkan/bin/llama-server",
+  "unit": "qwen36-prefill-test.service",
+  "persistence": "transient",
+  "flags": {
+    "GGML_VK_FA_MR": "1",
+    "GGML_VK_CONCAT_TRANSPOSE": "1",
+    "LLAMA_MTP_SKIP_UNUSED_HEAD": "1"
+  },
+  "health": {
+    "status": "ok"
+  },
+  "arithmetic": "42",
+  "tool_name_and_arguments": "passed",
+  "tool_result_continuation": "42",
+  "cached_tokens_on_continuation": 2743,
+  "OpenClaw_agent_requests_sent": 0,
+  "OpenClaw_gateway_restarted": false,
+  "real_prompt_integration": "User will run through their normal OpenClaw agent after readiness is reported."
+}

@@ -1,0 +1,35 @@
+{
+  "concat": {
+    "enabled_cpu_reference_passed": 139,
+    "enabled_total": 139,
+    "new_cases_disabled_passed": 27,
+    "new_cases_disabled_total": 27,
+    "new_cases_final_build_enabled_passed": 27,
+    "new_cases_final_build_enabled_total": 27,
+    "new_case_max_nmse": 0
+  },
+  "mtp_hidden": {
+    "status": "passed",
+    "scope": "Target hidden rows, selected logits, verification, multiple sequences and checkpoint restore; MR and new switches enabled."
+  },
+  "draft_head": {
+    "status": "passed",
+    "required_logit_and_hidden_rows": 9,
+    "zero_output_prefill_tokens": 2048,
+    "zero_output_tail_tokens": 37,
+    "physical_ubatch": 1024,
+    "saved_state_bytes": 4311828,
+    "off_on_comparison": "Bit-identical required logits, hidden rows and saved KV state; see draft-head-comparison.json."
+  },
+  "output_hashes": {
+    "all_eight_server_runs_identical": true,
+    "sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "drafted_each": 63,
+    "accepted_each": 58
+  },
+  "limits": [
+    "MR vs old attention numerical-equivalence gate remains failed; user accepted evidence and requested practical testing.",
+    "Real OpenClaw task quality is not established by local API checks.",
+    "Live continuation restored a small checkpoint; long-context displaced-cache behavior is not established by that check."
+  ]
+}

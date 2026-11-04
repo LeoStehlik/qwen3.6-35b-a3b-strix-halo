@@ -8,11 +8,47 @@ The runtime is **llama.cpp Vulkan/RADV**. ROCmFP4 names the weight format and
 specialized kernels here; these measurements are **not vLLM or a HIP backend**.
 
 The goal is sustained long-context prefill near 1,000 tok/s while preserving the
-model, tools, and useful context. The largest measured improvement is a
-multi-row attention port, still experimental because full-model numerical
-equivalence failed on the 64K code prompt.
+model, tools, and useful context. Multi-row attention plus two follow-up
+optimizations now reach about **956 tok/s** on the 64K server/MTP fixture.
+The optimized endpoint is ready for the user's real OpenClaw prompt trial.
+
+The first user-triggered Telegram request subsequently processed 50,437 prompt
+tokens at **1,029.18 tok/s**, then generated 4,408 tokens at **70.20 tok/s** with
+production checkpoints enabled. This is one real workload observation, separate
+from the controlled 65K comparison; answer quality is for the user to assess.
 
 ## Current result — 2026-11-04 UTC
+
+The final-build comparison keeps multi-row attention (MR) enabled in both modes:
+
+| 65,536-token server/MTP request | MR only | MR + new optimizations | Change |
+|---|---:|---:|---:|
+| Prefill throughput | 821.97 tok/s | **955.71 tok/s** | **+16.27%** |
+| Prefill time | 79.73 s | **68.57 s** | −11.16 s |
+| Short generation check | 49.17 tok/s | **52.35 tok/s** | +6.48% |
+
+The new changes tile convolution-input copies and omit unused MTP draft
+vocabulary projections. Two earlier combined trials measured 957.56 and
+952.95 tok/s. Their MR-only controls varied from 776.01 to 833.70 tok/s;
+all samples are retained rather than selecting the slowest control. The table
+uses one additional pair on the exact final build now serving. Same weights,
+F16 KV, batch/ubatch 2048/1024; no profiler or reused prompt tokens.
+[Individual measurements and correctness checks](results/prefill-next/summary.json).
+
+**Deployment status:** MR and both new optimizations are enabled on the local
+trial endpoint. Health, an actual completion, function arguments and cached
+tool-result continuation passed. The user will test real OpenClaw prompts;
+no synthetic OpenClaw agent turn or gateway restart was performed. The serving
+unit is transient; see [Francis's handoff](handoff.md) for operational details.
+
+The user reviewed and accepted the observed MR numerical variance as sufficient
+to continue optimization and practical testing. The earlier equivalence failure
+remains recorded. New operator tests and draft-state/output comparisons pass;
+these do not establish broad capability equivalence. Read the
+[numerical investigation](docs/NUMERICAL-INVESTIGATION.md) and
+[validation scope](docs/VALIDATION.md).
+
+## Earlier attention improvement
 
 | 65,536-token workload | MR off | MR on | Throughput gain |
 |---|---:|---:|---:|
@@ -29,19 +65,9 @@ belongs to the synthetic track. Server tests include MTP and use a fixed source
 prompt with a 2K warmup. Neither result establishes sustained 1,000 tok/s,
 150K-context performance, or end-to-end OpenClaw task throughput.
 
-**Deployment status:** the validated MTP sparse-logit build remains the normal
-server. MR attention is disabled. Its 30 operator tests and MTP regression pass,
-but the 64K numerical-equivalence gate still fails. The follow-up investigation
-found deterministic attention-rounding differences amplified by MoE routing:
-diagnostic router-score replay reduces mean KL 41×. Sampled attention near 64K
-is 36× closer to an FP64 reference with MR, and a paired 64K text check found
-no measured quality loss (PPL 5.8105 → 5.8062). These are bounded diagnostic
-findings, not broad capability equivalence or permission to promote the kernel.
-Both modes passed a 65K+ tool/continuation smoke check and failed its source
-comparison. MR also changed its answer after cache restoration with MTP enabled;
-that serving interaction needs isolation before promotion.
-Read the [numerical investigation](docs/NUMERICAL-INVESTIGATION.md) and
-[validation limits](docs/VALIDATION.md) before enabling MR.
+These earlier measurements isolate the attention change and must not be mixed
+with the new server pair to claim a synthetic speedup. No new target-only
+synthetic benchmark was run for the follow-up optimizations.
 
 ## Start here
 
@@ -73,6 +99,9 @@ python3 scripts/serve.py
 ```
 
 Default binding is `127.0.0.1:8082`; model ID is `tiercel-qwen36-a3b-fast`.
+The commands above retain the stable fallback. To reproduce the current trial,
+prepare/build profile `prefill-next` and launch with `--optimized-prefill`;
+see the [cookbook](docs/DEPLOYMENT.md).
 The launch uses the existing model files and does not download another model.
 The 131,072-token served context is the tested configuration, not a claim that
 150K prompts fit. Preserve checkpoint reuse and account for the context limit

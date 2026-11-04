@@ -7,10 +7,12 @@ implementations on the tested input. It is not evidence that the faster kernel
 has worse attention accuracy: its sampled long-context output was substantially
 closer to an independent reference.
 
-**The original numerical-equivalence gate still fails. MR remains disabled in
-normal serving.** This investigation does not change model weights, runtime
-kernels, serving defaults, or the gate's thresholds. In particular, diagnostic
-router replay is not a proposed inference algorithm.
+**The original numerical-equivalence gate still fails.** At the close of this
+investigation MR remained disabled in normal serving; this investigation changed
+neither runtime kernels nor the gate's thresholds. The user subsequently accepted
+the numerical evidence and requested practical testing of the optimized path;
+see [step 10](EXPERIMENTS.md) and [current serving state](../handoff.md).
+Diagnostic router replay is not a proposed inference algorithm.
 
 ## 1. Establish repeatability and trustworthy instrumentation
 

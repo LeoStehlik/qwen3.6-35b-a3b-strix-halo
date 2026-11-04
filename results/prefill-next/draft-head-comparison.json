@@ -1,0 +1,20 @@
+{
+  "logits": {
+    "bytes": 8939520,
+    "identical": true,
+    "sha256_off": "d1d70410e8e4dfa52fb4eddda6e56fcd797c5ae6382d85a1b993409174b09051",
+    "sha256_on": "d1d70410e8e4dfa52fb4eddda6e56fcd797c5ae6382d85a1b993409174b09051"
+  },
+  "hidden": {
+    "bytes": 73728,
+    "identical": true,
+    "sha256_off": "79705f086b69439ef0c5ee4dadf6a24977196b6a42977533b3812d651a2206e5",
+    "sha256_on": "79705f086b69439ef0c5ee4dadf6a24977196b6a42977533b3812d651a2206e5"
+  },
+  "state": {
+    "bytes": 4311828,
+    "identical": true,
+    "sha256_off": "25783d71466923fb017af2960eb9bcbf594a150d90ea12f7f02d6047462023cf",
+    "sha256_on": "25783d71466923fb017af2960eb9bcbf594a150d90ea12f7f02d6047462023cf"
+  }
+}

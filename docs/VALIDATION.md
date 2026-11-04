@@ -1,11 +1,43 @@
 # Validation, failures and deployment decision
 
-The MR speedup is repeatable on the tested 64K workload. Its deployment decision
-is separate: **MR remains disabled in normal serving**. The prior MTP build was
-restored, health returned OK and a completion answered `42`. No OpenClaw gateway
-restart was part of this experiment or repository work.
+As of 2026-11-04 22:07 UTC, the local trial endpoint serves MR plus tiled
+convolution-input copies and unused draft-head elimination. The user accepted
+the observed MR numerical variance and requested further performance work,
+followed by their own real OpenClaw prompts. The earlier equivalence failure
+remains evidence; it is not the practical task-quality acceptance criterion.
+No OpenClaw gateway restart was part of this work.
 
-## Passed checks
+## Follow-up optimization checks
+
+- 139/139 CONCAT CPU-reference cases passed with the tiled path enabled.
+  The 27 added cases also passed with it disabled, with exact zero error.
+  They cover odd extents, padded views, nonzero offsets, outer dimensions,
+  the 8192-channel model shape, and type/shape fallbacks. After adding a
+  workgroup-count guard, all 27 passed again on the final build.
+- `test-mtp-hidden` passed with MR and both optimizations enabled, checking
+  hidden rows, selected logits, verification, multiple sequences and restore.
+- The new `test-mtp-unused-head` compared head-skip off/on in separate processes:
+  two physical prompt ubatches, a short zero-output tail, draft steps, state
+  restoration and a multi-output batch. All nine requested vocabulary rows,
+  hidden rows and the saved draft KV state were bit-identical. This isolates
+  the new head elimination; it does not require old and MR attention to agree.
+- All eight measured server runs produced identical output hashes and the same
+  draft counts (63 drafted, 58 accepted). Combined prefill was 953–958 tok/s.
+  The final-build pair measured 821.97 → 955.71 tok/s (+16.27%).
+- The live endpoint passed health, an actual `42` completion, exact function
+  selection/arguments and a tool-result continuation answering `42`, with
+  2,743 cached tokens. Production cache/checkpoint settings were enabled.
+  The log confirms a small context checkpoint restored at token 2,743.
+  This does not test long-context displacement/restoration or complete
+  real-agent quality; the user supplies the real OpenClaw test.
+
+[Evidence](../results/prefill-next/summary.json),
+[draft-state comparison](../results/prefill-next/draft-head-comparison.json),
+[endpoint readiness](../results/prefill-next/live-readiness.json).
+
+The sections below retain the earlier attention investigation and its limits.
+
+## Earlier attention checks
 
 - 30 attention cases per mode against the CPU F32 oracle: Qwen dimensions,
   q=63/64/65/75/1024, KV up to 65,536, interleaved/padded views, masks, sinks,
@@ -90,7 +122,17 @@ With MTP disabled, both modes returned identical cold/restored/repeated text on
 this scenario. The remaining interaction involves MTP or its execution pattern;
 that control does not identify a serialization bug or establish state equality.
 
-## Before promotion
+## Updated acceptance direction
+
+The user subsequently accepted the measured numerical variance as sufficient
+to resume performance work and then test through OpenClaw. The failed exact
+numerical-equivalence result remains recorded; it is not by itself a task-quality
+failure. New changes must retain operator correctness and required state/output
+behavior. Judge practical adoption with assessable tasks, valid tool execution,
+cache/continuation behavior and performance, allowing different valid answers.
+Do not repeat open-ended equivalence forensics without evidence of malfunction.
+
+## Earlier proposed checks (historical)
 
 1. Preserve the deterministic tracing/replay evidence and investigate any new
    discrepancy that is not explained by the observed rounding/routing mechanism.
@@ -101,9 +143,10 @@ that control does not identify a serialization bug or establish state equality.
 4. Repeat paired timing and record workload/power/clock conditions after fixes.
 5. Establish quality acceptance criteria before examining new results.
 
-The prepared MR production-serving validation script in the local cache was
-**not executed**. The default launcher uses stable code; `--experimental-mr`
-is an opt-in switch, not a claim of promotion.
+The earlier MR production-serving validation script in the local cache was
+**not executed**. The follow-up endpoint checks described above are a separate,
+smaller API/tool/prefix-reuse check. The launcher without an explicit mode still
+uses stable code; the live trial uses `--optimized-prefill`.
 
 Evidence: [summary](../results/multi-row-attention/summary.json),
 [numeric comparison](../results/multi-row-attention/numeric-comparison.json),

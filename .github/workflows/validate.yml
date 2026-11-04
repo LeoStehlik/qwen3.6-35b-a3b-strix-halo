@@ -44,6 +44,7 @@ jobs:
           python3 benchmarks/analyze-perplexity.py --help >/dev/null
           python3 benchmarks/compare-numerics.py --help >/dev/null
           python3 scripts/serve.py --dry-run >/dev/null
+          python3 scripts/serve.py --optimized-prefill --dry-run >/dev/null
           python3 ops/restore-francis-baseline.py --bind-host 127.0.0.1 --dry-run >/dev/null
 
   reconstruct:
@@ -52,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [stable, profile, mr, moe-tiles]
+        profile: [stable, profile, mr, moe-tiles, prefill-next]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4

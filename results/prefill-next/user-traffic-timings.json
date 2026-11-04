@@ -1,0 +1,38 @@
+{
+  "date_utc": "2026-11-04",
+  "source": "Local inference service timing log; user initiated the Telegram request. No agent turn launched by the optimization work.",
+  "contents": "Aggregate timings only; no real prompts or responses.",
+  "conditions": {
+    "production_checkpoints_enabled": true,
+    "new_optimizations_enabled": true,
+    "MR_enabled": true,
+    "not_controlled_AB": true
+  },
+  "observations": [
+    {
+      "completed_utc": "2026-11-04T22:11:58Z",
+      "task_id": 18,
+      "prompt_tokens": 50437,
+      "prompt_ms": 49006.74,
+      "prompt_tok_s": 1029.18,
+      "generated_tokens": 4408,
+      "generation_ms": 62788.83,
+      "generation_tok_s": 70.2,
+      "draft_acceptance_rate": 0.94402,
+      "truncated": false
+    },
+    {
+      "completed_utc": "2026-11-04T22:12:26Z",
+      "task_id": 1524,
+      "prompt_tokens": 4049,
+      "prompt_ms": 3062.43,
+      "prompt_tok_s": 1322.15,
+      "generated_tokens": 2263,
+      "generation_ms": 23499.1,
+      "generation_tok_s": 96.3,
+      "draft_acceptance_rate": 0.94774,
+      "truncated": false
+    }
+  ],
+  "quality": "User assesses actual task answers; server completion alone does not establish correctness."
+}

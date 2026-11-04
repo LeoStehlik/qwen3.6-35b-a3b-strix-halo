@@ -1,0 +1,218 @@
+[
+  {
+    "flag": "baseline",
+    "mode": 1,
+    "repeat": 1,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 78608.42,
+      "prompt_per_token_ms": 1.1994692993164062,
+      "prompt_per_second": 833.7020385348033,
+      "predicted_n": 128,
+      "predicted_ms": 2609.482,
+      "predicted_per_token_ms": 20.386578125,
+      "predicted_per_second": 49.05188079473244,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 78.61829613600003,
+    "wall_seconds": 81.22721740099996,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": "baseline",
+    "hardware_before": {
+      "utc": "2026-11-04T21:54:36Z",
+      "temp1_input": "41000",
+      "power1_average": "16189000",
+      "freq1_input": "814000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T21:56:03Z",
+      "temp1_input": "63000",
+      "power1_average": "108623000",
+      "freq1_input": "2792000000"
+    },
+    "concat_transpose": 0,
+    "skip_unused_draft_head": 0
+  },
+  {
+    "flag": "concat",
+    "mode": 1,
+    "repeat": 1,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 72158.243,
+      "prompt_per_token_ms": 1.1010474090576172,
+      "prompt_per_second": 908.2261052281996,
+      "predicted_n": 128,
+      "predicted_ms": 2616.171,
+      "predicted_per_token_ms": 20.4388359375,
+      "predicted_per_second": 48.926465433643294,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 72.16910631500014,
+    "wall_seconds": 74.78477444599957,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": "concat",
+    "hardware_before": {
+      "utc": "2026-11-04T21:56:03Z",
+      "temp1_input": "63000",
+      "power1_average": "108623000",
+      "freq1_input": "2792000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T21:57:24Z",
+      "temp1_input": "65000",
+      "power1_average": "107540000",
+      "freq1_input": "2719000000"
+    },
+    "concat_transpose": 1,
+    "skip_unused_draft_head": 0
+  },
+  {
+    "flag": "draft",
+    "mode": 1,
+    "repeat": 1,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 75919.392,
+      "prompt_per_token_ms": 1.15843798828125,
+      "prompt_per_second": 863.2313599139466,
+      "predicted_n": 128,
+      "predicted_ms": 2444.152,
+      "predicted_per_token_ms": 19.0949375,
+      "predicted_per_second": 52.36990170824073,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 75.92894735999926,
+    "wall_seconds": 78.37280855999961,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": "draft",
+    "hardware_before": {
+      "utc": "2026-11-04T21:57:24Z",
+      "temp1_input": "65000",
+      "power1_average": "107540000",
+      "freq1_input": "2719000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T21:58:49Z",
+      "temp1_input": "67000",
+      "power1_average": "109310000",
+      "freq1_input": "2788000000"
+    },
+    "concat_transpose": 0,
+    "skip_unused_draft_head": 1
+  },
+  {
+    "flag": "combined",
+    "mode": 1,
+    "repeat": 1,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 68440.297,
+      "prompt_per_token_ms": 1.0443160552978517,
+      "prompt_per_second": 957.5645178746082,
+      "predicted_n": 128,
+      "predicted_ms": 2449.696,
+      "predicted_per_token_ms": 19.13825,
+      "predicted_per_second": 52.251381395895656,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 68.45014244699996,
+    "wall_seconds": 70.89973003400064,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": "combined",
+    "hardware_before": {
+      "utc": "2026-11-04T21:58:49Z",
+      "temp1_input": "67000",
+      "power1_average": "109310000",
+      "freq1_input": "2788000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T22:00:06Z",
+      "temp1_input": "66000",
+      "power1_average": "108747000",
+      "freq1_input": "2780000000"
+    },
+    "concat_transpose": 1,
+    "skip_unused_draft_head": 1
+  },
+  {
+    "flag": "combined",
+    "mode": 1,
+    "repeat": 2,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 68771.709,
+      "prompt_per_token_ms": 1.0493730010986329,
+      "prompt_per_second": 952.9499986687839,
+      "predicted_n": 128,
+      "predicted_ms": 2437.367,
+      "predicted_per_token_ms": 19.0419296875,
+      "predicted_per_second": 52.51568598409677,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 68.7807933690001,
+    "wall_seconds": 71.2182871770001,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": "combined",
+    "hardware_before": {
+      "utc": "2026-11-04T22:00:06Z",
+      "temp1_input": "66000",
+      "power1_average": "108747000",
+      "freq1_input": "2780000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T22:01:24Z",
+      "temp1_input": "66000",
+      "power1_average": "108156000",
+      "freq1_input": "2782000000"
+    },
+    "concat_transpose": 1,
+    "skip_unused_draft_head": 1
+  },
+  {
+    "flag": "baseline",
+    "mode": 1,
+    "repeat": 2,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 65536,
+      "prompt_ms": 84452.827,
+      "prompt_per_token_ms": 1.2886478729248048,
+      "prompt_per_second": 776.0071785400387,
+      "predicted_n": 128,
+      "predicted_ms": 2610.878,
+      "predicted_per_token_ms": 20.397484375,
+      "predicted_per_second": 49.025653439187884,
+      "draft_n": 63,
+      "draft_n_accepted": 58
+    },
+    "first_output_seconds": 84.46174351300033,
+    "wall_seconds": 87.07204780400025,
+    "output_sha256": "80f83af9be86f2c509b2b65bf8b201f73622f60db36ef9dc9e49bc3c5985a300",
+    "configuration": "baseline",
+    "hardware_before": {
+      "utc": "2026-11-04T22:01:24Z",
+      "temp1_input": "66000",
+      "power1_average": "108156000",
+      "freq1_input": "2782000000"
+    },
+    "hardware_after": {
+      "utc": "2026-11-04T22:02:58Z",
+      "temp1_input": "65000",
+      "power1_average": "110172000",
+      "freq1_input": "2794000000"
+    },
+    "concat_transpose": 0,
+    "skip_unused_draft_head": 0
+  }
+]

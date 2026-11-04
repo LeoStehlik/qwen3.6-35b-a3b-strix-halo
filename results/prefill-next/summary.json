@@ -1,0 +1,54 @@
+{
+  "date_utc": "2026-11-04",
+  "baseline": "MR H=2, F16 KV, native MTP, batch/ubatch 2048/1024",
+  "changes": [
+    "Tiled bit-preserving convolution-input concatenation",
+    "Omit unused MTP draft vocabulary projection on zero-output calls"
+  ],
+  "source_profile": "prefill-next",
+  "source_base_commit": "4795079b04f5e0ada6e5d2e85b12bac1e27e7873",
+  "acceptance": "User accepted observed MR numerical variance. Preserve operator and required state/output behavior; assess practical task quality without requiring old-kernel answers.",
+  "conditions": {
+    "track": "cold server/MTP",
+    "prompt_tokens": 65536,
+    "warmup_tokens": 2048,
+    "output_tokens": 128,
+    "cache_tokens": 0,
+    "cache_ram_mib": 0,
+    "context_checkpoints": 0,
+    "slots": 1,
+    "context_size": 131072,
+    "mtp_width": 5,
+    "mtp_p_split": 0.1,
+    "profilers": false,
+    "MR_dispatch_trace": true,
+    "isolation": "Local Qwen3.6 listener stopped during timing; Qwen3.8 CPU target idle. Restored serving after timing. No Mac gateway restart."
+  },
+  "final_build_pair": {
+    "baseline_tok_s": 821.9656369549509,
+    "candidate_tok_s": 955.7078915928358,
+    "throughput_gain_pct": 16.271027476689383,
+    "baseline_prefill_s": 79.730827,
+    "candidate_prefill_s": 68.573254,
+    "prefill_seconds_saved": 11.157573000000005,
+    "baseline_decode_tok_s": 49.1676455381514,
+    "candidate_decode_tok_s": 52.35259472547608,
+    "trials_per_mode": 1
+  },
+  "component_runs": {
+    "combined_prefill_tok_s": [
+      957.5645178746082,
+      952.9499986687839
+    ],
+    "baseline_prefill_tok_s": [
+      833.7020385348033,
+      776.0071785400387
+    ],
+    "variance_note": "MR-only controls varied materially. All observations retained; final pair used for headline. Component effects have one observation each."
+  },
+  "build_note": "Final build adds only dispatch-count bounds to the initial timing build. Targeted operator cases repeated and paired throughput measured again before deploying that final binary. Exact hashes retained for both builds.",
+  "correctness": "correctness.json",
+  "endpoint_check": "live-readiness.json",
+  "no_new_synthetic_result": true,
+  "real_prompt_test": "First user-triggered Telegram request completed: 50,437 prompt tokens at 1,029.18 tok/s, generation 70.20 tok/s; separate from controlled benchmark. See user-traffic-timings.json. Answer quality not assessed here."
+}

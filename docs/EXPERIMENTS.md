@@ -159,14 +159,73 @@ uncertainty. No kernel or serving-default change was made.
 equivalence gate and keep MR experimental.** Full methods, quality checks and
 limits are in [the investigation](NUMERICAL-INVESTIGATION.md).
 
+## 10. Tile convolution inputs and skip unused draft heads — 2026-11-04
+
+After reviewing the evidence, the user accepted the observed numerical variance
+and requested another 10–20% prefill improvement followed by real OpenClaw use.
+This explicitly superseded the earlier requirement to reproduce old-kernel
+outputs. The failed equivalence gate and task observations remain in the record.
+
+Two changes build on MR H=2 without changing model weights or KV precision:
+
+1. Patch 0005 copies recurrent convolution inputs through a padded shared-memory
+   tile, coalescing transposed activation reads and output writes. Values are
+   copied as 32-bit words. Unsupported layouts, types and shapes fall back.
+2. Patch 0006 omits the MTP draft vocabulary projection when no logits or generic
+   embeddings are requested. Hidden/state computation and actual drafting retain
+   their original paths. This complements patch 0002's target-side sparse logits.
+
+The initial component experiment used the same 65,536-token server fixture,
+2K warmup, F16 KV, batch/ubatch 2048/1024 and native MTP width 5. MR was on
+throughout; prompt reuse, checkpoints and profilers were off. In execution order:
+
+| Configuration | Prefill tok/s | Prefill seconds | Generation tok/s |
+|---|---:|---:|---:|
+| MR only, first control | 833.70 | 78.61 | 49.05 |
+| Tiled concat only | 908.23 | 72.16 | 48.93 |
+| Unused draft-head skip only | 863.23 | 75.92 | 52.37 |
+| Both, trial 1 | 957.56 | 68.44 | 52.25 |
+| Both, trial 2 | 952.95 | 68.77 | 52.52 |
+| MR only, second control | 776.01 | 84.45 | 49.03 |
+
+The controls varied materially; there is no established cause. The combined
+trials were consistent and about 14.6% faster than the faster initial control.
+Component timings are single observations, not independently precise effects.
+GPU temperature rose from 41°C before the first run to 63–67°C after runs;
+post-run power was approximately 108–110 W. Raw snapshots are retained.
+
+After adding a workgroup-count guard for oversized tensors, the final build
+passed the 27 targeted concat cases again. A fresh paired timing on that exact
+build measured **821.97 → 955.71 tok/s (+16.27%)**, reducing prefill
+**79.73 → 68.57 seconds**. Its short generation check was 49.17 → 52.35 tok/s.
+This pair reproduces the useful gain on the binary selected for serving.
+There is no new target-only synthetic measurement or sustained 1K claim.
+
+139/139 CONCAT cases passed with the new path enabled; the 27 added cases
+also passed disabled. The target MTP hidden/output regression passed. A new
+draft regression captured nine required logit/hidden rows plus saved draft KV
+state; head-skip off/on were bit-identical through prefill, drafting and restore.
+All eight server runs had identical output hashes and draft counts.
+
+**Decision: enable MR and both optimizations on the local trial endpoint for
+the user's real prompts.** At 22:07 UTC, health, an actual completion, function
+selection/arguments and cached tool-result continuation passed. No OpenClaw
+agent turn or gateway restart was initiated. The user then began their own
+Telegram request. Practical task quality remains for that test to establish.
+
+The default launcher still provides the stable fallback. The live trial uses
+`--optimized-prefill` and source profile `prefill-next`. Both new switches can
+be disabled independently for diagnosis. Reconstructable patches, exact build
+hashes, test summaries and all timings are retained in
+[the evidence](../results/prefill-next/summary.json).
+
 ## Next work
 
-1. Expand representative 64K+ task and corpus coverage using assessable answers;
-   the numerical investigation does not establish general capability equivalence.
-2. Once quality permits, validate MR under production cache/checkpoint settings
-   and real OpenClaw traffic. Existing tests do not establish that outcome.
-3. Reprofile the resulting build. The previous profile points to recurrent
-   convolution-input materialization and repeated MoE routing as candidates;
-   neither is an implemented/measured follow-up optimization here.
-4. Extend context and workload coverage. Do not extrapolate 64K averages into
-   a claim about 128K or 150K contexts.
+1. Observe the user's real OpenClaw prompts, tool loops and cache behavior;
+   assess useful answers without requiring old-kernel wording.
+2. Measure longer contexts before extrapolating 64K throughput to 128K or 150K.
+   The current served context is still 131,072.
+3. If further performance work is requested, profile the combined build;
+   repeated routing and remaining attention copies are unmeasured candidates.
+4. Treat boot persistence and larger served context as separate operational
+   changes; the current trial service is transient.

@@ -1,0 +1,129 @@
+diff --git a/src/models/qwen35moe.cpp b/src/models/qwen35moe.cpp
+index 70aec90..c63770a 100644
+--- a/src/models/qwen35moe.cpp
++++ b/src/models/qwen35moe.cpp
+@@ -717,6 +717,18 @@ llama_model_qwen35moe::graph_mtp::graph_mtp(const llama_model & model, const llm
+ 
+     cb(cur, "mtp_shared_head_norm", -1);
+ 
++    // process() advances draft KV state with logits=false for every prompt
++    // row. Keep its hidden/state graph, but do not compute an unused vocabulary
++    // projection. Actual drafting requests logits and follows the normal path.
++    static const bool skip_unused_head = [] {
++        const char * e = std::getenv("LLAMA_MTP_SKIP_UNUSED_HEAD");
++        return e && std::atoi(e) != 0;
++    }();
++    if (skip_unused_head && n_outputs == 0 && !cparams.embeddings) {
++        ggml_build_forward_expand(gf, cur);
++        return;
++    }
++
+     ggml_tensor * head_w = layer.nextn.shared_head_head ? layer.nextn.shared_head_head : model.output;
+     GGML_ASSERT(head_w && "QWEN35MOE MTP: missing LM head (nextn.shared_head_head or model.output)");
+     cur = build_lora_mm(head_w, cur);
+diff --git a/tests/CMakeLists.txt b/tests/CMakeLists.txt
+index f800883..1e7908e 100644
+--- a/tests/CMakeLists.txt
++++ b/tests/CMakeLists.txt
+@@ -118,6 +118,7 @@ endfunction()
+ 
+ # build test-tokenizer-0 target once and add many tests
+ llama_build(test-mtp-hidden.cpp)
++llama_build(test-mtp-unused-head.cpp)
+ llama_build(test-fa-mr-numeric.cpp)
+ llama_build(test-tokenizer-0.cpp)
+ 
+diff --git a/tests/test-mtp-unused-head.cpp b/tests/test-mtp-unused-head.cpp
+new file mode 100644
+index 0000000..9acdddd
+--- /dev/null
++++ b/tests/test-mtp-unused-head.cpp
+@@ -0,0 +1,88 @@
++// Cross-process regression for skipping unused Qwen MTP vocabulary projections.
++// Run with LLAMA_MTP_SKIP_UNUSED_HEAD=0 and =1 and compare saved outputs/state.
++#include "llama.h"
++#include "../src/llama-ext.h"
++#include "../vendor/nlohmann/json.hpp"
++#include <cmath>
++#include <cstdio>
++#include <cstdlib>
++#include <fstream>
++#include <stdexcept>
++#include <vector>
++
++static void require(bool ok, const char * what) {
++    if (!ok) { throw std::runtime_error(what); }
++}
++
++int main(int argc, char ** argv) {
++    try {
++        require(argc == 4, "usage: test-mtp-unused-head model.gguf tokens.json output-prefix");
++        std::ifstream input(argv[2]);
++        nlohmann::json data; input >> data;
++        const auto tokens = data.get<std::vector<llama_token>>();
++        require(tokens.size() >= 4096, "need 4096 input tokens");
++        llama_backend_init();
++        auto mp = llama_model_default_params(); mp.n_gpu_layers = 999; mp.use_mmap = false;
++        auto * model = llama_model_load_from_file(argv[1], mp);
++        require(model != nullptr, "model load failed");
++        auto cp = llama_context_default_params();
++        cp.n_ctx=4096; cp.n_batch=2048; cp.n_ubatch=1024; cp.n_seq_max=1;
++        cp.n_threads=cp.n_threads_batch=16;
++        cp.type_k=cp.type_v=GGML_TYPE_F16; cp.flash_attn_type=LLAMA_FLASH_ATTN_TYPE_ENABLED;
++        auto * target = llama_init_from_model(model, cp);
++        require(target != nullptr, "target context failed");
++        cp.ctx_type=LLAMA_CONTEXT_TYPE_MTP; cp.ctx_other=target;
++        auto * draft = llama_init_from_model(model, cp);
++        require(draft != nullptr, "draft context failed");
++        llama_set_embeddings_pre_norm(draft, true, true);
++        llama_set_mtp_source(draft, target);
++        const int hidden=llama_model_n_embd(model);
++        const int vocab=llama_vocab_n_tokens(llama_model_get_vocab(model));
++        auto batch=llama_batch_init(2048,hidden,1);
++        batch.token=(llama_token *)std::malloc(2048*sizeof(llama_token));
++        require(batch.token != nullptr, "token allocation failed");
++        std::ofstream logits(std::string(argv[3])+".logits",std::ios::binary);
++        std::ofstream embeddings(std::string(argv[3])+".hidden",std::ios::binary);
++        int saved_rows=0;
++        auto decode = [&](int start, int count, bool output) {
++            batch.n_tokens=count;
++            for (int i=0;i<count;++i) {
++                batch.token[i]=tokens[start+i]; batch.pos[i]=start+i;
++                batch.n_seq_id[i]=1; batch.seq_id[i][0]=0; batch.logits[i]=output;
++                for (int j=0;j<hidden;++j) {
++                    batch.embd[(size_t)i*hidden+j]=std::sin(float((start+i)*13+j)*0.03125f)*0.25f;
++                }
++            }
++            require(llama_decode(draft,batch)==0,"draft decode failed");
++            llama_synchronize(draft);
++            if (output) {
++                for (int i=0;i<count;++i) {
++                    const float * p=llama_get_logits_ith(draft,i);
++                    const float * h=llama_get_embeddings_pre_norm_ith(draft,i);
++                    require(p && h,"missing requested output");
++                    for (int j=0;j<vocab;++j) require(std::isfinite(p[j]),"nonfinite logits");
++                    for (int j=0;j<hidden;++j) require(std::isfinite(h[j]),"nonfinite hidden");
++                    logits.write((const char *)p,vocab*sizeof(float));
++                    embeddings.write((const char *)h,hidden*sizeof(float));
++                    ++saved_rows;
++                }
++            }
++            std::printf("decoded start=%d count=%d output=%d\n",start,count,output); std::fflush(stdout);
++        };
++        decode(0,2048,false); // two physical ubatches, no vocabulary outputs
++        decode(2048,37,false); // short prompt tail
++        std::vector<uint8_t> saved(llama_state_seq_get_size(draft,0));
++        require(llama_state_seq_get_data(draft,saved.data(),saved.size(),0)==saved.size(),"save failed");
++        std::ofstream state(std::string(argv[3])+".state",std::ios::binary);
++        state.write((const char *)saved.data(),saved.size());
++        decode(2085,1,true); decode(2086,1,true); // ordinary draft steps
++        require(llama_state_seq_set_data(draft,saved.data(),saved.size(),0)==saved.size(),"restore failed");
++        decode(2085,1,true); decode(2086,1,true); // required outputs after restore
++        decode(2087,5,true); // multi-output batch
++        require(saved_rows==9 && logits.good() && embeddings.good() && state.good(),"capture failed");
++        std::ofstream meta(std::string(argv[3])+".json");
++        meta << nlohmann::json({{"rows",saved_rows},{"vocab",vocab},{"hidden",hidden},{"saved_state_bytes",saved.size()}}).dump(2) << '\n';
++        llama_batch_free(batch); llama_free(draft); llama_free(target); llama_model_free(model); llama_backend_free();
++        return 0;
++    } catch (const std::exception & e) { std::fprintf(stderr,"FAIL: %s\n",e.what()); return 1; }
++}

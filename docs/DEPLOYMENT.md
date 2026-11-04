@@ -106,7 +106,24 @@ actually running it. Compilation does not enable MR; the environment switch is
 required. The default remains `stable`. Unset profiler and diagnostic oracle
 variables during serving and timed throughput runs.
 
-## 6. Cache and integration
+## 6. Additional prefill optimizations
+
+The `prefill-next` profile adds tiled convolution-input copies and removal of
+unused MTP draft vocabulary projections on top of MR:
+
+```bash
+python3 scripts/prepare-source.py --profile prefill-next
+bash scripts/build.sh work/prefill-next
+python3 scripts/serve.py --optimized-prefill --port 18082 --dry-run
+```
+
+After reviewing the printed configuration, omit `--dry-run` to start it on a
+free port. Use the actual private-network host and port when configuring a
+client. `--optimized-prefill` enables MR and both new optimizations together;
+the original stable launcher remains available without this option. Builds
+disable the embedded WebUI, matching the existing API-only inference binaries.
+
+## 7. Cache and integration
 
 Keep the existing OpenClaw provider/model identity and stable prefixes.
 `cache_prompt: true` enables the tested reuse. Faster cold prefill does not
@@ -115,5 +132,7 @@ remove the value of prefix reuse and checkpoints.
 This repository does not edit the Mac's OpenClaw configuration, restart its
 gateway, reduce tools, or change the model. Test complete tool loops,
 reasoning/stream handling, vision and cache restoration before deployment
-changes. MR timing disabled caches/checkpoints for measurement isolation;
-it is not evidence of production checkpoint behavior.
+changes. Timing runs disable caches/checkpoints for measurement isolation;
+live readiness checks retain the production settings. The user will perform the
+real OpenClaw prompt test; no synthetic OpenClaw agent turn is part of this
+optimization run.

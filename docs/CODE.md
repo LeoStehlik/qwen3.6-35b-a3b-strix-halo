@@ -11,15 +11,17 @@ Build directories and binaries are not committed.
 | 0002 | Independent all-token MTP hidden-state capture and selected vocabulary outputs | speculative/server contexts, llama batch/context, `test-mtp-hidden.cpp` |
 | 0003 | Attention-stage timing and operator profile records | `ggml-vulkan.cpp` |
 | 0004 | MR kernel, V transpose, guarded dispatch, numerical tests and diagnostic references | Vulkan host/shaders, CPU attention, backend/model tests, perplexity exporter |
+| 0005 | Tiled bit-preserving copies for recurrent convolution inputs | Vulkan host, `concat_transpose.comp`, backend tests |
+| 0006 | Skip unused draft vocabulary projection on zero-logit MTP calls | `qwen35moe.cpp`, `test-mtp-unused-head.cpp` |
 | experimental/5001 | Smaller per-expert MoE tiles; slower in this experiment | Vulkan host and routing tests |
 
 Profiles: `stable` = 0001–0002; `profile` = 0001–0003; `mr` = 0001–0004;
-`moe-tiles` = 0001–0002 plus 5001. The rejected MoE-tile patch is a sibling,
+`prefill-next` = 0001–0006; `moe-tiles` = 0001–0002 plus 5001. The rejected MoE-tile patch is a sibling,
 not an extra step to apply on top of MR.
 
 ## Runtime switches
 
-| Variable | Validated serving value | Meaning |
+| Variable | Optimized trial value | Meaning |
 |---|---|---|
 | `GGML_VK_FA_KV_CONTIG` | `1` | Repack eligible strided F16 KV for attention |
 | `GGML_VK_MMID_ROWLISTS` | `1` | Build/use per-expert row lists |
@@ -27,9 +29,15 @@ not an extra step to apply on top of MR.
 | `GGML_VK_MMID_INDIRECT` | `0` | Indirect dispatch; no measured gain |
 | `LLAMA_MTP_SPARSE_LOGITS` | `1` | Preserve hidden rows while selecting vocabulary outputs |
 | `GGML_VK_MMID_SMALLN` | `0` | Only the rejected MoE-tile profile implements this |
-| `GGML_VK_FA_MR` | `0` | Experimental MR attention; opt-in only |
-| `GGML_VK_FA_MR_H` | candidate `2` | Heads per MR group |
-| `GGML_VK_FA_MR_LAZY`, `..._NOEB`, `..._VPOST` | candidate `1` | Ported scheduling options; all default on within MR |
+| `GGML_VK_FA_MR` | `1` | MR attention, enabled by `--optimized-prefill` |
+| `GGML_VK_FA_MR_H` | `2` | Heads per MR group |
+| `GGML_VK_FA_MR_LAZY`, `..._NOEB`, `..._VPOST` | `1` | Ported scheduling options; all default on within MR |
+| `GGML_VK_CONCAT_TRANSPOSE` | `1` | Tiled copies of eligible convolution inputs |
+| `LLAMA_MTP_SKIP_UNUSED_HEAD` | `1` | Skip the draft vocabulary head when no logits are requested |
+
+The launcher without `--optimized-prefill` retains the original stable profile
+and sets the new switches to zero. Both new switches are opt-in and can be
+disabled separately for same-binary comparisons.
 
 `GGML_VK_FA_PROFILE`, `GGML_VK_PERF_LOGGER`, `GGML_VK_FA_MR_TRACE`,
 `GGML_VK_FA_F32_OUTPUT` and `GGML_CPU_FA_F32_REFERENCE` are diagnostic
@@ -57,6 +65,25 @@ stride `KV + 128`. All scratch regions are reserved before recording GPU work.
 The current port retains the original V contiguity pass before V transpose;
 eliminating that extra conversion remains possible follow-up work, not a
 measured optimization in this repository.
+
+## Convolution-input tiling and unused draft-head elimination
+
+The generic concatenation kernel writes contiguous output while reading the
+transposed activation tensor at a large stride. Patch 0005 uses a padded 32×33
+shared-memory tile, with 32×8 threads, to coalesce the large activation reads
+and the output writes. Values are copied as 32-bit words. The dispatch gate
+requires concatenation along dimension zero, a history of at most 32 positions,
+the expected transposed input strides, and bounded workgroup dimensions. Other
+types/layouts/shapes use the existing kernel. Odd extents, padded views, nonzero
+offsets, outer dimensions and fallback cases are tested against the CPU result.
+
+MTP's `process()` calls advance draft state with no requested vocabulary logits,
+yet the original Qwen MTP graph always projected the entire vocabulary. Patch
+0006 keeps the hidden/state graph and omits only that unused projection when
+`n_outputs == 0` and generic embeddings are not requested. Actual drafting still
+uses the original head. The regression captures required logits and hidden
+states after a two-ubatch zero-logit prefill, a short tail, ordinary draft steps
+and state restoration, and compares the saved KV state across both modes.
 
 ## Diagnostic changes included with MR
 

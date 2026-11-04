@@ -1,0 +1,5 @@
+{
+  "llama-server": "e62cd29daea773bb26e9d9ea934885761cb67cdcf26090cde9a47de0e981ca4f",
+  "libllama.so": "f7396bf30715cef6bf4bcaa08d2afb7b894eb4de45545dcd1d719973b4da29fd",
+  "libggml-vulkan.so": "1ab3908c92489246e0ce6962bd8c5c99ab63c98d33a493d9d153c02d0f1d472c"
+}

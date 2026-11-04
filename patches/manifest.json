@@ -148,5 +148,45 @@
         "sha256_after": "755363c0ad864ff77e8f7a7f24004e2d82b5c83d73680ca4ba53341cbbb77858"
       }
     ]
+  },
+  {
+    "patch": "patches/0005-tiled-convolution-input-concat.patch",
+    "sha256": "7999a2161a1480e383990688ddc736c6b5c66957d974618f227969c4b8c4eeba",
+    "files": [
+      {
+        "path": "ggml/src/ggml-vulkan/ggml-vulkan.cpp",
+        "sha256_after": "295de9c8d23680d839b857b578a938e6bfa51933b6baf05a5d99f2a8788b6533"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/vulkan-shaders-gen.cpp",
+        "sha256_after": "0efc72f6454a1fab1fbd2389fad6bc5e5ce25a0eb2773465ef9b7ab795c7da45"
+      },
+      {
+        "path": "tests/test-backend-ops.cpp",
+        "sha256_after": "03126c61c141493d439d46701cc74dc3e46c73ec4417fcd75ef514ab400aecd0"
+      },
+      {
+        "path": "ggml/src/ggml-vulkan/vulkan-shaders/concat_transpose.comp",
+        "sha256_after": "7981fca260ad249c5a8b1f8eb918d71a4e7cbccf11d3c9a14106bdf3e267d6d5"
+      }
+    ]
+  },
+  {
+    "patch": "patches/0006-mtp-unused-draft-head.patch",
+    "sha256": "2ada83afc84b9499c56028cd43bda576f2cac1e7ea01bc90683b18d8933c1f74",
+    "files": [
+      {
+        "path": "src/models/qwen35moe.cpp",
+        "sha256_after": "6aa241698d2e23432d948e81bbae129e2a00b5a09503d687e495498e8b9900b9"
+      },
+      {
+        "path": "tests/CMakeLists.txt",
+        "sha256_after": "805fadda165cbcd42843924a5e1fc417015c800dee750220c500d2ee58547070"
+      },
+      {
+        "path": "tests/test-mtp-unused-head.cpp",
+        "sha256_after": "10aad10fa4d6531ab577c46836703fac8f416e9b89b32ed08f0d5a603edaaaac"
+      }
+    ]
   }
 ]

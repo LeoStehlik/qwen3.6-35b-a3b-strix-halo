@@ -78,7 +78,38 @@ GGML_VK_FA_MR=1 GGML_VK_FA_KV_CONTIG=1 LLAMA_MTP_SPARSE_LOGITS=1 \
   "$model" benchmarks/fixtures/prompt-tokens.json
 ```
 
-## Full-model numerical gate
+## Additional optimizations on top of MR
+
+Use `prefill-next` to compare both new switches together, retaining MR on in
+both modes. Component choices are `GGML_VK_CONCAT_TRANSPOSE` and
+`LLAMA_MTP_SKIP_UNUSED_HEAD`; these also retain MR and leave the other component
+disabled. `prefill-next` is a harness selector, not an environment variable.
+
+```bash
+python3 benchmarks/run-prefill.py --kind server --flag prefill-next \
+  --bin-dir work/prefill-next/build-vulkan/bin --model "$model" \
+  --output runs/prefill-next --repetitions 2
+GGML_VK_CONCAT_TRANSPOSE=1 work/prefill-next/build-vulkan/bin/test-backend-ops \
+  -b Vulkan0 -o CONCAT
+mkdir -p runs/draft-head
+for mode in 0 1; do
+  GGML_VK_FA_MR=1 GGML_VK_FA_KV_CONTIG=1 GGML_VK_MMID_ROWLISTS=1 \
+    LLAMA_MTP_SKIP_UNUSED_HEAD="$mode" \
+    work/prefill-next/build-vulkan/bin/test-mtp-unused-head \
+    "$model" benchmarks/fixtures/prompt-tokens.json "runs/draft-head/mode-$mode"
+done
+cmp runs/draft-head/mode-0.logits runs/draft-head/mode-1.logits
+cmp runs/draft-head/mode-0.hidden runs/draft-head/mode-1.hidden
+cmp runs/draft-head/mode-0.state runs/draft-head/mode-1.state
+```
+
+Those byte comparisons test elimination of an unused projection against the
+same MR computation, not agreement between different attention algorithms.
+The source profile also retains `test-mtp-hidden` for the target's sparse-output
+and hidden-row contract. Headline timings use the server/MTP track; do not infer
+a new synthetic target-only throughput number from them.
+
+## Full-model numerical gate (historical equivalence diagnostic)
 
 Analysis needs NumPy. Captures write large arrays into ignored `runs/`; do not
 commit those arrays.
@@ -127,6 +158,6 @@ python3 benchmarks/analyze-perplexity.py runs/perplexity
 ```
 
 This checks next-token accuracy on one excerpt, not agent capability. The
-block-based uncertainty estimate is approximate. Evaluate more corpora and
-contexts before promotion. Unset all profiling/F32-reference diagnostics before
+block-based uncertainty estimate is approximate. Broader quality claims need
+more corpora and contexts. Unset all profiling/F32-reference diagnostics before
 performance and perplexity comparisons, except the probability exporter above.
