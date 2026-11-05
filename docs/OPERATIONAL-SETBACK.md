@@ -91,3 +91,8 @@ checkpoint support does not prove that OpenClaw assembles a reusable stable
 prefix. Measure that independently. Judge progress by time to a correct useful
 action on cold and warm real requests, including tool discovery, exact arguments,
 continuation and recovery; retain model capability and useful context.
+
+The subsequent [Qwen3.8 diagnostic](https://github.com/LeoStehlik/qwen3.8-27b-strix-halo-dflash2/blob/investigate/dense-prefill-20261105/docs/PREFILL-RETURN-2026-11-05.md)
+is complete on a separate branch: 62.65% of cold 64K GPU prefill is quantized
+dense matrix work and 20.20% is attention. No new kernel is deployed. This
+changes the next optimization priority without altering the Qwen3.6 evidence.

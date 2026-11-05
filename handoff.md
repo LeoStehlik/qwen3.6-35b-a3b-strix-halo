@@ -305,9 +305,11 @@ explicitly calls for it. Never launch both listeners on the same port.
 1. Handover is complete: retain Qwen3.6 offline and preserve its artifacts.
    Qwen3.8 GPU serving and basic API readiness have been verified.
    Do not restart the Mac/OpenClaw gateway or change its routing implicitly.
-2. Profile the existing dense Q4/Q8-KV/DFlash2 build before new optimization.
-   The earlier cold 64K comparison was 367.33 tok/s at 2048/2048 versus 354.59
-   at 2048/1024, one trial each. MoE tuning does not transfer automatically.
+2. The restored dense build has now been profiled: quantized dense matrix work
+   accounts for 62.65% of GPU prefill, attention 20.20%, and draft prefill 0.50%.
+   Start with the measured Q5_K/IQ4_XS matrix shapes; existing attention/fusion
+   paths are already present. [Dense investigation and next experiments](https://github.com/LeoStehlik/qwen3.8-27b-strix-halo-dflash2/blob/investigate/dense-prefill-20261105/docs/PREFILL-RETURN-2026-11-05.md).
+   Its historical cold 64K baseline is 367.33 tok/s at 2048/2048, one trial.
 3. Evaluate raw prefill and exact stable-prefix reuse independently. Use cold and
    warm time to useful action, correct tool arguments and recovery as acceptance
    criteria; preserve configured context and the user's observed capability.
