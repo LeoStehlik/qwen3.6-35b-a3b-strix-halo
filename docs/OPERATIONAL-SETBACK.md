@@ -69,10 +69,12 @@ results or demonstrate that a particular patch caused the failure.
 
 ## Deployment and next work
 
-At publication of this finding, retiring the idle Qwen3.6 listener and disabling
-its boot unit are authorized; the service handover is still pending. The
-[handoff](../handoff.md) records the verified state after that operation. Preserve
-weights and reproducible builds; do not delete them or move the frozen tag.
+The finding was published before service changes. The handover is now complete:
+Qwen3.6 is stopped and disabled at boot; Qwen3.8 is GPU-resident and passed actual
+completion, exact tool-argument and tool-result continuation checks. The Mac mini
+can reach its endpoint. [Verified handover](../results/operational-setback/handover.json)
+and [current handoff](../handoff.md). Weights, source, builds and the frozen tag
+remain intact. No OpenClaw routing change, gateway restart or reboot was performed.
 Repository launch defaults continue to reconstruct Stage 2 for research, not
 as a recommendation to deploy it as the user's agent.
 

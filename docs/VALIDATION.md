@@ -14,7 +14,7 @@ checks passed. That deployment acceptance is now withdrawn. It was
 not proof of equivalent quality on every task. No OpenClaw gateway restart was
 part of this work.
 
-The enabled boot unit matches the live binary, full argv and selected flags;
+At the historical promotion, the enabled boot unit matched the live binary, full argv and selected flags;
 systemd validation and lingering checks passed without changing the live PID.
 No reboot test was performed. Combined-build profiling finished with unchanged
 inference binaries; its parser reproduces the saved aggregate analysis.

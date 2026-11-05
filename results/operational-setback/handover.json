@@ -1,0 +1,46 @@
+{
+  "checked_at_utc": "2026-11-05T18:44:07.634203+00:00",
+  "qwen36": {
+    "active": false,
+    "boot_enabled": false,
+    "weights_source_builds_retained": true,
+    "frozen_tag_unchanged": true
+  },
+  "qwen38": {
+    "active": true,
+    "boot_enabled": true,
+    "model_id": "qwen3.8-27b-q4-fast",
+    "public_port": 8080,
+    "runtime_commit": "a82001bd382ea54481603be113ced229a21db8d2",
+    "driver": "bundled Mesa RADV 26.2.4",
+    "gpu": "AMD Radeon 8060S (gfx1151)",
+    "gpu_evidence": "live child has amdgpu renderD128 descriptor, resident GPU allocations and increasing compute time; packaged Vulkan backend and RADV mapped",
+    "ctx_size": 245760,
+    "parallel": 1,
+    "batch": 2048,
+    "ubatch": 2048,
+    "target_kv": "q8_0",
+    "draft": "DFlash2 Q4_K_M, width 4",
+    "checkpoint_snapshot_auto_restore": false,
+    "historical_checkpoint_file_retained": true,
+    "readiness": {
+      "completion": {
+        "passed": true,
+        "wall_seconds": 0.7689792660094099
+      },
+      "tool_arguments": {
+        "passed": true,
+        "wall_seconds": 2.386016565011232
+      },
+      "tool_continuation": {
+        "passed": true,
+        "wall_seconds": 0.5889533589943312
+      }
+    },
+    "mac_mini_can_reach_health": true
+  },
+  "openclaw_gateway_restarted": false,
+  "openclaw_routing_changed": false,
+  "reboot_performed": false,
+  "scope": "Service restored and narrow synthetic API checks passed; no new broad model-quality claim."
+}

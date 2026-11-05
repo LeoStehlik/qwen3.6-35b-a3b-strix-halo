@@ -10,8 +10,8 @@ specialized kernels here; these measurements are **not vLLM or a HIP backend**.
 **Status — 2026-11-05: daily OpenClaw acceptance withdrawn.** Real use exposed
 an output-budget-exhausting reasoning loop, failure to retrieve accessible
 channel history, and unsupported recovery explanations. The user is returning
-to Qwen3.8-27B dense; Qwen3.6 is retained for offline experiments. Service handover
-is authorized and pending at this update. See the [setback findings](docs/OPERATIONAL-SETBACK.md)
+to Qwen3.8-27B dense; Qwen3.6 is stopped and disabled at boot, with all artifacts
+retained for offline experiments. Qwen3.8 GPU serving and direct API checks pass. See the [setback findings](docs/OPERATIONAL-SETBACK.md)
 and [current handoff](handoff.md).
 
 The measured **1,045 and 1,049 tok/s** cold 64K server/MTP result remains valid.

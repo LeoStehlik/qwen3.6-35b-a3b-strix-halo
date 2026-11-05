@@ -2,9 +2,8 @@
 
 Updated 2026-11-05 UTC: **daily OpenClaw acceptance withdrawn** after real-use
 failures. The user authorized taking Qwen3.6 offline, retaining all artifacts,
-and restoring Qwen3.8-27B dense + DFlash2. Documentation is published before the
-service handover; the switch is pending at this update. The frozen performance
-tag and code remain unchanged. [Findings and evidence limits](docs/OPERATIONAL-SETBACK.md).
+and restoring Qwen3.8-27B dense + DFlash2. Findings were published first; the
+handover is now complete. The frozen performance tag and code remain unchanged. [Findings and evidence limits](docs/OPERATIONAL-SETBACK.md).
 
 ## Goal and constraints
 
@@ -27,51 +26,38 @@ answers are not the quality criterion. Preserve earlier failures as evidence;
 use operator correctness, required state/output behavior and useful task results.
 Do not reopen equivalence forensics without evidence of malfunction.
 
-## Pre-handover serving snapshot — 2026-11-05
+## Current serving state — 2026-11-05
 
-This section records the state before the authorized switch, not the desired
-future deployment. Do not re-enable Qwen3.6 merely because its unit is retained.
-
-| Item | Observed value |
+| Item | Verified state |
 |---|---|
-| OpenAI-compatible base URL | `http://100.96.8.54:8082/v1` |
-| Model ID | `tiercel-qwen36-a3b-fast` |
-| Existing OpenClaw provider/model | `tiercelmoe/tiercel-qwen36-a3b-fast` |
-| Active unit | `qwen36-prefill-test.service` |
-| Active process lifetime | Transient unit continues unchanged; enabled persistent boot unit now matches it |
-| Actual binary | `$HOME/src/rocmfp4-prefill-stage2/build-vulkan/bin/llama-server` |
-| Launch helper | `scripts/serve.py --expert-prefill --binary <above> --host 100.96.8.54` |
-| Enabled | Prior optimizations + compact expert lists, ≤32-row narrow selector, fused convolution/SiLU |
-| Disabled | Old max-row-grid indirect experiment, global narrow tiles, arithmetic decode, deeper K, all profiler/oracle/trace diagnostics |
-| KV / batch / ubatch / slots | F16 / 2048 / 1024 / 1 |
-| Served context | 131,072; 150K initial prompts do not fit this configuration |
-| Prompt cache / checkpoints | 24,576 MiB; idle slots; 32 checkpoints every 8,192 tokens |
-| Readiness | Health OK, actual completion `42`, exact tool arguments and result continuation `42` |
-| Reuse check | 11,239 tokens reused for tool continuation; 11,310 restored after displacement; logs confirm RAM and checkpoint restore |
+| Qwen3.6 transient listener | Stopped; port 8082 retired |
+| Qwen3.6 persistent unit | `qwen36-rocmfpx.service` inactive and **disabled** |
+| Qwen3.6 artifacts | Weights, all source/build trees, unit file and frozen tag retained |
+| Qwen3.8 unit | `qwen38-dflash2.service` active and enabled |
+| OpenAI-compatible base URL | `http://100.96.8.54:8080/v1` |
+| Default model ID | `qwen3.8-27b-q4-fast` |
+| Runtime | Checkpoint-persistence build `a82001bd3`, bundled Mesa RADV 26.2.4 |
+| Target / draft / KV | Existing Q4_K_XL / DFlash2 Q4_K_M width 4 / target Q8_0 |
+| Context / slots / batch / ubatch | 245,760 / 1 / 2,048 / 2,048 |
+| GPU residency | Live child maps Vulkan/RADV, owns renderD128 and resident GPU allocations |
+| Readiness | Actual `42` completion; exact `lookup_order` arguments; result continuation `42` |
+| Remote reachability | Mac mini health request succeeded |
+| Boot / Mac / OpenClaw | No reboot; gateway and routing unchanged |
 
-`qwen36-rocmfpx.service` is **inactive and enabled for boot**, now pointing to
-`rocmfp4-prefill-stage2` with exactly the live argv and optimization flags.
-The user explicitly authorized this promotion. Systemd syntax, argv/environment
-agreement, enablement and `Linger=yes` were checked. The live PID stayed 317073
-through the configuration change; no restart/reboot was performed or tested.
-Do not start the persistent unit alongside the transient listener. On the next
-boot it replaces the old boot configuration. If an earlier deliberate handover
-is needed, stop the transient listener first, then start the persistent unit
-and verify inference. Documentation work must not trigger that interruption.
-[Evidence](results/combined-profile/persistence.json),
-[portable systemd instructions](docs/DEPLOYMENT.md#9-persistent-systemd-user-service).
+[Aggregate handover evidence](results/operational-setback/handover.json).
+The formerly CPU-loaded Qwen3.8 child was replaced by a GPU-loaded child during
+this authorized restart. GPU render permissions now work for this service.
 
-`qwen38-dflash2.service` remains active. Its router at loopback 8081 had
-previously autoloaded a Q4 target on CPU while GPU permissions were unavailable.
-That CPU target was idle during the new timing runs. It was left alone.
-Verify residency and other work before any future controlled benchmark.
+The October 30 slot snapshot remains on disk, but automatic restoration of that
+old conversation was disabled in `~/.config/qwen38-dflash2.env`. Current prompt
+cache/checkpoint support remains enabled. No model was downloaded or deleted.
+Pre-switch unit/config copies and synthetic readiness evidence are under
+`~/.cache/qwen38-return-20261105/`. Existing uncommitted Qwen3.8 source/config
+changes were preserved. Its next prefill investigation lives in a separate worktree.
 
-Earlier in this investigation the account lacked render-node permissions after
-a host reboot. Membership in `render` and `video` was added, and a user ACL on
-the current render node restored access without another reboot or logout.
-The older failing boot unit was stopped and the stable transient baseline
-restored. It was subsequently replaced by the tested optimized trial below.
-The Mac/OpenClaw was not restarted.
+Keep Qwen3.6 offline unless an explicit future experiment needs it. Its research
+launcher still defaults to Stage 2; that does not authorize re-enabling boot
+startup. Direct API checks prove basic readiness, not broad agent reliability.
 
 ## Latest result and acceptance status
 
@@ -286,8 +272,8 @@ curl -fsS http://100.96.8.54:8082/health
 ```
 
 Verify the actual process binary/environment, not just a stale service file.
-The generic cookbook defaults to loopback; the live private listener uses the
-explicit host above. Do not launch a parallel benchmark while the user tests.
+The Qwen3.6 health URL should now be unavailable. Check the active Qwen3.8
+endpoint on port 8080 instead. Do not launch a benchmark while the user tests.
 
 ## Recovery after an intentional inference stop
 
@@ -316,8 +302,8 @@ explicitly calls for it. Never launch both listeners on the same port.
 
 ## Next work
 
-1. Finish the authorized handover: disable Qwen3.6 boot startup, stop its listener,
-   retain weights/source/builds, and verify Qwen3.8 GPU residency and inference.
+1. Handover is complete: retain Qwen3.6 offline and preserve its artifacts.
+   Qwen3.8 GPU serving and basic API readiness have been verified.
    Do not restart the Mac/OpenClaw gateway or change its routing implicitly.
 2. Profile the existing dense Q4/Q8-KV/DFlash2 build before new optimization.
    The earlier cold 64K comparison was 367.33 tok/s at 2048/2048 versus 354.59
