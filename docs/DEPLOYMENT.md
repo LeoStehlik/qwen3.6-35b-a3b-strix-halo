@@ -1,5 +1,10 @@
 # Deployment cookbook
 
+**Research reproduction:** daily OpenClaw acceptance was withdrawn on
+2026-11-05 after [real-use failures](OPERATIONAL-SETBACK.md). The frozen Stage 2
+code and launch defaults remain available for experiments. These instructions
+are not a recommendation to restore it as the user's daily agent.
+
 These steps prepare files and optionally start a foreground process. They do
 not install/enable a systemd unit unless you explicitly follow the persistent
 setup section. They do not stop an existing server, change OpenClaw, or switch

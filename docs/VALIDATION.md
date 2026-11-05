@@ -1,9 +1,16 @@
 # Validation, failures and deployment decision
 
-As of 2026-11-04 23:54 UTC, the user has accepted the selected expert-row kernel
+**2026-11-05: daily-use acceptance withdrawn.** Real requests exposed a repeated
+thinking loop ending at the output limit, failure to retrieve accessible channel
+history and unsupported recovery claims. The cause has not been isolated.
+[Setback report](OPERATIONAL-SETBACK.md) and
+[aggregate evidence](../results/operational-setback/summary.json).
+The bounded checks below still stand; they did not certify autonomous task quality.
+
+Historically, at 2026-11-04 23:54 UTC, the user accepted the selected expert-row kernel
 and fused convolution as the persistent/default baseline, on top of the earlier
 MR/tiled-concat/unused-head profile. Direct correctness, state, tool and cache
-checks passed. Production requests continue. This is deployment acceptance,
+checks passed. That deployment acceptance is now withdrawn. It was
 not proof of equivalent quality on every task. No OpenClaw gateway restart was
 part of this work.
 

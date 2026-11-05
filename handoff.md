@@ -1,22 +1,24 @@
 # Handoff for Francis
 
-Updated 2026-11-05 UTC after combined-build profiling and persistent-default
-configuration at **2026-11-04 23:54 UTC**. The user explicitly accepted the promoted pair
-as the persistent/default baseline. Real OpenClaw testing continues; this is not
-a broad capability certification. Verify process state before acting.
+Updated 2026-11-05 UTC: **daily OpenClaw acceptance withdrawn** after real-use
+failures. The user authorized taking Qwen3.6 offline, retaining all artifacts,
+and restoring Qwen3.8-27B dense + DFlash2. Documentation is published before the
+service handover; the switch is pending at this update. The frozen performance
+tag and code remain unchanged. [Findings and evidence limits](docs/OPERATIONAL-SETBACK.md).
 
 ## Goal and constraints
 
-The priority is long-context **prefill**, targeting sustained approximately
-1,000 tok/s while keeping the existing Qwen3.6 model and OpenClaw capabilities.
-Generation around 50–100 tok/s depending on workload/context was already useful.
+The priority is useful, reliable OpenClaw task completion with faster long-context
+**prefill** on Qwen3.8-27B dense. Qwen3.6's roughly 1,047 tok/s performance success
+did not meet the user's agent-reliability requirement. Its 50–100 tok/s generation
+was useful only when it led to a completed answer.
 Do not substitute a weaker model, reduce the tool inventory, impose an 8K output
 cap, or present short-prompt throughput as a large-context result.
 
 Do not restart the Mac mini's OpenClaw gateway or reboot that Mac. This project
 runs on the Linux Strix Halo inference host. The user authorized local inference
-interruptions for these experiments, and the optimized endpoint now serves
-their real requests. Do not interrupt it for documentation. Do not send channel
+interruptions for the explicitly requested model handover. Publish the setback
+documentation first, then stop Qwen3.6 and restore Qwen3.8. Do not send channel
 messages or launch OpenClaw agent turns: the user supplies real prompts.
 
 The user reviewed the numerical evidence and accepted the observed MR variance
@@ -25,7 +27,10 @@ answers are not the quality criterion. Preserve earlier failures as evidence;
 use operator correctness, required state/output behavior and useful task results.
 Do not reopen equivalence forensics without evidence of malfunction.
 
-## Current serving state
+## Pre-handover serving snapshot — 2026-11-05
+
+This section records the state before the authorized switch, not the desired
+future deployment. Do not re-enable Qwen3.6 merely because its unit is retained.
 
 | Item | Observed value |
 |---|---|
@@ -70,11 +75,11 @@ The Mac/OpenClaw was not restarted.
 
 ## Latest result and acceptance status
 
-The new pair is the **user-accepted persistent/default baseline**. Direct
-operator, state, tool and cache checks passed. The user authorized combined-build
-profiling, which is now finished and documented below. No additional kernel
-change was made. Do not turn deployment acceptance into a claim of broad
-capability equivalence or repeat the completed timing sweep.
+The pair was accepted on November 4; **daily-use acceptance was withdrawn on
+November 5**. Direct operator, state, tool and cache checks passed their bounded
+scenarios. Combined-build profiling is complete. Keep its results and the frozen
+tag; do not repeat the timing sweep or mistake these checks for agent reliability.
+See [the operational setback](docs/OPERATIONAL-SETBACK.md).
 
 Two cold 65,536-token server/MTP runs per configuration, with all previous
 accepted optimizations retained:
@@ -238,7 +243,7 @@ or establish complete long-context displaced-cache validation.
 | Path under `$HOME` | Purpose |
 |---|---|
 | `qwen3.6-35b-a3b-strix-halo/` | This durable GitHub repository |
-| `src/rocmfp4-prefill-stage2/` | **Currently serving** source/build, profile 0001–0007 |
+| `src/rocmfp4-prefill-stage2/` | Preserved Stage 2 source/build, profile 0001–0007 |
 | `src/rocmfp4-prefill-next/` | Previous accepted source/build, profile 0001–0006 |
 | `src/rocmfp4-mtp-output/` | Stable fallback, without MR |
 | `src/rocmfp4-fa-mr/` | Earlier MR port and numerical investigation |
@@ -296,7 +301,7 @@ python3 ops/restore-francis-baseline.py --bind-host "$(tailscale ip -4)" --dry-r
 
 Omitting `--dry-run` restores a stopped baseline, waits for health and verifies
 a completion. It does not change the older boot unit or restart OpenClaw.
-The current promoted process was started before persistence was configured with:
+The historical promoted process was started before persistence was configured with:
 
 ```bash
 systemd-run --user --unit=qwen36-prefill-test python3 \
@@ -305,21 +310,24 @@ systemd-run --user --unit=qwen36-prefill-test python3 \
   --expert-prefill --host 100.96.8.54
 ```
 
-This records the current transient process, not the preferred new boot setup.
-For a future intentional handover use the enabled persistent unit; never launch
-both listeners. The command above is not an instruction to restart now.
+This records the historical transient process. Qwen3.6 is now designated for
+offline research; do not run these recovery commands unless a future experiment
+explicitly calls for it. Never launch both listeners on the same port.
 
 ## Next work
 
-1. Observe the user's own OpenClaw prompts without interrupting them. The pair
-   is accepted as the default; record any concrete task/tool/cache malfunction.
-2. The combined profile is complete. If more optimization is authorized, target
-   attention K/V access/reuse at long context and separate short-query preparation.
-   Keep candidates independently switchable and retain quality/state guards.
-3. Before actual upstream contribution, isolate candidates and test against that
-   destination's current source. Do not duplicate the already merged/open work.
-4. Boot persistence is configured. A reboot validation and larger served context
-   remain untested; do not reboot or expand context merely to complete documentation.
+1. Finish the authorized handover: disable Qwen3.6 boot startup, stop its listener,
+   retain weights/source/builds, and verify Qwen3.8 GPU residency and inference.
+   Do not restart the Mac/OpenClaw gateway or change its routing implicitly.
+2. Profile the existing dense Q4/Q8-KV/DFlash2 build before new optimization.
+   The earlier cold 64K comparison was 367.33 tok/s at 2048/2048 versus 354.59
+   at 2048/1024, one trial each. MoE tuning does not transfer automatically.
+3. Evaluate raw prefill and exact stable-prefix reuse independently. Use cold and
+   warm time to useful action, correct tool arguments and recovery as acceptance
+   criteria; preserve configured context and the user's observed capability.
+4. Keep this repository's tag and performance evidence frozen. Any future Qwen3.6
+   diagnostic replay must distinguish runtime, sampling, model and kernel effects;
+   none has been established as the cause of the observed failure.
 
 Keep failed/rejected experiments and their conditions in the history. Publish
 only aggregate real-traffic measurements, never user conversations or credentials.

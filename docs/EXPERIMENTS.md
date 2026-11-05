@@ -280,13 +280,26 @@ prepare/build/serve defaults now select `prefill-stage2`, and model artifacts
 have an immutable downloadable revision with matching SHA-256 checksums.
 [Deployment](DEPLOYMENT.md), [upstream assessment](UPSTREAM.md).
 
+## 13. Withdraw daily-use acceptance — 2026-11-05
+
+Real OpenClaw use produced a 32,768-token thinking loop with no final answer and
+an unsuccessful channel-history recovery after a session reset. The later
+user-supplied discussion also showed misattribution and unsupported diagnoses.
+The comparison to the succeeding model changed runtime too; no controlled test
+isolated model, sampling, tool presentation, quantization or kernel causality.
+
+**Decision: retain the frozen performance result for offline research, take
+Qwen3.6 out of daily use, and restore Qwen3.8-27B dense + DFlash2.** No kernel or
+tag is changed by this documentation. See [findings](OPERATIONAL-SETBACK.md) and
+[aggregate incident evidence](../results/operational-setback/summary.json).
+
 ## Next work
 
-1. Keep real OpenClaw requests uninterrupted. No more benchmarking of this pair
-   is needed. Use the completed profile to guide a separately authorized change.
-2. Prioritize long-context attention memory access/reuse, with short-query KV
-   preparation evaluated independently. Keep scope and gain ceilings explicit.
-3. Isolate upstream candidates before porting: convolution fusion to mainline,
-   expert selection to the ROCmFP4 fork; avoid already merged/open duplicates.
-4. Preserve the131,072 served context and established test scope. Neither boot
-   validation nor context expansion requires disrupting the service now.
+1. Complete the separately authorized service handover after publishing these
+   findings; preserve all Qwen3.6 artifacts and disable automatic boot startup.
+2. Profile Qwen3.8's actual dense/Q8-KV/DFlash2 execution before selecting new
+   optimizations. Keep its context and capability requirements intact.
+3. Measure stable-prefix reuse separately from raw prefill. Correct useful action
+   on cold and warm OpenClaw requests is the operational success criterion.
+4. Preserve historical failed/rejected experiments and upstream candidates.
+   Do not reopen Qwen3.6 kernel work merely to rescue a throughput milestone.

@@ -7,14 +7,19 @@ ROCmFP4 weights, native MTP, and F16 KV on a Ryzen AI Max+ 395 / Radeon 8060S.
 The runtime is **llama.cpp Vulkan/RADV**. ROCmFP4 names the weight format and
 specialized kernels here; these measurements are **not vLLM or a HIP backend**.
 
-The goal is sustained long-context prefill near 1,000 tok/s while preserving the
-model, tools, and useful context. The latest pair of kernel changes reaches
-**1,045 and 1,049 tok/s** on the cold 64K server/MTP fixture. Both are now enabled
-on the existing endpoint; direct tool, continuation and cache checks passed.
-The user has accepted this as the persistent/default baseline. Ongoing real
-OpenClaw testing remains useful; it is not a broad model-quality certification.
+**Status — 2026-11-05: daily OpenClaw acceptance withdrawn.** Real use exposed
+an output-budget-exhausting reasoning loop, failure to retrieve accessible
+channel history, and unsupported recovery explanations. The user is returning
+to Qwen3.8-27B dense; Qwen3.6 is retained for offline experiments. Service handover
+is authorized and pending at this update. See the [setback findings](docs/OPERATIONAL-SETBACK.md)
+and [current handoff](handoff.md).
 
-## Current result — 2026-11-04 UTC
+The measured **1,045 and 1,049 tok/s** cold 64K server/MTP result remains valid.
+The frozen `prefill-stage2-2026-11-04` tag, code and evidence are preserved.
+Passing bounded tool/state checks did not establish reliable autonomous agent
+behavior. The root cause of the live failures has not been isolated.
+
+## Preserved performance result — 2026-11-04 UTC
 
 Two runs per configuration, same weights, F16 KV, batch/ubatch 2048/1024,
 MR attention and native MTP. The control includes the previously accepted tiled
@@ -34,12 +39,12 @@ the combined result. All ten uninstrumented runs have the same output hash and
 draft counts. [Experiment details](docs/EXPERT-PREFILL.md),
 [all measurements](results/prefill-stage2/server-runs.json).
 
-**Deployment status, 23:54 UTC:** `prefill-stage2` is the accepted default.
-The enabled persistent boot unit now selects the exact running binary, arguments
-and optimization flags; lingering is enabled. The existing transient process
-continues serving without interruption until the next intentional restart or
-boot. No restart or reboot was performed to change persistence; a reboot test
-has not been performed. Direct tool, continuation and displaced-cache checks
+**Historical deployment, 2026-11-04 23:54 UTC:** `prefill-stage2` was accepted.
+That daily-use acceptance was withdrawn on November 5.
+At promotion, the enabled boot unit was aligned with the running binary,
+arguments and optimization flags; lingering was enabled. The transient process
+continued without interruption. No restart or reboot was performed to change
+persistence; a reboot test was not performed. Direct tool, continuation and displaced-cache checks
 passed at 11K. See [Francis's handoff](handoff.md) and
 [persistence evidence](results/combined-profile/persistence.json).
 
@@ -60,8 +65,8 @@ optimization and practical testing. Its failed equivalence gate remains recorded
 New operator, row-ownership and state checks pass; these do not establish broad
 capability equivalence. Read the [numerical investigation](docs/NUMERICAL-INVESTIGATION.md)
 and [validation scope](docs/VALIDATION.md). Performance testing of this pair is
-complete. The user explicitly accepted the pair as the deployment default;
-ongoing real use can reveal issues beyond the existing test coverage.
+complete. The subsequent real-use failure is documented separately; it does
+not establish a regression in a particular kernel.
 
 ## Earlier attention improvement
 
@@ -86,6 +91,8 @@ synthetic benchmark was run for the follow-up optimizations.
 
 ## Start here
 
+- [Operational setback](docs/OPERATIONAL-SETBACK.md): real-use failures, evidence
+  limits, withdrawal of daily-use acceptance and the move back to Qwen3.8.
 - [Francis handoff](handoff.md): current state, exact local locations, recovery,
   next experiments, and operational constraints.
 - [Deployment cookbook](docs/DEPLOYMENT.md): pinned source, models, build and
@@ -120,7 +127,8 @@ python3 scripts/serve.py
 ```
 
 Default binding is `127.0.0.1:8082`; model ID is `tiercel-qwen36-a3b-fast`.
-Source preparation, build and launch now default to **prefill-stage2**.
+Source preparation, build and launch default to **prefill-stage2** for research
+reproduction; this is no longer the accepted daily OpenClaw deployment.
 The earlier fallback remains explicit: prepare/build `stable`, then launch with
 `--profile stable`. `--expert-prefill` remains a compatible alias for the default.
 Only the explicit download command fetches models; launch never does.
@@ -132,9 +140,10 @@ in clients; no 8,192-token output cap is introduced.
 ## Relationship to the Qwen3.8 repository
 
 The earlier [Qwen3.8-27B + DFlash2 deployment](https://github.com/LeoStehlik/qwen3.8-27b-strix-halo-dflash2)
-remains a separate setup. This repository carries the Qwen3.6-specific source
-patches, MTP work and prefill evidence. Its historical Qwen3.6 overview is useful
-background, but the service state and benchmark decisions here are newer.
+is the next deployment/optimization target after the real-use setback. This
+repository retains the Qwen3.6-specific source patches, MTP work and prefill
+evidence. Do not transfer MoE kernel policies or measured bottleneck shares to
+the dense model without profiling its actual execution path.
 
 ## Reproducibility and attribution
 

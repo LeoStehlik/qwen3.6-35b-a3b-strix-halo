@@ -1,0 +1,45 @@
+{
+  "date_utc": "2026-11-05",
+  "decision": "withdraw_daily_openclaw_acceptance_retain_offline_research",
+  "frozen_tag": "prefill-stage2-2026-11-04",
+  "root_cause": "undetermined_no_controlled_replay",
+  "evidence_scope": "aggregate local inference/OpenClaw records; recovery discussion supplied by user",
+  "failed_turn": {
+    "reused_tokens": 32768,
+    "new_prompt_tokens": 5680,
+    "prompt_ms": 5662.11,
+    "prompt_tokens_per_second": 1003.16,
+    "generated_tokens": 32768,
+    "generation_ms": 380853.33,
+    "generation_tokens_per_second": 86.04,
+    "stop_reason": "length",
+    "output_part_types": [
+      "thinking"
+    ],
+    "final_answer_parts": 0,
+    "thinking_characters": 163219,
+    "thinking_words": 27355,
+    "nonempty_lines": 532,
+    "distinct_nonempty_lines": 15,
+    "largest_identical_line_count": 260,
+    "preceding_tool_actions": 9
+  },
+  "history_recovery": {
+    "session_reset": true,
+    "qwen_checked_session_tools": true,
+    "qwen_retrieved_discord_history": false,
+    "subsequent_model_retrieved_via_shell": true,
+    "shell_available_to_both": true,
+    "model_and_runtime_both_changed": true,
+    "controlled_model_only_comparison": false
+  },
+  "performance_results_revoked": false,
+  "daily_use_acceptance_revoked": true,
+  "public_artifacts_exclude": [
+    "private transcripts",
+    "thinking text",
+    "session and channel identifiers",
+    "credentials",
+    "raw tool payloads"
+  ]
+}
