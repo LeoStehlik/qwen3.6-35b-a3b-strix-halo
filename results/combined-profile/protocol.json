@@ -1,0 +1,31 @@
+{
+  "captured_date": "2026-11-04",
+  "source_profile": "prefill-stage2",
+  "source_commit": "4795079b04f5e0ada6e5d2e85b12bac1e27e7873",
+  "server_settings": "Exact production settings from scripts/serve.py, with loopback port18082 and FA/MMID diagnostic timing enabled",
+  "continuation_fixture": "benchmarks/fixtures/prompt-tokens.json",
+  "fixture_sha256": "f4d8caf4698d26f019455e871fb9f084d0acbbf9de658881b8f7b8288f9760bf",
+  "seed_tokens": 98304,
+  "seed_recipe": "65536-token fixture + fixture[:32768]",
+  "appends": [
+    2048,
+    96
+  ],
+  "append_recipe": "fixture[32768:34816], then fixture[34816:34912]",
+  "cache_ram_mib": 24576,
+  "checkpoints": 32,
+  "checkpoint_interval": 8192,
+  "native_counter_driver": "Mesa26.0.8-1ubuntu0.3 RADV gfx1151",
+  "native_counter_samples_shader_cycles": 4096,
+  "native_counter_cases": 8,
+  "counter_failures_before_success": [
+    "initial per-submit capture:90s timeout",
+    "async-disabled retry:25s timeout",
+    "incomplete device-only hook retry:25s timeout"
+  ],
+  "final_capture_workaround": "diagnostic-local empty-submit fence preservation on instance/device dispatch and unique RGP output names",
+  "inference_binary_or_library_changes": false,
+  "new_gpu_runs_for_publication": false,
+  "serving_binary_sha256": "5a594f6911c14ec7f0fd3b0ddb195b9d17aa986e826b13dfbd47c3f2acdcf919",
+  "vulkan_library_sha256": "8e97d6743cf20d15013d6b81fd0aaaf7aebb76320d71dbbfae5045b77c27f13d"
+}

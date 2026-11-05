@@ -12,6 +12,12 @@ def command(args):
     expert = getattr(args, 'expert_prefill', False)
     optimized = expert or getattr(args, 'optimized_prefill', False)
     profile = 'prefill-stage2' if expert else ('prefill-next' if optimized else ('mr' if args.experimental_mr else 'stable'))
+    # Legacy callers (benchmark harnesses) retain their explicit flag semantics.
+    # CLI launches default to the promoted profile through create_parser().
+    if getattr(args, 'profile', None):
+        profile = args.profile
+        expert = profile == 'prefill-stage2'
+        optimized = profile in ('prefill-stage2', 'prefill-next')
     binary = args.binary or ROOT / 'work' / profile / 'build-vulkan/bin/llama-server'
     cmd = [str(binary), '--model', str(args.model_dir / MODEL),
            '--mmproj', str(args.model_dir / 'mmproj-F32.gguf'),
@@ -33,7 +39,7 @@ def command(args):
         env.pop(key, None)
     overrides = dict(GGML_VK_FA_KV_CONTIG='1', GGML_VK_MMID_ROWLISTS='1', LLAMA_CONV_TAIL_X='1',
                      GGML_VK_MMID_INDIRECT='0', LLAMA_MTP_SPARSE_LOGITS='1',
-                     GGML_VK_MMID_SMALLN='0', GGML_VK_FA_MR='1' if args.experimental_mr or optimized else '0',
+                     GGML_VK_MMID_SMALLN='0', GGML_VK_FA_MR='1' if profile == 'mr' or optimized else '0',
                      GGML_VK_CONCAT_TRANSPOSE='1' if optimized else '0',
                      LLAMA_MTP_SKIP_UNUSED_HEAD='1' if optimized else '0',
                      GGML_VK_FA_MR_H='2', GGML_VK_FA_MR_LAZY='1', GGML_VK_FA_MR_NOEB='1', GGML_VK_FA_MR_VPOST='1')
@@ -45,19 +51,32 @@ def command(args):
     env.update(overrides)
     return cmd, env, overrides
 
-def main():
+def create_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--binary', type=Path)
     parser.add_argument('--model-dir', type=Path, default=Path.home() / 'models/qwen36-rocmfpx')
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--port', type=int, default=8082)
-    parser.add_argument('--experimental-mr', action='store_true', help='Explicitly enable unpromoted MR attention; see docs/VALIDATION.md')
-    parser.add_argument('--optimized-prefill', action='store_true', help='Enable MR plus tiled convolution-input copies and unused draft-head elimination; see docs/EXPERIMENTS.md')
-    parser.add_argument('--expert-prefill', action='store_true', help='Enable the prefill-stage2 profile; see docs/EXPERT-PREFILL.md')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--profile', choices=('stable', 'mr', 'prefill-next', 'prefill-stage2'),
+                       help='Serving profile (default: promoted prefill-stage2)')
+    modes.add_argument('--experimental-mr', action='store_true', help='Legacy alias for --profile mr')
+    modes.add_argument('--optimized-prefill', action='store_true', help='Legacy alias for --profile prefill-next')
+    modes.add_argument('--expert-prefill', action='store_true', help='Legacy alias for --profile prefill-stage2')
     parser.add_argument('--disable-expert-selector', action='store_true')
     parser.add_argument('--disable-conv-fusion', action='store_true')
     parser.add_argument('--dry-run', action='store_true')
+    return parser
+
+def select_default(args):
+    if not (args.profile or args.experimental_mr or args.optimized_prefill or args.expert_prefill):
+        args.profile = 'prefill-stage2'
+    return args
+
+def main():
+    parser = create_parser()
     args = parser.parse_args()
+    select_default(args)
     cmd, env, overrides = command(args)
     if args.dry_run:
         print(json.dumps({'argv': cmd, 'environment_overrides': overrides}, indent=2))

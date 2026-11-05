@@ -256,12 +256,37 @@ The live build uses `prefill-stage2` / `--expert-prefill`. Both additions remain
 independently switchable. See [full analysis](EXPERT-PREFILL.md) and
 [structured evidence](../results/prefill-stage2/summary.json).
 
+## 12. Profile the combined build and accept the persistent default — 2026-11-04
+
+The user requested profiling before stacking more optimizations. Cold64K GPU
+shares are now attention30.3%, expert operations28.6%, dense23.6%. A production-
+checkpoint/cache diagnostic at96K found attention taking58.0% of GPU time for
+a cached2K append. The short96-token append replays4tokens and exposes59ms of
+KV preparation. Exact target/draft token accounting includes the checkpoint tails.
+
+Native Mesa RGP/SPM counter probes were captured for attention, small/mixed
+experts and dense projections. Attention has higher memory-unit stall signals,
+but absolute traffic counters fail physical-bandwidth sanity checks; no DRAM
+saturation or achieved occupancy claim is made. Initial captures stalled on a
+zero-submit fence omission in Mesa's per-submit trace layer. A diagnostic-local
+shim fixed capture; no production/driver/kernel modification was made.
+[Protocol, failures, evidence and next experiment](COMBINED-PROFILE.md).
+
+The user then explicitly accepted the promoted pair as the persistent/default
+baseline. The boot unit was updated to the same binary/argv/flags and enabled;
+lingering is already on. The transient process was left serving, with the same
+PID. This is verified boot configuration, not a reboot validation. Repository
+prepare/build/serve defaults now select `prefill-stage2`, and model artifacts
+have an immutable downloadable revision with matching SHA-256 checksums.
+[Deployment](DEPLOYMENT.md), [upstream assessment](UPSTREAM.md).
+
 ## Next work
 
-1. Observe the user's real OpenClaw prompts and accept this as the new baseline
-   if useful answers, tools and continuation remain sound. Do not send artificial
-   OpenClaw turns or repeat the completed timing sweep.
-2. Keep 64K performance and the 11K displaced-cache check scoped to their actual
-   workloads; no 128K/150K throughput or broad quality claim has been established.
-3. Treat boot persistence and larger served context as separate operational
-   changes; the current service is transient and the served limit is 131,072.
+1. Keep real OpenClaw requests uninterrupted. No more benchmarking of this pair
+   is needed. Use the completed profile to guide a separately authorized change.
+2. Prioritize long-context attention memory access/reuse, with short-query KV
+   preparation evaluated independently. Keep scope and gain ceilings explicit.
+3. Isolate upstream candidates before porting: convolution fusion to mainline,
+   expert selection to the ROCmFP4 fork; avoid already merged/open duplicates.
+4. Preserve the131,072 served context and established test scope. Neither boot
+   validation nor context expansion requires disrupting the service now.

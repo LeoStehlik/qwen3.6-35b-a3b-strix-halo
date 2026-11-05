@@ -1,9 +1,9 @@
 # Handoff for Francis
 
-Updated 2026-11-04 UTC after promotion and endpoint checks at **23:21:56 UTC**.
-The user has started real OpenClaw requests on the new pair. Performance testing
-is complete; ordinary answer-quality acceptance is pending. This is a dated
-snapshot; verify process state before acting.
+Updated 2026-11-05 UTC after combined-build profiling and persistent-default
+configuration at **2026-11-04 23:54 UTC**. The user explicitly accepted the promoted pair
+as the persistent/default baseline. Real OpenClaw testing continues; this is not
+a broad capability certification. Verify process state before acting.
 
 ## Goal and constraints
 
@@ -33,7 +33,7 @@ Do not reopen equivalence forensics without evidence of malfunction.
 | Model ID | `tiercel-qwen36-a3b-fast` |
 | Existing OpenClaw provider/model | `tiercelmoe/tiercel-qwen36-a3b-fast` |
 | Active unit | `qwen36-prefill-test.service` |
-| Unit persistence | **Transient**, under `/run/user/1000/systemd/transient/` |
+| Active process lifetime | Transient unit continues unchanged; enabled persistent boot unit now matches it |
 | Actual binary | `$HOME/src/rocmfp4-prefill-stage2/build-vulkan/bin/llama-server` |
 | Launch helper | `scripts/serve.py --expert-prefill --binary <above> --host 100.96.8.54` |
 | Enabled | Prior optimizations + compact expert lists, ≤32-row narrow selector, fused convolution/SiLU |
@@ -44,10 +44,17 @@ Do not reopen equivalence forensics without evidence of malfunction.
 | Readiness | Health OK, actual completion `42`, exact tool arguments and result continuation `42` |
 | Reuse check | 11,239 tokens reused for tool continuation; 11,310 restored after displacement; logs confirm RAM and checkpoint restore |
 
-`qwen36-rocmfpx.service` remains **inactive but enabled for boot**. It is the
-older persistent unit, not the unit currently serving. The transient replacement
-will not automatically become a persistent boot configuration. Making the
-selected configuration persistent is separate pending operational work.
+`qwen36-rocmfpx.service` is **inactive and enabled for boot**, now pointing to
+`rocmfp4-prefill-stage2` with exactly the live argv and optimization flags.
+The user explicitly authorized this promotion. Systemd syntax, argv/environment
+agreement, enablement and `Linger=yes` were checked. The live PID stayed 317073
+through the configuration change; no restart/reboot was performed or tested.
+Do not start the persistent unit alongside the transient listener. On the next
+boot it replaces the old boot configuration. If an earlier deliberate handover
+is needed, stop the transient listener first, then start the persistent unit
+and verify inference. Documentation work must not trigger that interruption.
+[Evidence](results/combined-profile/persistence.json),
+[portable systemd instructions](docs/DEPLOYMENT.md#9-persistent-systemd-user-service).
 
 `qwen38-dflash2.service` remains active. Its router at loopback 8081 had
 previously autoloaded a Q4 target on CPU while GPU permissions were unavailable.
@@ -63,11 +70,11 @@ The Mac/OpenClaw was not restarted.
 
 ## Latest result and acceptance status
 
-The new pair is **promoted on the existing endpoint**. Direct operator, state,
-tool and cache checks passed. The user is now testing ordinary OpenClaw answer
-quality; if that remains sound, this becomes the next baseline. Do not claim
-that the user's quality acceptance has already arrived. No more timing sweeps
-or kernel experiments are requested for this pair.
+The new pair is the **user-accepted persistent/default baseline**. Direct
+operator, state, tool and cache checks passed. The user authorized combined-build
+profiling, which is now finished and documented below. No additional kernel
+change was made. Do not turn deployment acceptance into a claim of broad
+capability equivalence or repeat the completed timing sweep.
 
 Two cold 65,536-token server/MTP runs per configuration, with all previous
 accepted optimizations retained:
@@ -149,6 +156,45 @@ more requests were active at capture. These are workload observations, not
 paired speedup measurements or an answer-quality verdict. Aggregate-only
 [evidence](results/prefill-stage2/live-traffic-observations.json) is retained.
 
+## Combined-build profiling completed
+
+[Full profile and reproducible diagnostics](docs/COMBINED-PROFILE.md).
+Cold64K GPU shares are attention30.3%, experts28.6%, dense23.6%. With production
+cache/checkpoints, a 2K append to 96K reuses all98,304 prefix tokens and spends
+58.0% of GPU operator time in attention (1.922/3.314s; prompt wall3.615s).
+A following96-token append replays4tokens; repack takes59ms of612ms wall.
+These are instrumented synthetic/public-fixture measurements, not real-task
+speed or a new uninstrumented benchmark.
+
+Native RGP/SPM probes show attention memory-unit stall signals around62–68%,
+versus17% on sampled dense projections. Absolute traffic counters fail sanity
+checks on some probes, so **DRAM saturation and actual wave occupancy are not
+established**. Next investigate attention memory access/reuse and scheduling,
+then separately short-append KV preparation. Do not re-optimize experts merely
+because they were the old bottleneck.
+
+Initial RGP attempts hit a Mesa26.0.8 zero-submit fence bug. A diagnostic-only
+preload shim preserves the empty fence and unique output filenames; no driver,
+serving library or production environment was changed. All GPU diagnostics have
+finished. The local source and raw captures remain under
+`.cache/prefill-profile-next.pjSKecT3/`. Portable helpers and aggregate-only
+evidence are published. No more profiling interruption is pending.
+
+## Upstream and maintenance
+
+[Patch-by-patch assessment](docs/UPSTREAM.md) checks mainline at
+`3de52ac38818978d6da8f386eda43a856e53714a`. Best distinct mainline candidate:
+extract concat+convolution+SiLU fusion. Expert selection/compact lists fit the
+ROCmFP4 fork first. F16 KV contiguity is already upstream; tiled concat has an
+open PR. Current MTP APIs already overlap our older sparse-output work, so
+head skipping needs a current-mainline benefit demonstration. No PR was sent.
+
+No Mesa/Vulkan driver fork is needed. Keep the pinned source+patch approach for
+now; a dedicated llama.cpp source fork may help later with releases, regular
+rebases or outside contributors. New installs have explicit checksum-verified
+model downloads from an immutable revision. Default prepare/build/serve now
+select `prefill-stage2`; `--profile stable` explicitly chooses the older fallback.
+
 ## Previous accepted step
 
 The preceding `prefill-next` profile reached about 956 tok/s after tiled concat
@@ -201,6 +247,7 @@ or establish complete long-context displaced-cache validation.
 | `src/rocmfp4-moe-tiles/` | Rejected tile experiment |
 | `src/rocmfp4-fa-profile/` | Diagnostic profiling source/build |
 | `models/qwen36-rocmfpx/` | Existing weights, projector, template |
+| `.cache/prefill-profile-next.pjSKecT3/` | Combined profiles, native counters, upstream review and persistence backup |
 | `.cache/prefill-stage2.u4wqau5y/` | Current raw profiles, kernel/operator tests, repeats, state/endpoint checks and promotion scripts |
 | `.cache/prefill-next.hhm3990y/` | Previous protocol, builds, tests, timing and endpoint evidence |
 | `.cache/fa-mr.MuLSLc/` | Earlier MR raw logs, captures and results |
@@ -249,7 +296,7 @@ python3 ops/restore-francis-baseline.py --bind-host "$(tailscale ip -4)" --dry-r
 
 Omitting `--dry-run` restores a stopped baseline, waits for health and verifies
 a completion. It does not change the older boot unit or restart OpenClaw.
-The current promoted pair was started after the authorized local stop with:
+The current promoted process was started before persistence was configured with:
 
 ```bash
 systemd-run --user --unit=qwen36-prefill-test python3 \
@@ -258,19 +305,21 @@ systemd-run --user --unit=qwen36-prefill-test python3 \
   --expert-prefill --host 100.96.8.54
 ```
 
-This is a reconstruction command, not an instruction to restart the live unit.
+This records the current transient process, not the preferred new boot setup.
+For a future intentional handover use the enabled persistent unit; never launch
+both listeners. The command above is not an instruction to restart now.
 
 ## Next work
 
-1. Watch the user's real OpenClaw requests read-only. Assess exact tool arguments,
-   tool-result continuation, cache behavior and useful answers. The user supplies
-   the prompts and quality verdict; no artificial OpenClaw agent turns.
-2. If ordinary quality remains sound, record the pair as the new accepted
-   baseline. Performance testing is complete; do not keep benchmarking it or
-   interrupt the service for documentation.
-3. Keep the 64K throughput and 11K cache-check scopes explicit. Broader context,
-   boot persistence and context expansion are separate work, not authorized
-   changes to make while the user tests.
+1. Observe the user's own OpenClaw prompts without interrupting them. The pair
+   is accepted as the default; record any concrete task/tool/cache malfunction.
+2. The combined profile is complete. If more optimization is authorized, target
+   attention K/V access/reuse at long context and separate short-query preparation.
+   Keep candidates independently switchable and retain quality/state guards.
+3. Before actual upstream contribution, isolate candidates and test against that
+   destination's current source. Do not duplicate the already merged/open work.
+4. Boot persistence is configured. A reboot validation and larger served context
+   remain untested; do not reboot or expand context merely to complete documentation.
 
 Keep failed/rejected experiments and their conditions in the history. Publish
 only aggregate real-traffic measurements, never user conversations or credentials.

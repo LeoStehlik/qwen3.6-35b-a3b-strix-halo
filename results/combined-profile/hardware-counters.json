@@ -1,0 +1,2994 @@
+[
+  {
+    "name": "attention-1024-96k",
+    "selected": {
+      "samples": 41614,
+      "sampling_interval_shader_cycles": 4096,
+      "timestamp_span": 7193224,
+      "counters": [
+        {
+          "name": "Instruction cache hit",
+          "description": "The percentage of read requests made that hit the data in the Instruction cache. The Instruction cache supplies shader code to an executing shader. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            0,
+            1,
+            2
+          ],
+          "sum": 151415.73101285362,
+          "mean": 3.6385767052639406,
+          "max": 100.0,
+          "weighted_percent": 98.28294272808105
+        },
+        {
+          "name": "Scalar cache hit",
+          "description": "The percentage of read requests made from executing shader code that hit the data in the Scalar cache. The Scalar cache contains data that does not vary in each thread across the wavefront. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            3,
+            4,
+            5
+          ],
+          "sum": 3745705.7432804387,
+          "mean": 90.01071137791222,
+          "max": 100.0,
+          "weighted_percent": 99.96063767947021
+        },
+        {
+          "name": "L0 cache hit",
+          "description": "The percentage of read requests that hit the data in the L0 cache. The L0 cache contains vector data, which is data that may vary in each thread across the wavefront. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            6,
+            7,
+            8
+          ],
+          "sum": 3129435.9275871604,
+          "mean": 75.20151697955401,
+          "max": 100.0,
+          "weighted_percent": 89.13015851259955
+        },
+        {
+          "name": "L1 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L1 cache. The L1 cache is shared across all WGPs in a single shader engine. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            9,
+            10,
+            11
+          ],
+          "sum": 2907894.6348158023,
+          "mean": 69.87779677069742,
+          "max": 100.0,
+          "weighted_percent": 73.42432357245667
+        },
+        {
+          "name": "L2 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L2 cache. The L2 cache is shared by many blocks across the GPU, including the Command Processor, Geometry Engine, all WGPs, all Render Backends, and others. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            12,
+            13,
+            14
+          ],
+          "sum": 2864102.3503139177,
+          "mean": 68.82545177858215,
+          "max": 100.0,
+          "weighted_percent": 89.72152646202841
+        },
+        {
+          "name": "LDS Bank Conflict",
+          "description": "The percentage of GPUTime LDS is stalled by bank conflicts. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            16
+          ],
+          "sum": 182417.47864290944,
+          "mean": 4.3835603076587075,
+          "max": 27.237002684891387,
+          "weighted_percent": 4.383453223320896
+        },
+        {
+          "name": "Fetch size",
+          "description": "The total bytes fetched from the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 12591540384.0,
+          "mean": 302579.4296150334,
+          "max": 3393440.0
+        },
+        {
+          "name": "Write size",
+          "description": "The total bytes written to the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 6080.0,
+          "mean": 0.1461046763108569,
+          "max": 128.0
+        },
+        {
+          "name": "Local video memory bytes",
+          "description": "Number of bytes read from or written to the Infinity Cache (if available) or local video memory",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 1610514368.0,
+          "mean": 38701.2632287211,
+          "max": 872928.0
+        },
+        {
+          "name": "PCIe bytes",
+          "description": "Number of bytes sent and received over the PCIe bus",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Memory unity busy",
+          "description": "The percentage of GPUTime the memory unit is active. The result includes the stall time (MemUnitStalled). This is measured with all extra fetches and writes and any cache or memory effects taken into account. Value range: 0% to 100% (fetch-bound).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            17
+          ],
+          "sum": 3523067.146692702,
+          "mean": 84.66062254752492,
+          "max": 100.0,
+          "weighted_percent": 84.65856378952222
+        },
+        {
+          "name": "Memory unit stalled",
+          "description": "The percentage of GPUTime the memory unit is stalled. Try reducing the number or size of fetches and writes if possible. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            18
+          ],
+          "sum": 2845518.1840371005,
+          "mean": 68.37886730516414,
+          "max": 100.0,
+          "weighted_percent": 68.37719690366131
+        },
+        {
+          "name": "Ray-box tests",
+          "description": "The number of ray box intersection tests.",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Ray-triangle tests",
+          "description": "iThe number of ray triangle intersection tests",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        }
+      ],
+      "components": [
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 672546.0,
+          "mean": 16.16153217667131,
+          "max": 2418.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 660998.0,
+          "mean": 15.884029413178258,
+          "max": 2418.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 11548.0,
+          "mean": 0.27750276349305525,
+          "max": 868.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 20247790.0,
+          "mean": 486.56197433556014,
+          "max": 2548.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 20239820.0,
+          "mean": 486.3704522516461,
+          "max": 2516.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 7970.0,
+          "mean": 0.1915220839140674,
+          "max": 924.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 2414493618.0,
+          "mean": 58021.185610611814,
+          "max": 104143.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 2152041989.0,
+          "mean": 51714.37470562792,
+          "max": 99222.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 262451629.0,
+          "mean": 6306.8109049838995,
+          "max": 13839.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 434054250.0,
+          "mean": 10430.486134473975,
+          "max": 23069.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 318701397.0,
+          "mean": 7658.5138895564,
+          "max": 19636.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 115352853.0,
+          "mean": 2771.9722449175756,
+          "max": 20557.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 115353043.0,
+          "mean": 2771.9768106887104,
+          "max": 20403.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 103496511.0,
+          "mean": 2487.0599077233624,
+          "max": 15205.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 11856532.0,
+          "mean": 284.9169029653482,
+          "max": 11209.0
+        },
+        {
+          "name": "Gpu Busy Cycles",
+          "usage": 2,
+          "sum": 170496723.0,
+          "mean": 4097.100086509347,
+          "max": 8194.0
+        },
+        {
+          "name": "LDS Busy Cycles",
+          "usage": 2,
+          "sum": 7473644.1,
+          "mean": 179.59446580477723,
+          "max": 1115.9
+        },
+        {
+          "name": "Memory unit busy cycles",
+          "usage": 2,
+          "sum": 144340077.0,
+          "mean": 3468.546090258086,
+          "max": 4097.0
+        },
+        {
+          "name": "Memory unit stalled cycles",
+          "usage": 2,
+          "sum": 116580880.0,
+          "mean": 2801.4821934925744,
+          "max": 4097.0
+        }
+      ],
+      "file": "measured-317040-12.rgp",
+      "asic": {
+        "shader_clock_hz": 2347000000,
+        "memory_clock_hz": 956000000,
+        "gpu_timestamp_frequency": 99810000,
+        "gpu_name": "STRIX_HALO"
+      },
+      "trace_seconds": 0.07206917142570884,
+      "chunks": [
+        {
+          "type": 7,
+          "size": 112
+        },
+        {
+          "type": 0,
+          "size": 768
+        },
+        {
+          "type": 3,
+          "size": 560
+        },
+        {
+          "type": 9,
+          "size": 107772
+        },
+        {
+          "type": 10,
+          "size": 272
+        },
+        {
+          "type": 11,
+          "size": 560
+        },
+        {
+          "type": 5,
+          "size": 136
+        },
+        {
+          "type": 6,
+          "size": 40
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 19783160
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 19793240
+        },
+        {
+          "type": 128,
+          "size": 11322704
+        }
+      ]
+    },
+    "other_trace_durations": [
+      0.0001119326720769462,
+      1.4026650636208797e-06
+    ]
+  },
+  {
+    "name": "attention-96-98k",
+    "selected": {
+      "samples": 9771,
+      "sampling_interval_shader_cycles": 4096,
+      "timestamp_span": 1445260,
+      "counters": [
+        {
+          "name": "Instruction cache hit",
+          "description": "The percentage of read requests made that hit the data in the Instruction cache. The Instruction cache supplies shader code to an executing shader. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            0,
+            1,
+            2
+          ],
+          "sum": 7143.029194104641,
+          "mean": 0.7310438229561601,
+          "max": 100.0,
+          "weighted_percent": 35.421494785631516
+        },
+        {
+          "name": "Scalar cache hit",
+          "description": "The percentage of read requests made from executing shader code that hit the data in the Scalar cache. The Scalar cache contains data that does not vary in each thread across the wavefront. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            3,
+            4,
+            5
+          ],
+          "sum": 953844.9586602247,
+          "mean": 97.61999372226228,
+          "max": 100.0,
+          "weighted_percent": 99.88876648890225
+        },
+        {
+          "name": "L0 cache hit",
+          "description": "The percentage of read requests that hit the data in the L0 cache. The L0 cache contains vector data, which is data that may vary in each thread across the wavefront. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            6,
+            7,
+            8
+          ],
+          "sum": 685142.5172069696,
+          "mean": 70.119999714151,
+          "max": 100.0,
+          "weighted_percent": 89.79536441903798
+        },
+        {
+          "name": "L1 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L1 cache. The L1 cache is shared across all WGPs in a single shader engine. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            9,
+            10,
+            11
+          ],
+          "sum": 624181.4473960139,
+          "mean": 63.881020099888836,
+          "max": 100.0,
+          "weighted_percent": 67.57527412262895
+        },
+        {
+          "name": "L2 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L2 cache. The L2 cache is shared by many blocks across the GPU, including the Command Processor, Geometry Engine, all WGPs, all Render Backends, and others. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            12,
+            13,
+            14
+          ],
+          "sum": 633251.0035052703,
+          "mean": 64.80923175778021,
+          "max": 100.0,
+          "weighted_percent": 52.32994950780414
+        },
+        {
+          "name": "LDS Bank Conflict",
+          "description": "The percentage of GPUTime LDS is stalled by bank conflicts. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            16
+          ],
+          "sum": 25470.61142299243,
+          "mean": 2.606755851293873,
+          "max": 21.170978764949965,
+          "weighted_percent": 2.6064846665816765
+        },
+        {
+          "name": "Fetch size",
+          "description": "The total bytes fetched from the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 2178934144.0,
+          "mean": 223000.11708115853,
+          "max": 3310848.0
+        },
+        {
+          "name": "Write size",
+          "description": "The total bytes written to the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 320.0,
+          "mean": 0.03274997441408249,
+          "max": 64.0
+        },
+        {
+          "name": "Local video memory bytes",
+          "description": "Number of bytes read from or written to the Infinity Cache (if available) or local video memory",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 863727136.0,
+          "mean": 88397.00501483983,
+          "max": 1223168.0
+        },
+        {
+          "name": "PCIe bytes",
+          "description": "Number of bytes sent and received over the PCIe bus",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Memory unity busy",
+          "description": "The percentage of GPUTime the memory unit is active. The result includes the stall time (MemUnitStalled). This is measured with all extra fetches and writes and any cache or memory effects taken into account. Value range: 0% to 100% (fetch-bound).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            17
+          ],
+          "sum": 769933.2072247986,
+          "mean": 78.79779011613945,
+          "max": 100.0,
+          "weighted_percent": 78.79050559357249
+        },
+        {
+          "name": "Memory unit stalled",
+          "description": "The percentage of GPUTime the memory unit is stalled. Try reducing the number or size of fetches and writes if possible. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            18
+          ],
+          "sum": 601693.8125457652,
+          "mean": 61.579553018704864,
+          "max": 100.0,
+          "weighted_percent": 61.57362262798197
+        },
+        {
+          "name": "Ray-box tests",
+          "description": "The number of ray box intersection tests.",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Ray-triangle tests",
+          "description": "iThe number of ray triangle intersection tests",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        }
+      ],
+      "components": [
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 27616.0,
+          "mean": 2.826322791935319,
+          "max": 884.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 9782.0,
+          "mean": 1.001125780370484,
+          "max": 486.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 17834.0,
+          "mean": 1.8251970115648348,
+          "max": 858.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 2421932.0,
+          "mean": 247.86940947702385,
+          "max": 1024.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 2419238.0,
+          "mean": 247.5936956299253,
+          "max": 882.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 2694.0,
+          "mean": 0.27571384709855695,
+          "max": 418.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 260537829.0,
+          "mean": 26664.39760515812,
+          "max": 40960.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 233950893.0,
+          "mean": 23943.39299969297,
+          "max": 37903.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 26586936.0,
+          "mean": 2721.004605465152,
+          "max": 7568.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 42797543.0,
+          "mean": 4380.057619486235,
+          "max": 19878.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 28920557.0,
+          "mean": 2959.8359430969194,
+          "max": 5120.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 13876986.0,
+          "mean": 1420.2216763893152,
+          "max": 19878.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 13876996.0,
+          "mean": 1420.2226998260157,
+          "max": 19732.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 7261825.0,
+          "mean": 743.2018217173268,
+          "max": 8665.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 6615171.0,
+          "mean": 677.020878108689,
+          "max": 11067.0
+        },
+        {
+          "name": "Gpu Busy Cycles",
+          "usage": 2,
+          "sum": 40035952.0,
+          "mean": 4097.426261385734,
+          "max": 8194.0
+        },
+        {
+          "name": "LDS Busy Cycles",
+          "usage": 2,
+          "sum": 1043530.95,
+          "mean": 106.79878722750998,
+          "max": 867.375
+        },
+        {
+          "name": "Memory unit busy cycles",
+          "usage": 2,
+          "sum": 31544529.0,
+          "mean": 3228.382867669635,
+          "max": 4097.0
+        },
+        {
+          "name": "Memory unit stalled cycles",
+          "usage": 2,
+          "sum": 24651586.0,
+          "mean": 2522.9337836454815,
+          "max": 4097.0
+        }
+      ],
+      "file": "measured-317043-13.rgp",
+      "asic": {
+        "shader_clock_hz": 2860000000,
+        "memory_clock_hz": 998000000,
+        "gpu_timestamp_frequency": 99810000,
+        "gpu_name": "STRIX_HALO"
+      },
+      "trace_seconds": 0.014480112213205089,
+      "chunks": [
+        {
+          "type": 7,
+          "size": 112
+        },
+        {
+          "type": 0,
+          "size": 768
+        },
+        {
+          "type": 3,
+          "size": 560
+        },
+        {
+          "type": 9,
+          "size": 107772
+        },
+        {
+          "type": 10,
+          "size": 272
+        },
+        {
+          "type": 11,
+          "size": 560
+        },
+        {
+          "type": 5,
+          "size": 136
+        },
+        {
+          "type": 6,
+          "size": 40
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 2914360
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 1499160
+        },
+        {
+          "type": 128,
+          "size": 2661408
+        }
+      ]
+    },
+    "other_trace_durations": [
+      6.259893798216611e-05,
+      1.4026650636208797e-06
+    ]
+  },
+  {
+    "name": "dense-out",
+    "selected": {
+      "samples": 690,
+      "sampling_interval_shader_cycles": 4096,
+      "timestamp_span": 100488,
+      "counters": [
+        {
+          "name": "Instruction cache hit",
+          "description": "The percentage of read requests made that hit the data in the Instruction cache. The Instruction cache supplies shader code to an executing shader. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            0,
+            1,
+            2
+          ],
+          "sum": 2343.159810933898,
+          "mean": 3.395883783962171,
+          "max": 100.0,
+          "weighted_percent": 57.291394193042116
+        },
+        {
+          "name": "Scalar cache hit",
+          "description": "The percentage of read requests made from executing shader code that hit the data in the Scalar cache. The Scalar cache contains data that does not vary in each thread across the wavefront. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            3,
+            4,
+            5
+          ],
+          "sum": 64538.10455949338,
+          "mean": 93.533484868831,
+          "max": 100.0,
+          "weighted_percent": 98.11601545183966
+        },
+        {
+          "name": "L0 cache hit",
+          "description": "The percentage of read requests that hit the data in the L0 cache. The L0 cache contains vector data, which is data that may vary in each thread across the wavefront. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            6,
+            7,
+            8
+          ],
+          "sum": 34756.4977549683,
+          "mean": 50.37173587676565,
+          "max": 87.59689922480621,
+          "weighted_percent": 55.358473553089944
+        },
+        {
+          "name": "L1 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L1 cache. The L1 cache is shared across all WGPs in a single shader engine. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            9,
+            10,
+            11
+          ],
+          "sum": 33053.2692731346,
+          "mean": 47.90328880164436,
+          "max": 72.02445163610213,
+          "weighted_percent": 49.00703077072471
+        },
+        {
+          "name": "L2 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L2 cache. The L2 cache is shared by many blocks across the GPU, including the Command Processor, Geometry Engine, all WGPs, all Render Backends, and others. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            12,
+            13,
+            14
+          ],
+          "sum": 56104.9740698991,
+          "mean": 81.31155662304218,
+          "max": 100.0,
+          "weighted_percent": 86.66385984672597
+        },
+        {
+          "name": "LDS Bank Conflict",
+          "description": "The percentage of GPUTime LDS is stalled by bank conflicts. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            16
+          ],
+          "sum": 4767.644007810593,
+          "mean": 6.909628996826947,
+          "max": 13.895533317061263,
+          "weighted_percent": 6.909462794101729
+        },
+        {
+          "name": "Fetch size",
+          "description": "The total bytes fetched from the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 250567328.0,
+          "mean": 363141.05507246376,
+          "max": 2466240.0
+        },
+        {
+          "name": "Write size",
+          "description": "The total bytes written to the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 64.0,
+          "mean": 0.0927536231884058,
+          "max": 32.0
+        },
+        {
+          "name": "Local video memory bytes",
+          "description": "Number of bytes read from or written to the Infinity Cache (if available) or local video memory",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 39526208.0,
+          "mean": 57284.35942028985,
+          "max": 1281888.0
+        },
+        {
+          "name": "PCIe bytes",
+          "description": "Number of bytes sent and received over the PCIe bus",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Memory unity busy",
+          "description": "The percentage of GPUTime the memory unit is active. The result includes the stall time (MemUnitStalled). This is measured with all extra fetches and writes and any cache or memory effects taken into account. Value range: 0% to 100% (fetch-bound).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            17
+          ],
+          "sum": 32201.757383451306,
+          "mean": 46.66921359920479,
+          "max": 100.0,
+          "weighted_percent": 46.668091028009215
+        },
+        {
+          "name": "Memory unit stalled",
+          "description": "The percentage of GPUTime the memory unit is stalled. Try reducing the number or size of fetches and writes if possible. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            18
+          ],
+          "sum": 11774.347083231632,
+          "mean": 17.064271135118307,
+          "max": 91.4083475713937,
+          "weighted_percent": 17.063860674821843
+        },
+        {
+          "name": "Ray-box tests",
+          "description": "The number of ray box intersection tests.",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Ray-triangle tests",
+          "description": "iThe number of ray triangle intersection tests",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        }
+      ],
+      "components": [
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 30584.0,
+          "mean": 44.32463768115942,
+          "max": 1880.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 17522.0,
+          "mean": 25.394202898550724,
+          "max": 1426.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 13062.0,
+          "mean": 18.930434782608696,
+          "max": 1734.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 63164.0,
+          "mean": 91.54202898550724,
+          "max": 1024.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 61974.0,
+          "mean": 89.81739130434782,
+          "max": 880.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 1190.0,
+          "mean": 1.7246376811594204,
+          "max": 938.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 6006524.0,
+          "mean": 8705.107246376812,
+          "max": 68780.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 3325120.0,
+          "mean": 4819.014492753623,
+          "max": 58687.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 2681404.0,
+          "mean": 3886.0927536231884,
+          "max": 10602.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 4345754.0,
+          "mean": 6298.19420289855,
+          "max": 17057.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 2129725.0,
+          "mean": 3086.557971014493,
+          "max": 10607.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 2216029.0,
+          "mean": 3211.636231884058,
+          "max": 14919.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 2216031.0,
+          "mean": 3211.6391304347826,
+          "max": 14926.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 1920498.0,
+          "mean": 2783.330434782609,
+          "max": 7525.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 295533.0,
+          "mean": 428.3086956521739,
+          "max": 8073.0
+        },
+        {
+          "name": "Gpu Busy Cycles",
+          "usage": 2,
+          "sum": 2826998.0,
+          "mean": 4097.098550724638,
+          "max": 4165.0
+        },
+        {
+          "name": "LDS Busy Cycles",
+          "usage": 2,
+          "sum": 195330.375,
+          "mean": 283.0875,
+          "max": 569.3
+        },
+        {
+          "name": "Memory unit busy cycles",
+          "usage": 2,
+          "sum": 1319306.0,
+          "mean": 1912.0376811594203,
+          "max": 4097.0
+        },
+        {
+          "name": "Memory unit stalled cycles",
+          "usage": 2,
+          "sum": 482395.0,
+          "mean": 699.1231884057971,
+          "max": 3745.0
+        }
+      ],
+      "file": "measured-317069-6.rgp",
+      "asic": {
+        "shader_clock_hz": 2625000000,
+        "memory_clock_hz": 992000000,
+        "gpu_timestamp_frequency": 99810000,
+        "gpu_name": "STRIX_HALO"
+      },
+      "trace_seconds": 0.0010067929065223926,
+      "chunks": [
+        {
+          "type": 7,
+          "size": 112
+        },
+        {
+          "type": 0,
+          "size": 768
+        },
+        {
+          "type": 3,
+          "size": 560
+        },
+        {
+          "type": 9,
+          "size": 26896
+        },
+        {
+          "type": 10,
+          "size": 152
+        },
+        {
+          "type": 11,
+          "size": 296
+        },
+        {
+          "type": 5,
+          "size": 136
+        },
+        {
+          "type": 6,
+          "size": 40
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 700184
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 365240
+        },
+        {
+          "type": 128,
+          "size": 191376
+        }
+      ]
+    },
+    "other_trace_durations": [
+      5.81104097785793e-05,
+      1.4026650636208797e-06
+    ]
+  },
+  {
+    "name": "dense-z",
+    "selected": {
+      "samples": 706,
+      "sampling_interval_shader_cycles": 4096,
+      "timestamp_span": 102564,
+      "counters": [
+        {
+          "name": "Instruction cache hit",
+          "description": "The percentage of read requests made that hit the data in the Instruction cache. The Instruction cache supplies shader code to an executing shader. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            0,
+            1,
+            2
+          ],
+          "sum": 5050.452640193096,
+          "mean": 7.153615637667276,
+          "max": 100.0,
+          "weighted_percent": 80.13108119996481
+        },
+        {
+          "name": "Scalar cache hit",
+          "description": "The percentage of read requests made from executing shader code that hit the data in the Scalar cache. The Scalar cache contains data that does not vary in each thread across the wavefront. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            3,
+            4,
+            5
+          ],
+          "sum": 60110.332249302235,
+          "mean": 85.1421136675669,
+          "max": 100.0,
+          "weighted_percent": 98.39919238534756
+        },
+        {
+          "name": "L0 cache hit",
+          "description": "The percentage of read requests that hit the data in the L0 cache. The L0 cache contains vector data, which is data that may vary in each thread across the wavefront. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            6,
+            7,
+            8
+          ],
+          "sum": 35300.69000121284,
+          "mean": 50.000977338828385,
+          "max": 100.0,
+          "weighted_percent": 61.44542662331284
+        },
+        {
+          "name": "L1 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L1 cache. The L1 cache is shared across all WGPs in a single shader engine. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            9,
+            10,
+            11
+          ],
+          "sum": 29338.433670235343,
+          "mean": 41.555855056990566,
+          "max": 100.0,
+          "weighted_percent": 45.09693947267175
+        },
+        {
+          "name": "L2 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L2 cache. The L2 cache is shared by many blocks across the GPU, including the Command Processor, Geometry Engine, all WGPs, all Render Backends, and others. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            12,
+            13,
+            14
+          ],
+          "sum": 50886.65701771156,
+          "mean": 72.07741787211269,
+          "max": 100.0,
+          "weighted_percent": 82.62283001050244
+        },
+        {
+          "name": "LDS Bank Conflict",
+          "description": "The percentage of GPUTime LDS is stalled by bank conflicts. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            16
+          ],
+          "sum": 4587.794117647059,
+          "mean": 6.498291951341443,
+          "max": 17.852086892848426,
+          "weighted_percent": 6.4981391851480526
+        },
+        {
+          "name": "Fetch size",
+          "description": "The total bytes fetched from the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 267954880.0,
+          "mean": 379539.49008498585,
+          "max": 3544352.0
+        },
+        {
+          "name": "Write size",
+          "description": "The total bytes written to the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 96.0,
+          "mean": 0.1359773371104816,
+          "max": 32.0
+        },
+        {
+          "name": "Local video memory bytes",
+          "description": "Number of bytes read from or written to the Infinity Cache (if available) or local video memory",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 47936096.0,
+          "mean": 67898.15297450425,
+          "max": 1284608.0
+        },
+        {
+          "name": "PCIe bytes",
+          "description": "Number of bytes sent and received over the PCIe bus",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Memory unity busy",
+          "description": "The percentage of GPUTime the memory unit is active. The result includes the stall time (MemUnitStalled). This is measured with all extra fetches and writes and any cache or memory effects taken into account. Value range: 0% to 100% (fetch-bound).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            17
+          ],
+          "sum": 29229.92433487918,
+          "mean": 41.402159114559744,
+          "max": 100.0,
+          "weighted_percent": 41.40118580491262
+        },
+        {
+          "name": "Memory unit stalled",
+          "description": "The percentage of GPUTime the memory unit is stalled. Try reducing the number or size of fetches and writes if possible. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            18
+          ],
+          "sum": 12062.289480107396,
+          "mean": 17.08539586417478,
+          "max": 93.8979741274103,
+          "weighted_percent": 17.084994209261723
+        },
+        {
+          "name": "Ray-box tests",
+          "description": "The number of ray box intersection tests.",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Ray-triangle tests",
+          "description": "iThe number of ray triangle intersection tests",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        }
+      ],
+      "components": [
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 45468.0,
+          "mean": 64.40226628895184,
+          "max": 2214.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 36434.0,
+          "mean": 51.60623229461756,
+          "max": 2034.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 9034.0,
+          "mean": 12.796033994334278,
+          "max": 1854.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 69340.0,
+          "mean": 98.21529745042493,
+          "max": 1166.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 68230.0,
+          "mean": 96.64305949008498,
+          "max": 1166.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 1110.0,
+          "mean": 1.5722379603399435,
+          "max": 938.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 6485241.0,
+          "mean": 9185.893767705382,
+          "max": 87016.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 3984884.0,
+          "mean": 5644.311614730878,
+          "max": 75458.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 2500357.0,
+          "mean": 3541.5821529745044,
+          "max": 11558.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 4127524.0,
+          "mean": 5846.351274787536,
+          "max": 19918.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 1861387.0,
+          "mean": 2636.525495750708,
+          "max": 10464.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 2266137.0,
+          "mean": 3209.825779036827,
+          "max": 18976.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 2266140.0,
+          "mean": 3209.830028328612,
+          "max": 19047.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 1872349.0,
+          "mean": 2652.052407932011,
+          "max": 8570.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 393791.0,
+          "mean": 557.7776203966006,
+          "max": 13405.0
+        },
+        {
+          "name": "Gpu Busy Cycles",
+          "usage": 2,
+          "sum": 2892550.0,
+          "mean": 4097.096317280453,
+          "max": 4165.0
+        },
+        {
+          "name": "LDS Busy Cycles",
+          "usage": 2,
+          "sum": 187961.925,
+          "mean": 266.2350212464589,
+          "max": 731.4
+        },
+        {
+          "name": "Memory unit busy cycles",
+          "usage": 2,
+          "sum": 1197550.0,
+          "mean": 1696.2464589235128,
+          "max": 4097.0
+        },
+        {
+          "name": "Memory unit stalled cycles",
+          "usage": 2,
+          "sum": 494192.0,
+          "mean": 699.9886685552408,
+          "max": 3847.0
+        }
+      ],
+      "file": "measured-317066-6.rgp",
+      "asic": {
+        "shader_clock_hz": 2698000000,
+        "memory_clock_hz": 993000000,
+        "gpu_timestamp_frequency": 99810000,
+        "gpu_name": "STRIX_HALO"
+      },
+      "trace_seconds": 0.0010275924256086565,
+      "chunks": [
+        {
+          "type": 7,
+          "size": 112
+        },
+        {
+          "type": 0,
+          "size": 768
+        },
+        {
+          "type": 3,
+          "size": 560
+        },
+        {
+          "type": 9,
+          "size": 26896
+        },
+        {
+          "type": 10,
+          "size": 152
+        },
+        {
+          "type": 11,
+          "size": 296
+        },
+        {
+          "type": 5,
+          "size": 136
+        },
+        {
+          "type": 6,
+          "size": 40
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 539704
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 539896
+        },
+        {
+          "type": 128,
+          "size": 195728
+        }
+      ]
+    },
+    "other_trace_durations": [
+      6.0955816050495944e-05,
+      1.4026650636208797e-06
+    ]
+  },
+  {
+    "name": "expert-down-mixed",
+    "selected": {
+      "samples": 1406,
+      "sampling_interval_shader_cycles": 4096,
+      "timestamp_span": 208336,
+      "counters": [
+        {
+          "name": "Instruction cache hit",
+          "description": "The percentage of read requests made that hit the data in the Instruction cache. The Instruction cache supplies shader code to an executing shader. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            0,
+            1,
+            2
+          ],
+          "sum": 120112.1176795136,
+          "mean": 85.4282487052017,
+          "max": 100.0,
+          "weighted_percent": 99.33536067049116
+        },
+        {
+          "name": "Scalar cache hit",
+          "description": "The percentage of read requests made from executing shader code that hit the data in the Scalar cache. The Scalar cache contains data that does not vary in each thread across the wavefront. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            3,
+            4,
+            5
+          ],
+          "sum": 133821.57598169867,
+          "mean": 95.17893028570319,
+          "max": 100.0,
+          "weighted_percent": 99.51897731662226
+        },
+        {
+          "name": "L0 cache hit",
+          "description": "The percentage of read requests that hit the data in the L0 cache. The L0 cache contains vector data, which is data that may vary in each thread across the wavefront. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            6,
+            7,
+            8
+          ],
+          "sum": 67755.12719915454,
+          "mean": 48.189990895558,
+          "max": 89.74358974358975,
+          "weighted_percent": 50.30080263301632
+        },
+        {
+          "name": "L1 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L1 cache. The L1 cache is shared across all WGPs in a single shader engine. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            9,
+            10,
+            11
+          ],
+          "sum": 23337.66304311966,
+          "mean": 16.598622363527497,
+          "max": 90.68150208623088,
+          "weighted_percent": 16.34619368663775
+        },
+        {
+          "name": "L2 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L2 cache. The L2 cache is shared by many blocks across the GPU, including the Command Processor, Geometry Engine, all WGPs, all Render Backends, and others. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            12,
+            13,
+            14
+          ],
+          "sum": 87795.23432613215,
+          "mean": 62.443267657277495,
+          "max": 100.0,
+          "weighted_percent": 62.85301423697777
+        },
+        {
+          "name": "LDS Bank Conflict",
+          "description": "The percentage of GPUTime LDS is stalled by bank conflicts. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            16
+          ],
+          "sum": 13716.037954600928,
+          "mean": 9.755361276387573,
+          "max": 14.81632902123505,
+          "weighted_percent": 9.755246117924814
+        },
+        {
+          "name": "Fetch size",
+          "description": "The total bytes fetched from the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 1828752192.0,
+          "mean": 1300677.2347083925,
+          "max": 2204864.0
+        },
+        {
+          "name": "Write size",
+          "description": "The total bytes written to the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 128.0,
+          "mean": 0.09103840682788052,
+          "max": 32.0
+        },
+        {
+          "name": "Local video memory bytes",
+          "description": "Number of bytes read from or written to the Infinity Cache (if available) or local video memory",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 610135200.0,
+          "mean": 433951.06685633,
+          "max": 931808.0
+        },
+        {
+          "name": "PCIe bytes",
+          "description": "Number of bytes sent and received over the PCIe bus",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Memory unity busy",
+          "description": "The percentage of GPUTime the memory unit is active. The result includes the stall time (MemUnitStalled). This is measured with all extra fetches and writes and any cache or memory effects taken into account. Value range: 0% to 100% (fetch-bound).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            17
+          ],
+          "sum": 126413.10715157432,
+          "mean": 89.90974904094902,
+          "max": 100.0,
+          "weighted_percent": 89.90868768932982
+        },
+        {
+          "name": "Memory unit stalled",
+          "description": "The percentage of GPUTime the memory unit is stalled. Try reducing the number or size of fetches and writes if possible. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            18
+          ],
+          "sum": 30681.71833048572,
+          "mean": 21.82199027772811,
+          "max": 100.0,
+          "weighted_percent": 21.821732677134598
+        },
+        {
+          "name": "Ray-box tests",
+          "description": "The number of ray box intersection tests.",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Ray-triangle tests",
+          "description": "iThe number of ray triangle intersection tests",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        }
+      ],
+      "components": [
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 1442286.0,
+          "mean": 1025.8079658605975,
+          "max": 7184.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 1432700.0,
+          "mean": 1018.9900426742532,
+          "max": 7184.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 9586.0,
+          "mean": 6.817923186344239,
+          "max": 1088.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 823246.0,
+          "mean": 585.5234708392603,
+          "max": 3434.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 819286.0,
+          "mean": 582.7069701280227,
+          "max": 3434.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 3960.0,
+          "mean": 2.8165007112375533,
+          "max": 960.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 18335777.0,
+          "mean": 13041.093172119488,
+          "max": 18905.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 9223043.0,
+          "mean": 6559.77453769559,
+          "max": 9732.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 9112734.0,
+          "mean": 6481.3186344238975,
+          "max": 9732.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 15229001.0,
+          "mean": 10831.437411095305,
+          "max": 15334.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 2489362.0,
+          "mean": 1770.5277382645804,
+          "max": 6626.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 12739639.0,
+          "mean": 9060.909672830725,
+          "max": 13866.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 12739642.0,
+          "mean": 9060.911806543385,
+          "max": 13764.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 8007249.0,
+          "mean": 5695.056187766714,
+          "max": 9539.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 4732393.0,
+          "mean": 3365.8556187766712,
+          "max": 7141.0
+        },
+        {
+          "name": "Gpu Busy Cycles",
+          "usage": 2,
+          "sum": 5760450.0,
+          "mean": 4097.0483641536275,
+          "max": 4165.0
+        },
+        {
+          "name": "LDS Busy Cycles",
+          "usage": 2,
+          "sum": 561946.075,
+          "mean": 399.67715149359884,
+          "max": 607.025
+        },
+        {
+          "name": "Memory unit busy cycles",
+          "usage": 2,
+          "sum": 5179145.0,
+          "mean": 3683.6024182076812,
+          "max": 4097.0
+        },
+        {
+          "name": "Memory unit stalled cycles",
+          "usage": 2,
+          "sum": 1257030.0,
+          "mean": 894.0469416785206,
+          "max": 4097.0
+        }
+      ],
+      "file": "measured-317055-9.rgp",
+      "asic": {
+        "shader_clock_hz": 2805000000,
+        "memory_clock_hz": 1000000000,
+        "gpu_timestamp_frequency": 99810000,
+        "gpu_name": "STRIX_HALO"
+      },
+      "trace_seconds": 0.0020873259192465683,
+      "chunks": [
+        {
+          "type": 7,
+          "size": 112
+        },
+        {
+          "type": 0,
+          "size": 768
+        },
+        {
+          "type": 3,
+          "size": 560
+        },
+        {
+          "type": 9,
+          "size": 39164
+        },
+        {
+          "type": 10,
+          "size": 272
+        },
+        {
+          "type": 11,
+          "size": 560
+        },
+        {
+          "type": 5,
+          "size": 136
+        },
+        {
+          "type": 6,
+          "size": 40
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 1441112
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 1423928
+        },
+        {
+          "type": 128,
+          "size": 386128
+        }
+      ]
+    },
+    "other_trace_durations": [
+      5.2539825668770665e-05,
+      1.442741208295762e-06
+    ]
+  },
+  {
+    "name": "expert-gate-32",
+    "selected": {
+      "samples": 1060,
+      "sampling_interval_shader_cycles": 4096,
+      "timestamp_span": 156560,
+      "counters": [
+        {
+          "name": "Instruction cache hit",
+          "description": "The percentage of read requests made that hit the data in the Instruction cache. The Instruction cache supplies shader code to an executing shader. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            0,
+            1,
+            2
+          ],
+          "sum": 39496.290257697925,
+          "mean": 37.260651186507474,
+          "max": 100.0,
+          "weighted_percent": 97.61238281379401
+        },
+        {
+          "name": "Scalar cache hit",
+          "description": "The percentage of read requests made from executing shader code that hit the data in the Scalar cache. The Scalar cache contains data that does not vary in each thread across the wavefront. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            3,
+            4,
+            5
+          ],
+          "sum": 97655.64635932143,
+          "mean": 92.12796826351078,
+          "max": 100.0,
+          "weighted_percent": 99.18835755025998
+        },
+        {
+          "name": "L0 cache hit",
+          "description": "The percentage of read requests that hit the data in the L0 cache. The L0 cache contains vector data, which is data that may vary in each thread across the wavefront. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            6,
+            7,
+            8
+          ],
+          "sum": 49433.65556815561,
+          "mean": 46.63552412090152,
+          "max": 85.53127354935945,
+          "weighted_percent": 49.48445263533212
+        },
+        {
+          "name": "L1 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L1 cache. The L1 cache is shared across all WGPs in a single shader engine. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            9,
+            10,
+            11
+          ],
+          "sum": 15968.770752944314,
+          "mean": 15.064878068815391,
+          "max": 90.60451565914057,
+          "weighted_percent": 14.186461468759882
+        },
+        {
+          "name": "L2 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L2 cache. The L2 cache is shared by many blocks across the GPU, including the Command Processor, Geometry Engine, all WGPs, all Render Backends, and others. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            12,
+            13,
+            14
+          ],
+          "sum": 46222.14460598944,
+          "mean": 43.60579679810325,
+          "max": 100.0,
+          "weighted_percent": 45.70964787973713
+        },
+        {
+          "name": "LDS Bank Conflict",
+          "description": "The percentage of GPUTime LDS is stalled by bank conflicts. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            16
+          ],
+          "sum": 9876.745789602148,
+          "mean": 9.317684707171837,
+          "max": 15.53331706126434,
+          "weighted_percent": 9.31753881288212
+        },
+        {
+          "name": "Fetch size",
+          "description": "The total bytes fetched from the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 1917092608.0,
+          "mean": 1808577.9320754716,
+          "max": 2678272.0
+        },
+        {
+          "name": "Write size",
+          "description": "The total bytes written to the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 128.0,
+          "mean": 0.12075471698113208,
+          "max": 32.0
+        },
+        {
+          "name": "Local video memory bytes",
+          "description": "Number of bytes read from or written to the Infinity Cache (if available) or local video memory",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 807808480.0,
+          "mean": 762083.4716981133,
+          "max": 1197472.0
+        },
+        {
+          "name": "PCIe bytes",
+          "description": "Number of bytes sent and received over the PCIe bus",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Memory unity busy",
+          "description": "The percentage of GPUTime the memory unit is active. The result includes the stall time (MemUnitStalled). This is measured with all extra fetches and writes and any cache or memory effects taken into account. Value range: 0% to 100% (fetch-bound).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            17
+          ],
+          "sum": 95679.57041737856,
+          "mean": 90.26374567677223,
+          "max": 100.0,
+          "weighted_percent": 90.26233234658596
+        },
+        {
+          "name": "Memory unit stalled",
+          "description": "The percentage of GPUTime the memory unit is stalled. Try reducing the number or size of fetches and writes if possible. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            18
+          ],
+          "sum": 40896.26556016597,
+          "mean": 38.581382603930166,
+          "max": 99.90236758603857,
+          "weighted_percent": 38.58077850499483
+        },
+        {
+          "name": "Ray-box tests",
+          "description": "The number of ray box intersection tests.",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Ray-triangle tests",
+          "description": "iThe number of ray triangle intersection tests",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        }
+      ],
+      "components": [
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 241496.0,
+          "mean": 227.8264150943396,
+          "max": 3128.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 235730.0,
+          "mean": 222.38679245283018,
+          "max": 3128.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 5766.0,
+          "mean": 5.439622641509434,
+          "max": 972.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 523876.0,
+          "mean": 494.22264150943397,
+          "max": 3420.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 519624.0,
+          "mean": 490.211320754717,
+          "max": 3420.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 4252.0,
+          "mean": 4.011320754716981,
+          "max": 1536.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 16048186.0,
+          "mean": 15139.798113207547,
+          "max": 20920.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 7941357.0,
+          "mean": 7491.846226415094,
+          "max": 10498.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 8106829.0,
+          "mean": 7647.951886792453,
+          "max": 10744.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 13499293.0,
+          "mean": 12735.182075471697,
+          "max": 17220.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 1915072.0,
+          "mean": 1806.6716981132076,
+          "max": 3795.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 11584221.0,
+          "mean": 10928.51037735849,
+          "max": 15501.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 11584224.0,
+          "mean": 10928.51320754717,
+          "max": 15484.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 5295108.0,
+          "mean": 4995.384905660378,
+          "max": 10304.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 6289116.0,
+          "mean": 5933.1283018867925,
+          "max": 9371.0
+        },
+        {
+          "name": "Gpu Busy Cycles",
+          "usage": 2,
+          "sum": 4342888.0,
+          "mean": 4097.064150943396,
+          "max": 4165.0
+        },
+        {
+          "name": "LDS Busy Cycles",
+          "usage": 2,
+          "sum": 404650.275,
+          "mean": 381.7455424528302,
+          "max": 636.4
+        },
+        {
+          "name": "Memory unit busy cycles",
+          "usage": 2,
+          "sum": 3919992.0,
+          "mean": 3698.1056603773586,
+          "max": 4097.0
+        },
+        {
+          "name": "Memory unit stalled cycles",
+          "usage": 2,
+          "sum": 1675520.0,
+          "mean": 1580.6792452830189,
+          "max": 4093.0
+        }
+      ],
+      "file": "measured-317049-9.rgp",
+      "asic": {
+        "shader_clock_hz": 2809000000,
+        "memory_clock_hz": 1000000000,
+        "gpu_timestamp_frequency": 99810000,
+        "gpu_name": "STRIX_HALO"
+      },
+      "trace_seconds": 0.0015685803025748922,
+      "chunks": [
+        {
+          "type": 7,
+          "size": 112
+        },
+        {
+          "type": 0,
+          "size": 768
+        },
+        {
+          "type": 3,
+          "size": 560
+        },
+        {
+          "type": 9,
+          "size": 39164
+        },
+        {
+          "type": 10,
+          "size": 272
+        },
+        {
+          "type": 11,
+          "size": 560
+        },
+        {
+          "type": 5,
+          "size": 136
+        },
+        {
+          "type": 6,
+          "size": 40
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 1015704
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 998712
+        },
+        {
+          "type": 128,
+          "size": 292016
+        }
+      ]
+    },
+    "other_trace_durations": [
+      7.233744113816251e-05,
+      1.442741208295762e-06
+    ]
+  },
+  {
+    "name": "expert-gate-8",
+    "selected": {
+      "samples": 928,
+      "sampling_interval_shader_cycles": 4096,
+      "timestamp_span": 137516,
+      "counters": [
+        {
+          "name": "Instruction cache hit",
+          "description": "The percentage of read requests made that hit the data in the Instruction cache. The Instruction cache supplies shader code to an executing shader. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            0,
+            1,
+            2
+          ],
+          "sum": 35753.01234864499,
+          "mean": 38.52695296190193,
+          "max": 100.0,
+          "weighted_percent": 97.49473473071909
+        },
+        {
+          "name": "Scalar cache hit",
+          "description": "The percentage of read requests made from executing shader code that hit the data in the Scalar cache. The Scalar cache contains data that does not vary in each thread across the wavefront. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            3,
+            4,
+            5
+          ],
+          "sum": 87063.7690297947,
+          "mean": 93.81871662693393,
+          "max": 100.0,
+          "weighted_percent": 99.09755086531486
+        },
+        {
+          "name": "L0 cache hit",
+          "description": "The percentage of read requests that hit the data in the L0 cache. The L0 cache contains vector data, which is data that may vary in each thread across the wavefront. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            6,
+            7,
+            8
+          ],
+          "sum": 44418.68023232939,
+          "mean": 47.86495714690667,
+          "max": 89.375,
+          "weighted_percent": 50.531519386455805
+        },
+        {
+          "name": "L1 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L1 cache. The L1 cache is shared across all WGPs in a single shader engine. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            9,
+            10,
+            11
+          ],
+          "sum": 6697.06537373172,
+          "mean": 7.216665273417801,
+          "max": 89.63730569948186,
+          "weighted_percent": 6.464807884167625
+        },
+        {
+          "name": "L2 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L2 cache. The L2 cache is shared by many blocks across the GPU, including the Command Processor, Geometry Engine, all WGPs, all Render Backends, and others. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            12,
+            13,
+            14
+          ],
+          "sum": 44521.17484898906,
+          "mean": 47.97540393210028,
+          "max": 96.95945945945947,
+          "weighted_percent": 50.57328731023222
+        },
+        {
+          "name": "LDS Bank Conflict",
+          "description": "The percentage of GPUTime LDS is stalled by bank conflicts. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            16
+          ],
+          "sum": 9840.804857212595,
+          "mean": 10.604315578892882,
+          "max": 15.85855504027337,
+          "weighted_percent": 10.60412592146833
+        },
+        {
+          "name": "Fetch size",
+          "description": "The total bytes fetched from the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 1541107712.0,
+          "mean": 1660676.4137931035,
+          "max": 2551104.0
+        },
+        {
+          "name": "Write size",
+          "description": "The total bytes written to the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 128.0,
+          "mean": 0.13793103448275862,
+          "max": 32.0
+        },
+        {
+          "name": "Local video memory bytes",
+          "description": "Number of bytes read from or written to the Infinity Cache (if available) or local video memory",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 615544992.0,
+          "mean": 663302.7931034482,
+          "max": 1380864.0
+        },
+        {
+          "name": "PCIe bytes",
+          "description": "Number of bytes sent and received over the PCIe bus",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Memory unity busy",
+          "description": "The percentage of GPUTime the memory unit is active. The result includes the stall time (MemUnitStalled). This is measured with all extra fetches and writes and any cache or memory effects taken into account. Value range: 0% to 100% (fetch-bound).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            17
+          ],
+          "sum": 76046.03368318282,
+          "mean": 81.94615698618838,
+          "max": 100.0,
+          "weighted_percent": 81.94469138504041
+        },
+        {
+          "name": "Memory unit stalled",
+          "description": "The percentage of GPUTime the memory unit is stalled. Try reducing the number or size of fetches and writes if possible. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            18
+          ],
+          "sum": 21213.741762265072,
+          "mean": 22.85963551968219,
+          "max": 59.43373199902368,
+          "weighted_percent": 22.859226676738338
+        },
+        {
+          "name": "Ray-box tests",
+          "description": "The number of ray box intersection tests.",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Ray-triangle tests",
+          "description": "iThe number of ray triangle intersection tests",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        }
+      ],
+      "components": [
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 199420.0,
+          "mean": 214.89224137931035,
+          "max": 2842.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 194424.0,
+          "mean": 209.50862068965517,
+          "max": 2842.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 4996.0,
+          "mean": 5.383620689655173,
+          "max": 1272.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 463184.0,
+          "mean": 499.12068965517244,
+          "max": 3212.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 459004.0,
+          "mean": 494.6163793103448,
+          "max": 3212.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 4180.0,
+          "mean": 4.504310344827586,
+          "max": 1536.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 12568027.0,
+          "mean": 13543.132543103447,
+          "max": 18461.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 6350815.0,
+          "mean": 6843.550646551724,
+          "max": 9607.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 6217212.0,
+          "mean": 6699.581896551724,
+          "max": 9284.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 10345087.0,
+          "mean": 11147.723060344828,
+          "max": 14497.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 668790.0,
+          "mean": 720.6788793103449,
+          "max": 2644.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 9676297.0,
+          "mean": 10427.044181034482,
+          "max": 13649.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 9676300.0,
+          "mean": 10427.047413793103,
+          "max": 13609.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 4893623.0,
+          "mean": 5273.300646551724,
+          "max": 10363.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 4782677.0,
+          "mean": 5153.7467672413795,
+          "max": 10407.0
+        },
+        {
+          "name": "Gpu Busy Cycles",
+          "usage": 2,
+          "sum": 3802084.0,
+          "mean": 4097.073275862069,
+          "max": 4165.0
+        },
+        {
+          "name": "LDS Busy Cycles",
+          "usage": 2,
+          "sum": 403177.775,
+          "mean": 434.4588092672414,
+          "max": 649.725
+        },
+        {
+          "name": "Memory unit busy cycles",
+          "usage": 2,
+          "sum": 3115606.0,
+          "mean": 3357.334051724138,
+          "max": 4097.0
+        },
+        {
+          "name": "Memory unit stalled cycles",
+          "usage": 2,
+          "sum": 869127.0,
+          "mean": 936.5592672413793,
+          "max": 2435.0
+        }
+      ],
+      "file": "measured-317046-9.rgp",
+      "asic": {
+        "shader_clock_hz": 2830000000,
+        "memory_clock_hz": 999000000,
+        "gpu_timestamp_frequency": 99810000,
+        "gpu_name": "STRIX_HALO"
+      },
+      "trace_seconds": 0.0013777777777777777,
+      "chunks": [
+        {
+          "type": 7,
+          "size": 112
+        },
+        {
+          "type": 0,
+          "size": 768
+        },
+        {
+          "type": 3,
+          "size": 560
+        },
+        {
+          "type": 9,
+          "size": 39164
+        },
+        {
+          "type": 10,
+          "size": 272
+        },
+        {
+          "type": 11,
+          "size": 560
+        },
+        {
+          "type": 5,
+          "size": 136
+        },
+        {
+          "type": 6,
+          "size": 40
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 1046840
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 1049560
+        },
+        {
+          "type": 128,
+          "size": 256112
+        }
+      ]
+    },
+    "other_trace_durations": [
+      4.676886083558762e-05,
+      1.4026650636208797e-06
+    ]
+  },
+  {
+    "name": "expert-gate-mixed",
+    "selected": {
+      "samples": 1378,
+      "sampling_interval_shader_cycles": 4096,
+      "timestamp_span": 203528,
+      "counters": [
+        {
+          "name": "Instruction cache hit",
+          "description": "The percentage of read requests made that hit the data in the Instruction cache. The Instruction cache supplies shader code to an executing shader. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            0,
+            1,
+            2
+          ],
+          "sum": 67773.31285905025,
+          "mean": 49.182375079136605,
+          "max": 100.0,
+          "weighted_percent": 98.53113931653374
+        },
+        {
+          "name": "Scalar cache hit",
+          "description": "The percentage of read requests made from executing shader code that hit the data in the Scalar cache. The Scalar cache contains data that does not vary in each thread across the wavefront. Each request is 64 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            3,
+            4,
+            5
+          ],
+          "sum": 129622.61705956189,
+          "mean": 94.0657598400304,
+          "max": 100.0,
+          "weighted_percent": 99.36334464481602
+        },
+        {
+          "name": "L0 cache hit",
+          "description": "The percentage of read requests that hit the data in the L0 cache. The L0 cache contains vector data, which is data that may vary in each thread across the wavefront. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            6,
+            7,
+            8
+          ],
+          "sum": 66454.75463700651,
+          "mean": 48.225511347609945,
+          "max": 91.77215189873418,
+          "weighted_percent": 50.26746330411049
+        },
+        {
+          "name": "L1 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L1 cache. The L1 cache is shared across all WGPs in a single shader engine. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            9,
+            10,
+            11
+          ],
+          "sum": 15541.321295134632,
+          "mean": 11.278172202565045,
+          "max": 100.0,
+          "weighted_percent": 9.53715528055154
+        },
+        {
+          "name": "L2 cache hit",
+          "description": "The percentage of read or write requests that hit the data in the L2 cache. The L2 cache is shared by many blocks across the GPU, including the Command Processor, Geometry Engine, all WGPs, all Render Backends, and others. Each request is 128 bytes in size. Value range: 0% (no hit) to 100% (optimal).",
+          "usage": 1,
+          "component_ids": [
+            12,
+            13,
+            14
+          ],
+          "sum": 78596.62760932378,
+          "mean": 57.03673991968345,
+          "max": 97.98534798534799,
+          "weighted_percent": 56.67964655063871
+        },
+        {
+          "name": "LDS Bank Conflict",
+          "description": "The percentage of GPUTime LDS is stalled by bank conflicts. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            16
+          ],
+          "sum": 13351.227727605565,
+          "mean": 9.688844504793588,
+          "max": 15.039052965584574,
+          "weighted_percent": 9.688727807580026
+        },
+        {
+          "name": "Fetch size",
+          "description": "The total bytes fetched from the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 2034015264.0,
+          "mean": 1476063.3265602323,
+          "max": 2686464.0
+        },
+        {
+          "name": "Write size",
+          "description": "The total bytes written to the video memory. This is measured with all extra fetches and any cache or memory effects taken into account.",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 160.0,
+          "mean": 0.11611030478955008,
+          "max": 32.0
+        },
+        {
+          "name": "Local video memory bytes",
+          "description": "Number of bytes read from or written to the Infinity Cache (if available) or local video memory",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 748876448.0,
+          "mean": 543451.7039187228,
+          "max": 1267584.0
+        },
+        {
+          "name": "PCIe bytes",
+          "description": "Number of bytes sent and received over the PCIe bus",
+          "usage": 4,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Memory unity busy",
+          "description": "The percentage of GPUTime the memory unit is active. The result includes the stall time (MemUnitStalled). This is measured with all extra fetches and writes and any cache or memory effects taken into account. Value range: 0% to 100% (fetch-bound).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            17
+          ],
+          "sum": 123639.71198437881,
+          "mean": 89.72402901624007,
+          "max": 100.0,
+          "weighted_percent": 89.72294833585855
+        },
+        {
+          "name": "Memory unit stalled",
+          "description": "The percentage of GPUTime the memory unit is stalled. Try reducing the number or size of fetches and writes if possible. Value range: 0% (optimal) to 100% (bad).",
+          "usage": 1,
+          "component_ids": [
+            15,
+            18
+          ],
+          "sum": 36489.57773980962,
+          "mean": 26.480099956320476,
+          "max": 100.0,
+          "weighted_percent": 26.479781016959
+        },
+        {
+          "name": "Ray-box tests",
+          "description": "The number of ray box intersection tests.",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        },
+        {
+          "name": "Ray-triangle tests",
+          "description": "iThe number of ray triangle intersection tests",
+          "usage": 5,
+          "component_ids": [],
+          "sum": 0.0,
+          "mean": 0.0,
+          "max": 0.0
+        }
+      ],
+      "components": [
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 679302.0,
+          "mean": 492.9622641509434,
+          "max": 5626.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 669324.0,
+          "mean": 485.7213352685051,
+          "max": 5626.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 9978.0,
+          "mean": 7.2409288824383164,
+          "max": 1140.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 585246.0,
+          "mean": 424.7068214804064,
+          "max": 3656.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 581520.0,
+          "mean": 422.0029027576197,
+          "max": 3656.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 3726.0,
+          "mean": 2.7039187227866472,
+          "max": 960.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 17937227.0,
+          "mean": 13016.855587808417,
+          "max": 18141.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 9016589.0,
+          "mean": 6543.243105950653,
+          "max": 9059.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 8920638.0,
+          "mean": 6473.612481857765,
+          "max": 9241.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 14846167.0,
+          "mean": 10773.706095791002,
+          "max": 15344.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 1415902.0,
+          "mean": 1027.5050798258346,
+          "max": 3396.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 13430265.0,
+          "mean": 9746.201015965167,
+          "max": 14818.0
+        },
+        {
+          "name": "Requests",
+          "usage": 5,
+          "sum": 13430269.0,
+          "mean": 9746.203918722787,
+          "max": 14715.0
+        },
+        {
+          "name": "Hits",
+          "usage": 5,
+          "sum": 7612229.0,
+          "mean": 5524.113933236575,
+          "max": 9428.0
+        },
+        {
+          "name": "Misses",
+          "usage": 5,
+          "sum": 5818040.0,
+          "mean": 4222.089985486212,
+          "max": 10182.0
+        },
+        {
+          "name": "Gpu Busy Cycles",
+          "usage": 2,
+          "sum": 5645734.0,
+          "mean": 4097.049346879536,
+          "max": 4165.0
+        },
+        {
+          "name": "LDS Busy Cycles",
+          "usage": 2,
+          "sum": 546999.8,
+          "mean": 396.95195936139334,
+          "max": 616.15
+        },
+        {
+          "name": "Memory unit busy cycles",
+          "usage": 2,
+          "sum": 5065519.0,
+          "mean": 3675.9934687953555,
+          "max": 4097.0
+        },
+        {
+          "name": "Memory unit stalled cycles",
+          "usage": 2,
+          "sum": 1494978.0,
+          "mean": 1084.8896952104499,
+          "max": 4097.0
+        }
+      ],
+      "file": "measured-317052-9.rgp",
+      "asic": {
+        "shader_clock_hz": 2809000000,
+        "memory_clock_hz": 1000000000,
+        "gpu_timestamp_frequency": 99810000,
+        "gpu_name": "STRIX_HALO"
+      },
+      "trace_seconds": 0.00203915439334736,
+      "chunks": [
+        {
+          "type": 7,
+          "size": 112
+        },
+        {
+          "type": 0,
+          "size": 768
+        },
+        {
+          "type": 3,
+          "size": 560
+        },
+        {
+          "type": 9,
+          "size": 39164
+        },
+        {
+          "type": 10,
+          "size": 272
+        },
+        {
+          "type": 11,
+          "size": 560
+        },
+        {
+          "type": 5,
+          "size": 136
+        },
+        {
+          "type": 6,
+          "size": 40
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 1329912
+        },
+        {
+          "type": 1,
+          "size": 32
+        },
+        {
+          "type": 2,
+          "size": 1318552
+        },
+        {
+          "type": 128,
+          "size": 378512
+        }
+      ]
+    },
+    "other_trace_durations": [
+      5.1097084460474905e-05,
+      1.442741208295762e-06
+    ]
+  }
+]

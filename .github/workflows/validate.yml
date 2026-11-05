@@ -44,6 +44,15 @@ jobs:
           python3 benchmarks/analyze-experts.py --help >/dev/null
           python3 benchmarks/analyze-perplexity.py --help >/dev/null
           python3 benchmarks/compare-numerics.py --help >/dev/null
+          python3 scripts/download-models.py --help >/dev/null
+          python3 scripts/render-service.py --help >/dev/null
+          python3 scripts/render-service.py >/dev/null
+          python3 benchmarks/profile-continuation.py --help >/dev/null
+          python3 benchmarks/analyze-continuation.py --help >/dev/null
+          python3 benchmarks/diagnostics/rgp/run-counters.py --help >/dev/null
+          python3 benchmarks/diagnostics/rgp/run-counters.py --probe /tmp/probe --shim /tmp/shim.so --backend-dir /tmp/bin --output /tmp/captures --dry-run >/dev/null
+          python3 benchmarks/diagnostics/rgp/analyze-rgp.py --help >/dev/null
+          python3 scripts/serve.py --profile stable --dry-run >/dev/null
           python3 scripts/serve.py --dry-run >/dev/null
           python3 scripts/serve.py --optimized-prefill --dry-run >/dev/null
           python3 scripts/serve.py --expert-prefill --dry-run >/dev/null

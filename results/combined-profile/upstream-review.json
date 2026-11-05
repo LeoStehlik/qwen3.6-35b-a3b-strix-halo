@@ -1,0 +1,60 @@
+{
+  "checked_date": "2026-11-04",
+  "mainline_commit": "3de52ac38818978d6da8f386eda43a856e53714a",
+  "files": {
+    "src/models/qwen35moe.cpp": "579426f57c8691279ab9231264b5a0bceb214e57b3876d58020a1f40a98647a4",
+    "ggml/src/ggml-vulkan/vulkan-shaders/concat.comp": "9057791bd37df001b3a859f4510dfe456e09abd0b2820b6a1c4d616fd4696388",
+    "ggml/include/ggml.h": "1aef7a5f465b1c19de305dd6f9a0c303f88e485133a94b9a0ee1cce6345c9101",
+    "src/llama-context.cpp": "4d137ded28efc44c8b471f6c056bee9444a24deb7b42d1e04c64728c25e5c822",
+    "ggml/src/ggml-vulkan/ggml-vulkan.cpp": "ab0ad31fea14e43f3e7762601f2164ee57629191a082ef86f5ac0e95430fc47d",
+    "common/speculative.cpp": "6bfab079d889cbcf4e16d659913537d3e9b217e02029ee0c72bc6dee961cc5b2"
+  },
+  "pull_requests": [
+    {
+      "number": 22653,
+      "title": "vulkan: fuse SSM_CONV + ADD + SILU",
+      "state": "closed",
+      "merged_at": "2026-05-17T08:25:50Z",
+      "html_url": "https://github.com/ggml-org/llama.cpp/pull/22653",
+      "author": "jeffbolznv"
+    },
+    {
+      "number": 23198,
+      "title": "llama: avoid copying logits during prompt decode in MTP",
+      "state": "closed",
+      "merged_at": "2026-05-17T15:30:25Z",
+      "html_url": "https://github.com/ggml-org/llama.cpp/pull/23198"
+    },
+    {
+      "number": 27703,
+      "title": "vulkan : copy strided f16 KV once on AMD so reads spread across memory channels",
+      "state": "closed",
+      "merged_at": "2026-10-15T07:09:03Z",
+      "html_url": "https://github.com/ggml-org/llama.cpp/pull/27703"
+    },
+    {
+      "number": 30141,
+      "title": "speculative : save and restore MTP hidden state",
+      "state": "closed",
+      "merged_at": "2026-11-03T15:53:58Z",
+      "html_url": "https://github.com/ggml-org/llama.cpp/pull/30141"
+    },
+    {
+      "number": 30149,
+      "title": "vulkan: add tiled concat for transposed inputs",
+      "state": "closed",
+      "merged_at": null,
+      "html_url": "https://github.com/ggml-org/llama.cpp/pull/30149",
+      "author": "ravel7524"
+    },
+    {
+      "number": 30591,
+      "title": "vulkan: add tiled-transpose concat shader for Qwen models",
+      "state": "open",
+      "merged_at": null,
+      "html_url": "https://github.com/ggml-org/llama.cpp/pull/30591",
+      "author": "0cc4m"
+    }
+  ],
+  "scope": "Read-only source/PR assessment. No mainline port, GPU test, PR or maintainer message."
+}

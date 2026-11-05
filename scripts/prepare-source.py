@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     config = json.loads((ROOT / 'source.json').read_text())
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--profile', choices=config['profiles'], default='stable')
+    parser.add_argument('--profile', choices=config['profiles'], default='prefill-stage2')
     parser.add_argument('--destination', type=Path)
     parser.add_argument('--upstream', default=config['repository'], help='Git URL or an existing local clone for offline reconstruction')
     args = parser.parse_args()

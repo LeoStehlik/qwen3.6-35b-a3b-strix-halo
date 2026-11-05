@@ -22,7 +22,7 @@ not an extra step to apply on top of MR.
 
 ## Runtime switches
 
-| Variable | Optimized trial value | Meaning |
+| Variable | Promoted default value | Meaning |
 |---|---|---|
 | `GGML_VK_FA_KV_CONTIG` | `1` | Repack eligible strided F16 KV for attention |
 | `GGML_VK_MMID_ROWLISTS` | `1` | Build/use per-expert row lists |
@@ -41,9 +41,10 @@ not an extra step to apply on top of MR.
 | `GGML_VK_MMID_FAST_TILE`, `..._FAST_DEQUANT` | `0` | Rejected global tile/arithmetic decode experiments |
 | `GGML_VK_MMID_FAST_BK` | `32` | Retain the original K tile; deeper K was slower |
 
-The launcher without opt-in profile flags retains the original stable profile.
-`--optimized-prefill` selects the previous profile; `--expert-prefill` selects
-the new combined profile. `--disable-expert-selector` and `--disable-conv-fusion`
+The launcher defaults to the accepted `prefill-stage2` profile.
+`--profile stable` explicitly selects the earlier fallback.
+`--optimized-prefill` selects the previous profile; `--expert-prefill` is a
+compatible alias for the new default. `--disable-expert-selector` and `--disable-conv-fusion`
 control its additions independently. Source defaults for the additions are off.
 
 `GGML_VK_FA_PROFILE`, `GGML_VK_PERF_LOGGER`, `GGML_VK_FA_MR_TRACE`,

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
-source_dir=${1:-"$repo_root/work/stable"}
+source_dir=${1:-"$repo_root/work/prefill-stage2"}
 test -f "$source_dir/CMakeLists.txt"
 cmake -S "$source_dir" -B "$source_dir/build-vulkan" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release \

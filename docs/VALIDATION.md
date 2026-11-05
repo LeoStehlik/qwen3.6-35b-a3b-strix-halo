@@ -1,10 +1,19 @@
 # Validation, failures and deployment decision
 
-As of 2026-11-04 23:21:56 UTC, the endpoint runs the selected expert-row kernel
-and fused convolution together, on top of the previously accepted MR/tiled
-concat/unused-head profile. Direct correctness, state, tool and cache checks
-passed. The user is testing ordinary OpenClaw quality before adopting the pair
-as the next baseline. No OpenClaw gateway restart was part of this work.
+As of 2026-11-04 23:54 UTC, the user has accepted the selected expert-row kernel
+and fused convolution as the persistent/default baseline, on top of the earlier
+MR/tiled-concat/unused-head profile. Direct correctness, state, tool and cache
+checks passed. Production requests continue. This is deployment acceptance,
+not proof of equivalent quality on every task. No OpenClaw gateway restart was
+part of this work.
+
+The enabled boot unit matches the live binary, full argv and selected flags;
+systemd validation and lingering checks passed without changing the live PID.
+No reboot test was performed. Combined-build profiling finished with unchanged
+inference binaries; its parser reproduces the saved aggregate analysis.
+Hardware traffic counters are uncalibrated and do not establish DRAM saturation.
+See [combined profile](COMBINED-PROFILE.md) and
+[persistence evidence](../results/combined-profile/persistence.json).
 
 ## Expert selection and convolution fusion
 

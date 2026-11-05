@@ -11,8 +11,8 @@ The goal is sustained long-context prefill near 1,000 tok/s while preserving the
 model, tools, and useful context. The latest pair of kernel changes reaches
 **1,045 and 1,049 tok/s** on the cold 64K server/MTP fixture. Both are now enabled
 on the existing endpoint; direct tool, continuation and cache checks passed.
-The user is testing ordinary OpenClaw answer quality before adopting this as
-the next baseline.
+The user has accepted this as the persistent/default baseline. Ongoing real
+OpenClaw testing remains useful; it is not a broad model-quality certification.
 
 ## Current result — 2026-11-04 UTC
 
@@ -34,13 +34,14 @@ the combined result. All ten uninstrumented runs have the same output hash and
 draft counts. [Experiment details](docs/EXPERT-PREFILL.md),
 [all measurements](results/prefill-stage2/server-runs.json).
 
-**Deployment status, 23:21:56 UTC:** the actual running binary uses profile
-`prefill-stage2`, with both changes enabled. Exact tool arguments, tool-result
-continuation, checkpoint restoration and displaced RAM-cache restoration passed.
-The latter reused 11,310 tokens and returned the correct result. No OpenClaw
-agent turn or gateway restart was initiated. The serving unit remains transient;
-see [Francis's handoff](handoff.md) and [readiness evidence](results/prefill-stage2/live-readiness.json).
-Ordinary OpenClaw answer quality is pending user acceptance of this pair.
+**Deployment status, 23:54 UTC:** `prefill-stage2` is the accepted default.
+The enabled persistent boot unit now selects the exact running binary, arguments
+and optimization flags; lingering is enabled. The existing transient process
+continues serving without interruption until the next intentional restart or
+boot. No restart or reboot was performed to change persistence; a reboot test
+has not been performed. Direct tool, continuation and displaced-cache checks
+passed at 11K. See [Francis's handoff](handoff.md) and
+[persistence evidence](results/combined-profile/persistence.json).
 
 Initial real traffic on the promoted pair processed **73,093 tokens at 1,012.02
 tok/s** and a later **79,548-token pass at 993.07 tok/s**, with production
@@ -59,7 +60,8 @@ optimization and practical testing. Its failed equivalence gate remains recorded
 New operator, row-ownership and state checks pass; these do not establish broad
 capability equivalence. Read the [numerical investigation](docs/NUMERICAL-INVESTIGATION.md)
 and [validation scope](docs/VALIDATION.md). Performance testing of this pair is
-complete; real OpenClaw use is the remaining acceptance check.
+complete. The user explicitly accepted the pair as the deployment default;
+ongoing real use can reveal issues beyond the existing test coverage.
 
 ## Earlier attention improvement
 
@@ -87,7 +89,11 @@ synthetic benchmark was run for the follow-up optimizations.
 - [Francis handoff](handoff.md): current state, exact local locations, recovery,
   next experiments, and operational constraints.
 - [Deployment cookbook](docs/DEPLOYMENT.md): pinned source, models, build and
-  foreground launch. Repository setup does not restart any service.
+  foreground launch and optional persistent systemd setup.
+- [Combined-build profile](docs/COMBINED-PROFILE.md): long-context continuation
+  bottlenecks, native counters and the next measured opportunity.
+- [Upstream candidates and fork strategy](docs/UPSTREAM.md): what merits a PR,
+  existing overlapping work and what we maintain downstream.
 - [Experiment history](docs/EXPERIMENTS.md): each step, including rejected ideas.
 - [Code and patch guide](docs/CODE.md): ordered changes and runtime flags.
 - [Benchmark reproduction](docs/BENCHMARKS.md): fixtures, commands and conditions.
@@ -99,8 +105,10 @@ synthetic benchmark was run for the follow-up optimizations.
 ```bash
 git clone https://github.com/LeoStehlik/qwen3.6-35b-a3b-strix-halo.git
 cd qwen3.6-35b-a3b-strix-halo
-python3 scripts/prepare-source.py --profile stable
-bash scripts/build.sh work/stable
+python3 scripts/prepare-source.py --profile prefill-stage2
+bash scripts/build.sh work/prefill-stage2
+# New installation only: downloads about 22 GB from a pinned public revision.
+python3 scripts/download-models.py "$HOME/models/qwen36-rocmfpx"
 python3 scripts/verify-models.py "$HOME/models/qwen36-rocmfpx"
 python3 scripts/serve.py --dry-run
 ```
@@ -112,10 +120,11 @@ python3 scripts/serve.py
 ```
 
 Default binding is `127.0.0.1:8082`; model ID is `tiercel-qwen36-a3b-fast`.
-The commands above retain the stable fallback. To reproduce the current trial,
-prepare/build profile `prefill-stage2` and launch with `--expert-prefill`;
-see the [cookbook](docs/DEPLOYMENT.md).
-The launch uses the existing model files and does not download another model.
+Source preparation, build and launch now default to **prefill-stage2**.
+The earlier fallback remains explicit: prepare/build `stable`, then launch with
+`--profile stable`. `--expert-prefill` remains a compatible alias for the default.
+Only the explicit download command fetches models; launch never does.
+For persistent boot setup, follow the [cookbook](docs/DEPLOYMENT.md).
 The 131,072-token served context is the tested configuration, not a claim that
 150K prompts fit. Preserve checkpoint reuse and account for the context limit
 in clients; no 8,192-token output cap is introduced.

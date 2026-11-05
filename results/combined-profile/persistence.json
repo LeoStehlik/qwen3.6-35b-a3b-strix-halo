@@ -1,0 +1,12 @@
+{
+  "verified_at": "2026-11-04T23:54:16.749234+00:00",
+  "running_pid_unchanged": 317073,
+  "boot_unit": "qwen36-rocmfpx.service",
+  "boot_unit_enabled": "enabled",
+  "linger": "yes",
+  "argv_matches_running_process": true,
+  "selected_flags_match_running_process": true,
+  "unit_sha256": "58cd989fdb419fda1eed87a425ae076c006adbb7a4b8db8a36d295818f88e57f",
+  "restart_performed": false,
+  "reboot_test_performed": false
+}

@@ -20,3 +20,11 @@ the synthetic public-source fixture and portable analysis scripts instead.
 this repository. It is separate from model-quality validation and does not
 claim that new GPU benchmarks or a live deployment were performed during
 documentation work.
+
+## Combined-build profiling and persistent acceptance
+
+`combined-profile/` contains instrumented96K/continuation operator summaries,
+native RGP/SPM counter aggregates, and the verified persistence configuration.
+These are separate from the uninstrumented cold64K headline results. Raw driver
+traffic counters are not calibrated physical bandwidth. No traces, tensors or
+real conversations are published. See [analysis](../docs/COMBINED-PROFILE.md).

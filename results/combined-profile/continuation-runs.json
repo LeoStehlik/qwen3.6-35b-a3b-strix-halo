@@ -1,0 +1,78 @@
+[
+  {
+    "label": "warmup",
+    "input_tokens": 2048,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 2048,
+      "prompt_ms": 1491.052,
+      "prompt_per_token_ms": 0.728052734375,
+      "prompt_per_second": 1373.5268790089146,
+      "predicted_n": 16,
+      "predicted_ms": 316.997,
+      "predicted_per_token_ms": 19.8123125,
+      "predicted_per_second": 50.47366378861629,
+      "draft_n": 10,
+      "draft_n_accepted": 5
+    },
+    "wall_seconds": 1.8109963440001593,
+    "output_sha256": "e36f2a7d6ce892cc774501c4858dc6a956478715561e00bb22594267b4f2a905",
+    "instrumented": true
+  },
+  {
+    "label": "seed-96k",
+    "input_tokens": 98304,
+    "timings": {
+      "cache_n": 0,
+      "prompt_n": 98304,
+      "prompt_ms": 113608.427,
+      "prompt_per_token_ms": 1.1556846822102864,
+      "prompt_per_second": 865.2879244600404,
+      "predicted_n": 1
+    },
+    "wall_seconds": 113.69960714199988,
+    "output_sha256": "5626488f6c83859cf2990cd0e87498a219c0a2a5adf30d45086a4a3c9efffb83",
+    "instrumented": true,
+    "note": "One output token: decode timing is not meaningful and has been omitted."
+  },
+  {
+    "label": "append-2048",
+    "input_tokens": 100352,
+    "timings": {
+      "cache_n": 98304,
+      "prompt_n": 2048,
+      "prompt_ms": 3614.833,
+      "prompt_per_token_ms": 1.76505517578125,
+      "prompt_per_second": 566.5545268619601,
+      "predicted_n": 16,
+      "predicted_ms": 456.366,
+      "predicted_per_token_ms": 28.522875,
+      "predicted_per_second": 35.059579372696476,
+      "draft_n": 12,
+      "draft_n_accepted": 6
+    },
+    "wall_seconds": 4.096914226000081,
+    "output_sha256": "47f9ef1fdbde903cf0f8a17bc604891c14e1b244fafd40ecec73486094dc25cb",
+    "instrumented": true
+  },
+  {
+    "label": "append-96",
+    "input_tokens": 100448,
+    "timings": {
+      "cache_n": 100348,
+      "prompt_n": 100,
+      "prompt_ms": 612.472,
+      "prompt_per_token_ms": 6.12472,
+      "prompt_per_second": 163.27277002050707,
+      "predicted_n": 16,
+      "predicted_ms": 600.73,
+      "predicted_per_token_ms": 37.545625,
+      "predicted_per_second": 26.63426164832787,
+      "draft_n": 11,
+      "draft_n_accepted": 1
+    },
+    "wall_seconds": 1.2388687670008949,
+    "output_sha256": "f883c9f3857079549658da420187d7d0a42264405ad5e1ebf8cce982faafcb8f",
+    "instrumented": true
+  }
+]
